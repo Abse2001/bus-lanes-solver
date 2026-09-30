@@ -2,11 +2,11 @@
   "name": "@tscircuit/bus-lanes-solver",
   "version": "0.0.1",
   "type": "module",
-  "module": "lib/index.ts",
-  "main": "lib/index.ts",
-  "types": "lib/index.ts",
+  "module": "dist/index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "files": [
-    "lib"
+    "dist"
   ],
   "scripts": {
     "test": "bun test",
@@ -14,28 +14,44 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "start": "cosmos",
-    "build:site": "cosmos-export"
-  },
-  "dependencies": {
-    "@tscircuit/solver-utils": "^0.0.21",
-    "graphics-debug": "^0.0.95",
-    "@tscircuit/fanout-solver": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86"
+    "build:site": "cosmos-export",
+    "build": "tsup && dts-bundle-generator --config dts-bundle.config.json",
+    "test:package": "bun run build && bun scripts/check-package.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
+    "@tscircuit/fanout-solver": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+    "@tscircuit/solver-utils": "^0.0.21",
     "@types/bun": "latest",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "circuit-json-to-connectivity-map": "^0.0.30",
+    "dts-bundle-generator": "^9.5.1",
+    "graphics-debug": "^0.0.95",
     "react": "^19",
     "react-cosmos": "^7.0.0",
     "react-cosmos-plugin-vite": "^7.0.0",
     "react-dom": "^19",
-    "typescript": "^5",
+    "tsup": "^8.5.0",
+    "typescript": "5.9.3",
     "vite": "^7.3.0"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/tscircuit/bus-lanes-solver.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "overrides": {
+    "typescript": "5.9.3"
   }
 }
