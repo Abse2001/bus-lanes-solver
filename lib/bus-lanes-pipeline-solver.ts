@@ -1,3 +1,4 @@
+import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
 import { routeFlexibleLanes } from "./route-flexible-lanes"
 import { BaseSolver } from "@tscircuit/solver-utils"
 import {
@@ -70,11 +71,23 @@ export class BusLanesPipelineSolver extends BaseSolver {
         b.connectionNames.some((n) => group.has(n)),
       )
       const members = this.input.connections.filter((c) => group.has(c.name))
-      const allowed = layers.filter((l) =>
-        buses.every((b) => !b.allowedLayers || b.allowedLayers.includes(l)),
+      const allowed = layers.filter(
+        (layer) =>
+          buses.every(
+            (b) => !b.allowedLayers || b.allowedLayers.includes(layer),
+          ) &&
+          members.every((connection) =>
+            connection.pointsToConnect.every(
+              (point) =>
+                (point.layers ?? [point.layer]).includes(layer) ||
+                isUnroutedComponentPad(this.input, connection, point),
+            ),
+          ),
       )
       if (!allowed.length)
-        throw Error("Bus/pair has no common allowed signal layer")
+        throw Error(
+          "Bus/pair has no common allowed signal layer; existing fanout handoffs cannot be dogboned again",
+        )
       const preferred = buses
         .flatMap((b) => [b.preferredLayer, ...(b.preferredLayers ?? [])])
         .filter((l): l is string => !!l)

@@ -128,7 +128,12 @@ Snapshots include [individual layer views](./docs/iterations/skew-tolerances) as
 ## Integrated local-dogbone pipeline (experimental)
 
 `BusLanesPipelineSolver(input, { fanout: "auto" })` composes local terminal
-escapes with the fixed-layer lane solver. It honors bus layer restrictions and
+escapes with the fixed-layer lane solver. Automatic escapes are only eligible at
+component pads without an existing connected route. Supplied fanout handoffs
+retain their available layers and fixed copper; a layer conflict fails rather
+than adding another dogbone. This distinguishes bus completion from the preceding fanout phase.
+
+It honors bus layer restrictions and
 preferences, keeps overlapping bus/pair groups atomic, and uses existing local
 via access when assigning remaining unconstrained signals. `fanout: "none"`
 retains the fixed-layer input contract. A failed pipeline emits no partial
