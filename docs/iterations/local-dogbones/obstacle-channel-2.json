@@ -1,1 +1,0 @@
-{"iteration":2,"stats":{"busLengths":[],"pairLengths":[],"phase":"route","algorithm":"octilinear_visibility","attempt":0,"lane":1,"totalLanes":3,"vertices":2,"expandedVertices":0,"frontier":1,"failureCode":null,"traceLengthsMm":[{"name":"lane2","length":10.248528137423857}]},"solved":false,"error":null}

@@ -1,5 +1,4 @@
 import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
-import { routeFlexibleLanes } from "./route-flexible-lanes"
 import { BaseSolver } from "@tscircuit/solver-utils"
 import {
   routeLocalSignalDogbones,
@@ -23,10 +22,6 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
-  private flexibleInput?: SimpleRouteJson
-  private flexibleConnections: SimpleRouteJson["connections"] = []
-  private reachable = new Map<string, string[]>()
-  private flexible?: Generator<void, Trace[]>
   constructor(input: SimpleRouteJson, options: BusLanesPipelineOptions = {}) {
     super()
     this.input = structuredClone(input)
@@ -167,44 +162,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.input.connections.find((c) => c.name === t.connection_name)
           ?.source_trace_id ?? t.connection_name,
     })) as Trace[]
-    const constrained = new Set([
-      ...(this.input.buses ?? []).flatMap((b) => b.connectionNames),
-      ...(this.input.differentialPairs ?? []).flatMap((p) => p.connectionNames),
-    ])
-    this.flexibleInput = {
-      ...this.input,
-      connections: result.connections as SimpleRouteJson["connections"],
-      traces: [...(this.input.traces ?? []), ...this.escapes],
-    }
-    this.flexibleConnections =
-      this.input.connections.length > 12 && constrained.size > 0
-        ? this.flexibleInput.connections.filter((c) => !constrained.has(c.name))
-        : []
-    for (const connection of this.flexibleConnections) {
-      const original = this.input.connections.find(
-        (c) => c.name === connection.name,
-      )!
-      const ends = original.pointsToConnect.map((p, index) => {
-        const escape = this.escapes.find(
-          (t) =>
-            t.connection_name === connection.name &&
-            Math.hypot(t.route[0].x - p.x, t.route[0].y - p.y) < 1e-8,
-        )
-        const via = escape?.route.find((p) => p.route_type === "via")
-        return via?.layers ?? p.layers ?? [p.layer]
-      })
-      this.reachable.set(
-        connection.name,
-        layers.filter((l) => ends.every((e) => e.includes(l))),
-      )
-    }
-    const flexibleNames = new Set(this.flexibleConnections.map((c) => c.name))
     this.child = new BusLanesSolver(
       {
-        ...this.flexibleInput,
-        connections: this.flexibleInput.connections.filter(
-          (c) => !flexibleNames.has(c.name),
-        ),
+        ...this.input,
+        connections: result.connections as SimpleRouteJson["connections"],
+        traces: [...(this.input.traces ?? []), ...this.escapes],
       },
       this.options,
     )
@@ -223,20 +185,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       if (this.child!.failed)
         throw Error(this.child!.error ?? "Bus lanes failed")
       if (this.child!.solved) {
-        let lanes = this.child!.traces
-        if (this.flexibleConnections.length) {
-          this.flexible ??= routeFlexibleLanes(
-            this.flexibleInput!,
-            this.flexibleConnections,
-            lanes,
-            this.reachable,
-          )
-          const step = this.flexible.next()
-          this.phase = "assign_remaining_layers"
-          if (!step.done) return
-          lanes = step.value
-        }
-        this.traces = lanes.map((lane) => {
+        this.traces = this.child!.traces.map((lane) => {
           const escapes = this.escapes.filter(
             (t) => t.connection_name === lane.connection_name,
           )
@@ -250,17 +199,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
           const suffix = escapes.find(
             (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
           )
-          const layer = (lane.route[0] as import("./types").Wire).layer
-          const adapt = (trace: Trace | undefined) =>
-            trace?.route.map((p, i) =>
-              p.route_type === "via"
-                ? { ...p, to_layer: layer }
-                : i === trace.route.length - 1
-                  ? { ...p, layer }
-                  : p,
-            )
-          const prefixRoute = adapt(prefix),
-            suffixRoute = adapt(suffix)
+          const prefixRoute = prefix?.route,
+            suffixRoute = suffix?.route
           const reversed =
             suffixRoute
               ?.toReversed()
@@ -294,9 +234,6 @@ export class BusLanesPipelineSolver extends BaseSolver {
       ) {
         this.child = undefined
         this.escapes = []
-        this.flexible = undefined
-        this.flexibleConnections = []
-        this.reachable.clear()
         this.phase = "retry_layers"
         return
       }

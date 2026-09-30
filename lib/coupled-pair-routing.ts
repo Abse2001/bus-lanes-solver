@@ -121,6 +121,34 @@ export function* routeCoupledPair(
       { x: p.x, y: top },
     ]
   })
+  // Keep a coupled corridor outside its bus envelope so it does not cut
+  // through the remaining lanes' package approaches. Derive the reserve from
+  // bus membership and trace pitch, never from board-specific coordinates.
+  const busNames = new Set(
+    (input.buses ?? [])
+      .filter((b) =>
+        pair.connectionNames.some((n) => b.connectionNames.includes(n)),
+      )
+      .flatMap((b) => b.connectionNames),
+  )
+  const busMembers = input.connections.filter((c) => busNames.has(c.name))
+  if (busMembers.length > 2 && originalPads.some((p) => p.length)) {
+    const reserve = busMembers.length * (width + clearance)
+    const side = Math.sign(centers[1][crossAxis] - centers[0][crossAxis]) || 1
+    const positions = busMembers.flatMap((c) =>
+      c.pointsToConnect.map((p) => p[crossAxis]),
+    )
+    const outer =
+      (side > 0 ? Math.max(...positions) : Math.min(...positions)) +
+      side * (reserve + 2 * width + gap + clearance)
+    for (let end = 0; end < 2; end++)
+      handoffChoices[end].unshift({
+        ...handoffChoices[end][0],
+        [axis]:
+          handoffChoices[end][0][axis] + (end === 0 ? sign : -sign) * reserve,
+        [crossAxis]: outer,
+      })
+  }
   const names = new Set(
     members.flatMap((c) => [c.name, c.source_trace_id ?? c.name]),
   )

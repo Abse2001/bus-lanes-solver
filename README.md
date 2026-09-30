@@ -13,13 +13,54 @@ const routed = solver.getOutput()
 
 Each connection must have exactly two terminals on the same fixed layer. The solver never emits vias, changes terminal layers, or falls back to a multilayer router. Existing copper and obstacles remain fixed. Geometric winding sweeps, seam rotations and reverse searches choose lane order; planar congestion, crossed lane orders, unsupported constraints, and exhausted search budgets produce explicit failures. A bounded visibility-graph search failure is not a proof that no continuous planar solution exists.
 
+## Review target
+
+The integrated preset is being developed against the
+[AM3352/RAM reference](https://tscircuit.com/seveibar/am3352-ram-dogbone-and-single-layer-route-test).
+It is not ready until the original TSX, with its custom algorithms replaced by
+`autorouter="bus_lanes"`, produces all 47 signal routes and a reviewed full-board
+snapshot. The reference's saved route plan is not an implementation of a general
+solver and must not be replayed by this preset.
+
+Acceptance requires zero DRC errors, via-free interconnects after local escapes,
+short ordinary runs with few direction changes, no self-touching copper or acute
+reversals, smooth length-tuning curves, coupled pair shapes, and the declared bus
+and pair skew limits. The existing four DDR benchmarks alone do not establish
+this result.
+
+The AM3352 regression measures these limits independently of the solver:
+
+| Measurement | Reviewed reference | Regression limit |
+| --- | ---: | ---: |
+| Connected signals | 47 | 47 |
+| Total planar copper | 1696.53 mm | ≤1700 mm |
+| Maximum / mean detour ratio | 2.536 / 1.723 | ≤2.6 / ≤1.75 |
+| Ordinary turns / short jogs | 888 / 451 | ≤900 / ≤460 |
+| Byte-bus / differential skew | Within declared bounds | ≤0.635 / ≤0.127 mm |
+| Pair interior edge gap | 0.11979–0.13813 mm | 0.0999–0.155 mm |
+
+The pair audit allows 6.2 mm at each end for package approaches, matching the
+reference audit. This is a board-specific test limit, not a hidden solver default.
+The quality limits supplement connectivity, continuous DRC, and visual review.
+
+The main review path is:
+
+1. `bus-lanes-pipeline-solver.ts`: preserve existing fanouts; escape only untouched
+   component pads; compose the routing and tuning stages.
+2. `bus-lanes-solver.ts`: complete fixed-layer connections and validate the result.
+3. `coupled-pair-routing.ts` and `tune-coupled-lengths.ts`: shared pair corridors
+   and shared smooth meanders.
+4. The AM3352 TSX regression in the accompanying core PR, followed by its full
+   routed visual snapshot. That regression is currently failing; there is no
+   accepted full-board solver snapshot yet.
+
 ## Constraints
 
 - `buses[].connectionNames`: connections belonging to the bus, in routing order.
 - `buses[].maxLengthSkew`: maximum difference in total planar copper lengths, in millimeters, including fixed traces associated by `source_trace_id` or `connection_name`. The solver adds clearance-checked tuning detours and verifies the final result.
 - `buses[].traceWidth`: explicit width in millimeters; otherwise uses connection `nominalTraceWidth` / `width`, then `minTraceWidth`.
 - `buses[].allowedLayers`: must contain the fixed terminal layer.
-- `differentialPairs[].lengthTolerance`: supported as a routed-length constraint. Coupled-pair `traceGap` and `maxUncoupledLength` constraints are explicitly rejected; this solver does not yet enforce coupled-pair geometry.
+- `differentialPairs[].lengthTolerance`: supported as a routed-length constraint. Pairs with `traceGap` use a shared corridor. An explicit `maxUncoupledLength` bounds total uncoupled copper, including fixed fanouts.
 
 Matching includes both fixed fanouts and the routes produced by this phase. It measures XY copper length; via depth, layer-dependent propagation velocity, and package delays are not inferred. No impedance or delay defaults are supplied. Matching uses the existing core SRJ fields: bus `maxLengthSkew` and differential-pair `lengthTolerance` (mapped from the JSX pair’s `maxLengthSkew`). Routes already inside the bound remain untuned; shorter routes grow only to the permitted lower bound. Overlapping bus and pair constraints are resolved together without forcing exact equality.
 
@@ -38,7 +79,7 @@ The accompanying core/props changes introduce:
 />
 ```
 
-Fanout phases must establish matching fixed-layer endpoints before this phase runs. Failed lane routing does not trigger a global-router fallback.
+The integrated phase adds local dogbones only for untouched component pads that need a signal-layer transition. Existing fanout handoffs retain their layers and geometry. Failed lane routing does not trigger a global-router fallback.
 
 ## Debugger
 
@@ -134,8 +175,7 @@ retain their available layers and fixed copper; a layer conflict fails rather
 than adding another dogbone. This distinguishes bus completion from the preceding fanout phase.
 
 It honors bus layer restrictions and
-preferences, keeps overlapping bus/pair groups atomic, and uses existing local
-via access when assigning remaining unconstrained signals. `fanout: "none"`
+preferences, keeps overlapping bus/pair groups atomic, and resolves signal layers before routing the interconnects. `fanout: "none"`
 retains the fixed-layer input contract. A failed pipeline emits no partial
 successful trace output.
 

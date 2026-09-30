@@ -1,5 +1,4 @@
 import { tuneCoupledLengths } from "./tune-coupled-lengths"
-import { routeDenseLanes } from "./route-dense-lanes"
 import { negotiateLanes } from "./negotiate-lanes"
 import { pairCouplingReports } from "./pair-coupling"
 import { tuningPathIsSelfClear } from "./length-tuning"
@@ -261,9 +260,13 @@ export class BusLanesSolver extends BaseSolver {
   }
   private route() {
     if (this.options.denseSearch && this.input.connections.length > 12) {
-      this.negotiated ??= (
-        this.input.connections.length > 32 ? negotiateLanes : routeDenseLanes
-      )(this.input, this.orders[0], this.fixed, this.pairedTraces, this.widths)
+      this.negotiated ??= negotiateLanes(
+        this.input,
+        this.orders[0],
+        this.fixed,
+        this.pairedTraces,
+        this.widths,
+      )
       const step = this.negotiated.next()
       if (!step.done) {
         this.traces = step.value
