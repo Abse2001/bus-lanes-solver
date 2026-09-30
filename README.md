@@ -188,3 +188,15 @@ supply fanout handoffs.
 The AM3352/RAM integration regression is still a blocking case for this
 experimental pipeline. Existing two-fanout DDR benchmark success does not imply
 that arbitrary dense original-pad inputs route successfully.
+
+### Routed PR artifacts
+
+PR images show completed routing only. Generate the four DDR artifacts with
+`bun scripts/snapshot-routed-ddr.ts`; it verifies all cases solve and every
+connection has a route before writing any images. Keep intermediate and failed
+captures outside the repository.
+
+- [Bottom to top](docs/routed-ddr/ddr_bottom_io_top-solved.png)
+- [Left to right](docs/routed-ddr/ddr_left_io_right-solved.png)
+- [Right to left](docs/routed-ddr/ddr_right_io_left-solved.png)
+- [Top to bottom](docs/routed-ddr/ddr_top_io_bottom-solved.png)
