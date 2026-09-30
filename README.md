@@ -147,12 +147,13 @@ The older 12 carrier-prefix cases remain available with `--legacy`; they are
 excluded from the default score and Cosmos pages. The prior grid-generated,
 aligned two-fanout data is superseded as well.
 
-The router uses a continuous octilinear visibility graph built from offset
-copper geometry. Lane ordering starts with layer-separated transverse winding
-sweeps, routes the outside of a bend first, and retains alternate seams. Clear
-analytic paths skip visibility-graph construction entirely. `maxLaneIterations` bounds vertex expansions
-per lane (4,000 by default); `maxSearchIterations` bounds the whole solve
-(200,000). There is no grid resolution option.
+The router checks continuous copper clearance while searching octilinear paths.
+Clear channels use analytic connectors. Dense inputs use a grid search with turn
+penalties, negotiated congestion, geometry-derived waypoint alternatives, and
+bounded candidate selection. Candidate pairs remain atomic. Search never loads a
+saved route plan; package envelopes, bus membership, and existing copper determine
+the alternatives. Bus corridors are routed and tuned before unrelated controls.
+A search-budget failure is explicit and does not export partial successful routes.
 
 See the [visual iteration audit](./docs/vector-routing.md) for inspected baseline
 and replacement snapshots. Cosmos includes a staggered obstacle channel in
@@ -162,9 +163,9 @@ Future changes must be submitted through pull requests with reviewed visual snap
 
 ### Meander geometry
 
-Length tuning prioritizes long runs over short terminal approaches and centers evenly pitched, chamfered serpentine lobes along them. Lobe count scales with the required added length, spreading large corrections without turning small corrections into dense teeth. Chamfers scale with lobe dimensions instead of a fixed microscopic corner cut. Returning arms retain at least three trace widths of center-to-center spacing (and the requested copper clearance). When the shortest lanes leave no room, the router opens an octilinear central corridor in winding order and rematches all affected bus lengths. Endpoints and fixed fanouts remain unchanged.
+Length tuning prioritizes long runs over short terminal approaches and centers evenly pitched serpentine lobes along them. The integrated preset uses rounded curves for both individual lanes and shared pair centerlines. Lobe count scales with the required added length, spreading large corrections without turning small corrections into dense teeth. Chamfers scale with lobe dimensions instead of a fixed microscopic corner cut. Returning arms retain at least three trace widths of center-to-center spacing (and the requested copper clearance). When the shortest lanes leave no room, the router opens an octilinear central corridor in winding order and rematches all affected bus lengths. Endpoints and fixed fanouts remain unchanged.
 
-Snapshots include [individual layer views](./docs/iterations/skew-tolerances) as well as complete boards. All new carrier bends in the DDR samples are checked to turn by at most 45 degrees; length matching and combined-copper DRC remain mandatory.
+The [routed artifacts](./docs/routed-ddr) contain complete boards. All new carrier bends in the DDR samples are checked to turn by at most 45 degrees; length matching and combined-copper DRC remain mandatory.
 
 ## Integrated local-dogbone pipeline (experimental)
 

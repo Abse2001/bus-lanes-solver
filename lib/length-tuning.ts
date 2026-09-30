@@ -150,12 +150,25 @@ export function tuneLengths(
 export function tuningPathIsSelfClear(path: Point[], required: number) {
   const cumulative = [0]
   const turning = [0]
+  const unsafeBends = [0]
   for (let i = 1; i < path.length - 1; i++) {
     const a = { x: path[i].x - path[i - 1].x, y: path[i].y - path[i - 1].y }
     const b = { x: path[i + 1].x - path[i].x, y: path[i + 1].y - path[i].y }
-    turning.push(
-      turning[i - 1] +
-        Math.abs(Math.atan2(a.x * b.y - a.y * b.x, a.x * b.x + a.y * b.y)),
+    const angle = Math.abs(
+      Math.atan2(a.x * b.y - a.y * b.x, a.x * b.x + a.y * b.y),
+    )
+    const cross = Math.abs(a.x * b.y - a.y * b.x)
+    const radius =
+      cross < 1e-12
+        ? Infinity
+        : (Math.hypot(a.x, a.y) *
+            Math.hypot(b.x, b.y) *
+            distance(path[i - 1], path[i + 1])) /
+          (2 * cross)
+    turning.push(turning[i - 1] + angle)
+    unsafeBends.push(
+      unsafeBends[i - 1] +
+        Number(angle > Math.PI / 8 + 1e-8 || radius < required / 2 - 1e-8),
     )
   }
   for (let i = 1; i < path.length; i++)
@@ -173,7 +186,9 @@ export function tuningPathIsSelfClear(path: Point[], required: number) {
       // half-circle neighborhood; intersections above are never exempted.
       if (
         cumulative[j] - cumulative[i + 1] <= Math.PI * required + 1e-8 &&
-        turning[j] - turning[i] <= Math.PI / 2 + 1e-8
+        (turning[j] - turning[i] <= Math.PI / 2 + 1e-8 ||
+          (turning[j] - turning[i] <= Math.PI + 1e-8 &&
+            unsafeBends[j] === unsafeBends[i]))
       )
         continue
       const a = path[i],

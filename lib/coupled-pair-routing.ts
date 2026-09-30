@@ -1,3 +1,7 @@
+import { extendPairApproaches } from "./extend-pair-approaches"
+import { chamferPairApproaches } from "./chamfer-pair-approaches"
+import { tightenPairApproaches } from "./tighten-pair-approaches"
+import { extendCoupledSectionEnds } from "./extend-coupled-section"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { distance, length, simplify } from "./geometry"
@@ -32,6 +36,12 @@ export function* routeCoupledPair(
   input: SimpleRouteJson,
   pair: NonNullable<SimpleRouteJson["differentialPairs"]>[number],
   fixed: Copper[],
+  negotiation?: {
+    copper: Copper[]
+    penalty: number
+    history?: Float32Array
+    variant?: number
+  },
 ): Generator<void, Trace[] | null> {
   const members = pair.connectionNames.map(
     (n) => input.connections.find((c) => c.name === n)!,
@@ -54,6 +64,19 @@ export function* routeCoupledPair(
       input.minTraceToPadEdgeClearance ??
       input.defaultObstacleMargin ??
       0.075
+  const inside = (point: Point, polygon: Point[]) => {
+    let inside = false
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const a = polygon[i],
+        b = polygon[j]
+      if (
+        a.y > point.y !== b.y > point.y &&
+        point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x
+      )
+        inside = !inside
+    }
+    return inside
+  }
   const layer = members[0].pointsToConnect[0].layer
   if (members.some((c) => c.pointsToConnect.some((p) => p.layer !== layer)))
     throw Error("Pair requires a common signal layer")
@@ -75,6 +98,9 @@ export function* routeCoupledPair(
     (input.obstacles ?? []).filter(
       (o) => o.componentId && o.connectedTo.includes(c.name),
     ),
+  )
+  const pairInBus = (input.buses ?? []).some((b) =>
+    pair.connectionNames.some((n) => b.connectionNames.includes(n)),
   )
   const handoffChoices = centers.map((p, i) => {
     const pads = originalPads
@@ -113,7 +139,28 @@ export function* routeCoupledPair(
       Math.min(...field.map((o) => o.center.y - o.height / 2)) - margin
     const top =
       Math.max(...field.map((o) => o.center.y + o.height / 2)) + margin
+    const openFront = pairInBus
+      ? front
+      : i === 0
+        ? {
+            ...front,
+            [axis]:
+              front[axis] +
+              s *
+                Math.max(
+                  4 * width,
+                  distance(
+                    members[0].pointsToConnect[i],
+                    members[1].pointsToConnect[i],
+                  ),
+                ),
+          }
+        : {
+            ...front,
+            [crossAxis]: vertical ? (left + right) / 2 : (top + bottom) / 2,
+          }
     return [
+      openFront,
       front,
       { x: left, y: p.y },
       { x: right, y: p.y },
@@ -141,13 +188,37 @@ export function* routeCoupledPair(
     const outer =
       (side > 0 ? Math.max(...positions) : Math.min(...positions)) +
       side * (reserve + 2 * width + gap + clearance)
-    for (let end = 0; end < 2; end++)
+    for (let end = 0; end < 2; end++) {
+      const front = handoffChoices[end][0]
       handoffChoices[end].unshift({
         ...handoffChoices[end][0],
         [axis]:
           handoffChoices[end][0][axis] + (end === 0 ? sign : -sign) * reserve,
         [crossAxis]: outer,
       })
+      if (end === 0)
+        handoffChoices[end].unshift({
+          ...front,
+          [axis]: front[axis] + (sign * reserve) / 2,
+        })
+    }
+  }
+  // A retry must explore another handoff topology instead of repeatedly
+  // returning the first viable corridor. All choices come from package geometry.
+  for (let end = 0; end < 2; end++) {
+    handoffChoices[end] = handoffChoices[end].filter(
+      (point, index, choices) =>
+        choices.findIndex((other) => distance(point, other) < 1e-8) === index,
+    )
+  }
+  const variant = negotiation?.variant ?? 0
+  const offsets = [Math.floor(variant / handoffChoices[1].length), variant]
+  for (let end = 0; end < 2; end++) {
+    const offset = offsets[end] % handoffChoices[end].length
+    handoffChoices[end] = [
+      ...handoffChoices[end].slice(offset),
+      ...handoffChoices[end].slice(0, offset),
+    ]
   }
   const names = new Set(
     members.flatMap((c) => [c.name, c.source_trace_id ?? c.name]),
@@ -187,8 +258,14 @@ export function* routeCoupledPair(
           pointsToConnect: ends.map((p) => ({ ...p, layer })),
         }
         const scene = new VectorScene(input, virtual, envelope, corridorCopper)
+        const visibleScene = negotiation
+          ? new VectorScene(input, virtual, envelope, [
+              ...corridorCopper,
+              ...negotiation.copper,
+            ])
+          : scene
         const direct = connectors(ends[0], ends[1]).find((p) =>
-          scene.pathVisible(p),
+          visibleScene.pathVisible(p),
         )
         const centerSearch = direct
           ? {
@@ -199,7 +276,14 @@ export function* routeCoupledPair(
               step() {},
             }
           : input.connections.length > 12
-            ? new GridVisibilitySearch(scene, ends[0], ends[1])
+            ? new GridVisibilitySearch(
+                scene,
+                ends[0],
+                ends[1],
+                negotiation?.copper,
+                negotiation?.penalty,
+                negotiation?.history,
+              )
             : new VectorVisibilitySearch(scene, ends[0], ends[1])
         while (
           !centerSearch.solved &&
@@ -211,7 +295,31 @@ export function* routeCoupledPair(
           yield
         }
         if (!centerSearch.solved) continue
-        const centerPath = reduceOrdinaryTurns(centerSearch.result, scene)
+        const centerPath = reduceOrdinaryTurns(
+          centerSearch.result,
+          visibleScene,
+        )
+        // Grid endpoint attachments can briefly backtrack at a blocked
+        // handoff. Reject that candidate instead of aborting the whole phase
+        // when the parallel offset has no finite intersection.
+        if (
+          centerPath.length < 2 ||
+          centerPath.some((point, i) => {
+            if (!i) return false
+            const previous = centerPath[i - 1],
+              span = distance(previous, point)
+            if (span < 1e-8) return true
+            if (i < 2) return false
+            const before = centerPath[i - 2],
+              oldSpan = distance(before, previous)
+            const dot =
+              ((previous.x - before.x) * (point.x - previous.x) +
+                (previous.y - before.y) * (point.y - previous.y)) /
+              (oldSpan * span)
+            return 1 + dot < 1e-5
+          })
+        )
+          continue
         const rails = [
           offsetPath(centerPath, (width + gap) / 2),
           offsetPath(centerPath, -(width + gap) / 2),
@@ -231,29 +339,93 @@ export function* routeCoupledPair(
         for (const flip of flips) {
           const ordered = flip ? rails.toReversed() : rails
           const main = members.map((c, i) => makeTrace(c, ordered[i]))
-          for (const escapeOrder of [
-            [0, 1],
-            [1, 0],
+          for (const escapeOrders of [
+            [
+              [0, 1],
+              [0, 1],
+            ],
+            [
+              [0, 1],
+              [1, 0],
+            ],
+            [
+              [1, 0],
+              [0, 1],
+            ],
+            [
+              [1, 0],
+              [1, 0],
+            ],
           ]) {
             const escapes: Trace[][] = [[], []]
             let failed = false
-            for (const i of escapeOrder)
-              for (let end = 0; end < 2; end++) {
+            for (let end = 0; end < 2; end++)
+              for (const i of escapeOrders[end]) {
                 const c = members[i],
                   target = ordered[i][end === 0 ? 0 : ordered[i].length - 1],
                   source = c.pointsToConnect[end]
-                const escapeInput = {
-                  ...input,
-                  minTraceToPadEdgeClearance: gap,
+                const escapeInput = input
+                const ownRail = end === 0 ? ordered[i] : ordered[i].toReversed()
+                let skip = 4 * width
+                const tail: Copper[] = []
+                for (let k = 1; k < ownRail.length; k++) {
+                  const a = ownRail[k - 1],
+                    b = ownRail[k],
+                    d = distance(a, b)
+                  if (skip >= d) {
+                    skip -= d
+                    continue
+                  }
+                  tail.push({
+                    a: {
+                      x: a.x + ((b.x - a.x) * skip) / d,
+                      y: a.y + ((b.y - a.y) * skip) / d,
+                    },
+                    b,
+                    radius: width / 2,
+                    layer,
+                    owners: ["reserved_pair_tail"],
+                  })
+                  skip = 0
                 }
                 const escapeScene = new VectorScene(escapeInput, c, width, [
                   ...fixed,
+                  ...tail,
                   ...main.flatMap(routeCopper),
                   ...escapes.flat().flatMap(routeCopper),
                 ])
+                const visibleEscapeScene = negotiation
+                  ? new VectorScene(escapeInput, c, width, [
+                      ...fixed,
+                      ...tail,
+                      ...main.flatMap(routeCopper),
+                      ...escapes.flat().flatMap(routeCopper),
+                      ...negotiation.copper,
+                    ])
+                  : escapeScene
                 const directEscape = connectors(source, target).find((p) =>
-                  escapeScene.pathVisible(p),
+                  visibleEscapeScene.pathVisible(p),
                 )
+                const fine = originalPads.some((pads) => pads.length > 0)
+                const padding = 30 * width
+                const localBounds = {
+                  minX: Math.max(
+                    input.bounds.minX,
+                    Math.min(source.x, target.x) - padding,
+                  ),
+                  maxX: Math.min(
+                    input.bounds.maxX,
+                    Math.max(source.x, target.x) + padding,
+                  ),
+                  minY: Math.max(
+                    input.bounds.minY,
+                    Math.min(source.y, target.y) - padding,
+                  ),
+                  maxY: Math.min(
+                    input.bounds.maxY,
+                    Math.max(source.y, target.y) + padding,
+                  ),
+                }
                 const search = directEscape
                   ? {
                       solved: true,
@@ -262,7 +434,17 @@ export function* routeCoupledPair(
                       result: directEscape,
                       step() {},
                     }
-                  : new GridVisibilitySearch(escapeScene, source, target)
+                  : new GridVisibilitySearch(
+                      escapeScene,
+                      source,
+                      target,
+                      negotiation?.copper,
+                      negotiation?.penalty,
+                      fine ? undefined : negotiation?.history,
+                      fine
+                        ? { step: width / 10, bounds: localBounds }
+                        : undefined,
+                    )
                 while (
                   !search.solved &&
                   !search.failed &&
@@ -277,25 +459,53 @@ export function* routeCoupledPair(
                 }
                 escapes[i][end] = makeTrace(
                   c,
-                  reduceOrdinaryTurns(search.result, escapeScene),
+                  reduceOrdinaryTurns(search.result, visibleEscapeScene),
                 )
               }
             if (failed) continue
-            const traces = members.map((c, i) => ({
-              ...makeTrace(
-                c,
-                [
-                  ...escapes[i][0].route,
-                  ...ordered[i].slice(1),
-                  ...escapes[i][1].route.toReversed().slice(1),
-                ],
-                true,
+            const approaches = tightenPairApproaches(
+              input,
+              members,
+              extendCoupledSectionEnds(
+                members.map((c, i) => ({
+                  ...makeTrace(
+                    c,
+                    [
+                      ...escapes[i][0].route,
+                      ...ordered[i].slice(1),
+                      ...escapes[i][1].route.toReversed().slice(1),
+                    ],
+                    true,
+                  ),
+                  coupledSection: [
+                    escapes[i][0].route.length - 1,
+                    escapes[i][0].route.length + ordered[i].length - 2,
+                  ] as [number, number],
+                })),
               ),
-              coupledSection: [
-                escapes[i][0].route.length - 1,
-                escapes[i][0].route.length + ordered[i].length - 2,
-              ] as [number, number],
-            }))
+              fixed,
+              width,
+              gap,
+              clearance,
+            )
+            const chamfered = chamferPairApproaches(
+              input,
+              members,
+              approaches,
+              fixed,
+              width,
+              clearance,
+            )
+            const traces = extendPairApproaches(
+              input,
+              members,
+              chamfered,
+              fixed,
+              width,
+              gap,
+              clearance,
+              offsetPath,
+            )
             if (
               !traces.every((t, i) =>
                 new VectorScene(input, members[i], width, [
@@ -305,14 +515,36 @@ export function* routeCoupledPair(
               )
             )
               continue
+            // The reference pair-variants.py scores foreign terminals enclosed
+            // between rails. Reject that topology: it forces other bus lanes to
+            // cross a pair or take an avoidable trip around a package.
+            const polygon = [
+              ...traces[0].route,
+              ...traces[1].route.toReversed(),
+            ]
+            if (
+              input.connections.some(
+                (c) =>
+                  !pair.connectionNames.includes(c.name) &&
+                  c.pointsToConnect.some((p) => inside(p, polygon)),
+              ) ||
+              fixed.some(
+                (copper) =>
+                  copper.layer === layer &&
+                  !copper.owners.some((owner) => names.has(owner)) &&
+                  distance(copper.a, copper.b) < 1e-8 &&
+                  inside(copper.a, polygon),
+              )
+            )
+              continue
             // A pair approach must not seal another terminal into a pocket. Check
             // remaining same-layer connections before locking this corridor.
             let trapsTerminal = false
-            let candidateScore = traces.reduce(
-              (sum, t) => sum + length(t.route),
-              0,
-            )
-            for (const other of input.connections.filter(
+            let candidateScore = negotiation
+              ? Math.abs(length(traces[0].route) - length(traces[1].route)) +
+                0.01 * traces.reduce((sum, t) => sum + length(t.route), 0)
+              : traces.reduce((sum, t) => sum + length(t.route), 0)
+            for (const other of (negotiation ? [] : input.connections).filter(
               (c) =>
                 !pair.connectionNames.includes(c.name) &&
                 c.pointsToConnect[0].layer === layer,
@@ -357,11 +589,18 @@ export function* routeCoupledPair(
                 bestScore = candidateScore
                 best = traces
               }
-              if (++viable >= 2) return best
-              continue candidates
+              if (
+                negotiation &&
+                Math.abs(length(traces[0].route) - length(traces[1].route)) <=
+                  pair.lengthTolerance
+              )
+                return best
+              if (!negotiation && ++viable >= 2) return best
+              if (!negotiation) continue candidates
             }
           }
         }
+        if (negotiation && best) return best
       }
   return best
 }

@@ -97,3 +97,82 @@ export function smoothPairedLobes(
   }
   return generate((lo + hi) / 2)
 }
+
+/** Rounded serpentine cells from the reference's compact-bays/tune-bays.py.
+ * Four tangent quarter-arcs leave straight sides whose height can grow without
+ * shrinking the bend radius. This fits more length in a narrow tuning bank
+ * than increasing the amplitude of a raised cosine. */
+export function roundedPairedLobes(
+  a: Point,
+  b: Point,
+  spacing: number,
+  deficit: number,
+  lobes: number,
+  side: number,
+  minRadius: number,
+): [Point[], Point[]] | null {
+  const span = distance(a, b),
+    period = span / lobes,
+    radius = minRadius + spacing / 2
+  if (deficit <= 0 || lobes < 1 || period < 4 * radius) return null
+  const ux = (b.x - a.x) / span,
+    uy = (b.y - a.y) / span
+  const generate = (height: number): [Point[], Point[]] => {
+    const rails: [Point[], Point[]] = [[], []]
+    const samples = Math.max(
+      18,
+      Math.ceil((Math.PI * radius) / (2 * Math.max(0.005, minRadius / 6))),
+    )
+    for (let l = 0; l < lobes; l++)
+      for (const [cx, cy, start, end] of [
+        [0, radius, -Math.PI / 2, 0],
+        [2 * radius, height - radius, Math.PI, Math.PI / 2],
+        [period - 2 * radius, height - radius, Math.PI / 2, 0],
+        [period, radius, Math.PI, Math.PI * 1.5],
+      ])
+        for (let i = 0; i <= samples; i++) {
+          const angle = start + ((end - start) * i) / samples,
+            direction = Math.sign(end - start)
+          const x = l * period + cx + radius * Math.cos(angle),
+            y = side * (cy + radius * Math.sin(angle))
+          const tx = -Math.sin(angle) * direction,
+            ty = side * Math.cos(angle) * direction
+          for (let k = 0; k < 2; k++) {
+            const offset = ((k === 0 ? 1 : -1) * spacing) / 2
+            const px = x - ty * offset,
+              py = y + tx * offset
+            const point = {
+              x: a.x + ux * px - uy * py,
+              y: a.y + uy * px + ux * py,
+            }
+            if (!rails[k].length || distance(rails[k].at(-1)!, point) > 1e-10)
+              rails[k].push(point)
+          }
+        }
+    return rails
+  }
+  const added = (h: number) =>
+    Math.min(...generate(h).map((rail) => length(rail) - span))
+  let lo = 2 * radius,
+    hi = lo + deficit / 2 + radius
+  if (added(lo) > deficit + 1e-8) return null
+  for (let iteration = 0; iteration < 36; iteration++) {
+    const mid = (lo + hi) / 2
+    if (added(mid) < deficit) lo = mid
+    else hi = mid
+  }
+  return generate((lo + hi) / 2)
+}
+
+export function roundedTuningLobes(
+  a: Point,
+  b: Point,
+  deficit: number,
+  lobes: number,
+  side: number,
+  minRadius: number,
+): Point[] | null {
+  return (
+    roundedPairedLobes(a, b, 0, deficit, lobes, side, minRadius)?.[0] ?? null
+  )
+}

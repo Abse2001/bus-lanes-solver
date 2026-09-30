@@ -19,7 +19,7 @@
   "dependencies": {
     "@tscircuit/solver-utils": "^0.0.21",
     "graphics-debug": "^0.0.95",
-    "@tscircuit/fanout-solver": "github:tscircuit/fanout-solver#ee7b23d07f1b978056fbb1a1ec50362ad77be771"
+    "@tscircuit/fanout-solver": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",

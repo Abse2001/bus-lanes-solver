@@ -1,4 +1,4 @@
-import { smoothPairedLobes } from "./smooth-tuning"
+import { smoothPairedLobes, roundedPairedLobes } from "./smooth-tuning"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { fixedRouteLength, minimumLengthTargets } from "./route-lengths"
 import { distance, length } from "./geometry"
@@ -79,81 +79,85 @@ export function tuneCoupledLengths(
           y: a.y + uy * x + (ux * offset) / 2,
         })
         tuningCandidate: for (const fraction of [0.9, 0.65, 0.4])
-          for (const lobes of [1, 2, 3, 4, 6, 8])
-            for (const side of [1, -1]) {
-              const margin = ((hi - lo) * (1 - fraction)) / 2
-              const waves = smoothPairedLobes(
-                center(lo + margin),
-                center(hi - margin),
-                spacing,
-                deficit,
-                lobes,
-                side,
-                Math.max(width * 1.2, clearance),
-              )
-              if (!waves) continue
-              // The first rail is on the opposite side of the signed offset.
-              const ordered = offset > 0 ? waves.toReversed() : waves
-              const candidate = rails.map((t, k) => {
-                const segment = k === 0 ? i : j,
-                  points = [
-                    ...t.route.slice(0, segment + 1),
-                    ...ordered[k],
-                    ...t.route.slice(segment + 1),
-                  ]
-                const added = points.length - t.route.length
-                return {
-                  ...t,
-                  coupledSection: [
-                    t.coupledSection![0],
-                    t.coupledSection![1] + added,
-                  ] as [number, number],
-                  curvedSegments: points.slice(1).flatMap((p, n) => {
-                    const dx = Math.abs(p.x - points[n].x),
-                      dy = Math.abs(p.y - points[n].y)
-                    return Math.min(dx, dy) > 1e-8 && Math.abs(dx - dy) > 1e-8
-                      ? [n + 1]
-                      : []
-                  }),
-                  route: points.map((p) => ({
-                    ...p,
-                    route_type: "wire" as const,
-                    layer: (t.route[0] as Wire).layer,
-                    width,
-                  })),
-                }
-              })
-              const copper = [
-                ...fixed,
-                ...result
-                  .filter((_, n) => !indices.includes(n))
-                  .flatMap(routeCopper),
-                ...candidate.flatMap(routeCopper),
-              ]
-              if (
-                candidate.some(
-                  (t, k) =>
-                    !new VectorScene(
-                      input,
-                      input.connections.find(
-                        (c) => c.name === t.connection_name,
-                      )!,
-                      width,
-                      copper,
-                    ).pathVisible(t.route) ||
-                    !tuningPathIsSelfClear(t.route, width + clearance) ||
-                    total(t) < targets.get(t.connection_name!)! - 1e-6,
+          for (const lobes of Array.from({ length: 16 }, (_, i) => i + 1))
+            for (const side of [1, -1])
+              for (const createLobes of [
+                roundedPairedLobes,
+                smoothPairedLobes,
+              ]) {
+                const margin = ((hi - lo) * (1 - fraction)) / 2
+                const waves = createLobes(
+                  center(lo + margin),
+                  center(hi - margin),
+                  spacing,
+                  deficit,
+                  lobes,
+                  side,
+                  Math.max(width * 1.2, clearance),
                 )
-              )
-                continue
-              if (
-                Math.abs(total(candidate[0]) - total(candidate[1])) >
-                pair.lengthTolerance + 1e-6
-              )
-                continue
-              accepted = candidate
-              break tuningCandidate
-            }
+                if (!waves) continue
+                // The first rail is on the opposite side of the signed offset.
+                const ordered = offset > 0 ? waves.toReversed() : waves
+                const candidate = rails.map((t, k) => {
+                  const segment = k === 0 ? i : j,
+                    points = [
+                      ...t.route.slice(0, segment + 1),
+                      ...ordered[k],
+                      ...t.route.slice(segment + 1),
+                    ]
+                  const added = points.length - t.route.length
+                  return {
+                    ...t,
+                    coupledSection: [
+                      t.coupledSection![0],
+                      t.coupledSection![1] + added,
+                    ] as [number, number],
+                    curvedSegments: points.slice(1).flatMap((p, n) => {
+                      const dx = Math.abs(p.x - points[n].x),
+                        dy = Math.abs(p.y - points[n].y)
+                      return Math.min(dx, dy) > 1e-8 && Math.abs(dx - dy) > 1e-8
+                        ? [n + 1]
+                        : []
+                    }),
+                    route: points.map((p) => ({
+                      ...p,
+                      route_type: "wire" as const,
+                      layer: (t.route[0] as Wire).layer,
+                      width,
+                    })),
+                  }
+                })
+                const copper = [
+                  ...fixed,
+                  ...result
+                    .filter((_, n) => !indices.includes(n))
+                    .flatMap(routeCopper),
+                  ...candidate.flatMap(routeCopper),
+                ]
+                if (
+                  candidate.some(
+                    (t, k) =>
+                      !new VectorScene(
+                        input,
+                        input.connections.find(
+                          (c) => c.name === t.connection_name,
+                        )!,
+                        width,
+                        copper,
+                      ).pathVisible(t.route) ||
+                      !tuningPathIsSelfClear(t.route, width + clearance) ||
+                      total(t) < targets.get(t.connection_name!)! - 1e-6,
+                  )
+                )
+                  continue
+                if (
+                  Math.abs(total(candidate[0]) - total(candidate[1])) >
+                  pair.lengthTolerance + 1e-6
+                )
+                  continue
+                accepted = candidate
+                break tuningCandidate
+              }
       }
     }
     if (!accepted)

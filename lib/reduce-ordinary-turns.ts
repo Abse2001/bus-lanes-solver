@@ -29,7 +29,14 @@ export function reduceOrdinaryTurns(path: Point[], scene: VectorScene) {
             ...replacement,
             ...result.slice(j + 1),
           ])
-          if (!tuningPathIsSelfClear(candidate, scene.width / 2 + scene.margin))
+          const required = scene.width / 2 + scene.margin
+          // A raster path may contain several tiny returning jogs. Repair them
+          // progressively; requiring the entire path to be clean after the first
+          // shortcut prevents either independent jog from being removed.
+          if (
+            !tuningPathIsSelfClear(candidate, required) &&
+            tuningPathIsSelfClear(result, required)
+          )
             continue
           result = candidate
           changed = true
@@ -41,5 +48,7 @@ export function reduceOrdinaryTurns(path: Point[], scene: VectorScene) {
     }
     if (!changed) break
   }
-  return result
+  return tuningPathIsSelfClear(result, scene.width / 2 + scene.margin)
+    ? result
+    : path
 }

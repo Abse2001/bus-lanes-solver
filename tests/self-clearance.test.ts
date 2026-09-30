@@ -25,6 +25,11 @@ test("local smooth bends do not exempt tight returning arms or crossings", () =>
       0.2,
     ),
   ).toBe(false)
+  const tightCurve = Array.from({ length: 37 }, (_, i) => ({
+    x: 0.06 * Math.cos((Math.PI * i) / 36),
+    y: 0.06 * Math.sin((Math.PI * i) / 36),
+  }))
+  expect(tuningPathIsSelfClear(tightCurve, 0.2)).toBe(false)
   expect(
     tuningPathIsSelfClear(
       smoothTuningLobes({ x: 0, y: 0 }, { x: 10, y: 0 }, 1, 2, 1, 0.3)!,

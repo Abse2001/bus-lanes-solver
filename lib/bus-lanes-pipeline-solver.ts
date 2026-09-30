@@ -22,6 +22,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
+  private completedLanes: Trace[] = []
+  private remainingInput?: SimpleRouteJson
+  private terminalLayers = new Map<string, string[]>()
   constructor(input: SimpleRouteJson, options: BusLanesPipelineOptions = {}) {
     super()
     this.input = structuredClone(input)
@@ -162,14 +165,73 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.input.connections.find((c) => c.name === t.connection_name)
           ?.source_trace_id ?? t.connection_name,
     })) as Trace[]
-    this.child = new BusLanesSolver(
-      {
-        ...this.input,
-        connections: result.connections as SimpleRouteJson["connections"],
-        traces: [...(this.input.traces ?? []), ...this.escapes],
-      },
-      this.options,
+    // Only newly created, two-ended dogbones may change signal layers during
+    // congestion negotiation. Existing handoffs always keep their fixed layer.
+    const terminalLayers = new Map<string, string[]>()
+    for (const connection of this.input.connections) {
+      if (
+        (this.input.buses ?? []).some((b) =>
+          b.connectionNames.includes(connection.name),
+        )
+      )
+        continue
+      const vias = this.escapes
+        .filter((t) => t.connection_name === connection.name)
+        .flatMap((t) => t.route.filter((p) => p.route_type === "via"))
+      if (vias.length !== 2) continue
+      const available = layers.filter((layer) =>
+        vias.every(
+          (via) =>
+            layer !== via.from_layer &&
+            (
+              via.layers ??
+              layers.slice(
+                Math.min(
+                  layers.indexOf(via.from_layer),
+                  layers.indexOf(via.to_layer),
+                ),
+                Math.max(
+                  layers.indexOf(via.from_layer),
+                  layers.indexOf(via.to_layer),
+                ) + 1,
+              )
+            ).includes(layer),
+        ),
+      )
+      if (available.length > 1) terminalLayers.set(connection.name, available)
+    }
+    this.terminalLayers = terminalLayers
+    const laneInput: SimpleRouteJson = {
+      ...this.input,
+      connections: result.connections as SimpleRouteJson["connections"],
+      traces: [...(this.input.traces ?? []), ...this.escapes],
+    }
+    const constrained = new Set([
+      ...(laneInput.buses ?? []).flatMap((b) => b.connectionNames),
+      ...(laneInput.differentialPairs ?? []).flatMap((p) => p.connectionNames),
+    ])
+    const matching = laneInput.connections.filter((c) =>
+      constrained.has(c.name),
     )
+    const remaining = laneInput.connections.filter(
+      (c) => !constrained.has(c.name),
+    )
+    // The reference routes and tunes bus corridors before placing unrelated
+    // controls, so those controls cannot consume space required for matching.
+    if (matching.length && remaining.length) {
+      this.remainingInput = {
+        ...laneInput,
+        connections: remaining,
+        buses: [],
+        differentialPairs: [],
+      }
+      this.child = new BusLanesSolver(
+        { ...laneInput, connections: matching },
+        this.options,
+        terminalLayers,
+      )
+    } else
+      this.child = new BusLanesSolver(laneInput, this.options, terminalLayers)
   }
   _step() {
     try {
@@ -180,49 +242,87 @@ export class BusLanesPipelineSolver extends BaseSolver {
         ...this.child!.stats,
         layerAttempt: this.attempt,
         dogbones: this.escapes.length,
+        routingStage: this.completedLanes.length
+          ? "remaining_signals"
+          : this.remainingInput
+            ? "matched_buses"
+            : "all_signals",
       }
       this.progress = this.child!.progress
       if (this.child!.failed)
         throw Error(this.child!.error ?? "Bus lanes failed")
-      if (this.child!.solved) {
-        this.traces = this.child!.traces.map((lane) => {
-          const escapes = this.escapes.filter(
-            (t) => t.connection_name === lane.connection_name,
-          )
-          const near = (
-            a: { x: number; y: number },
-            b: { x: number; y: number },
-          ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
-          const prefix = escapes.find((t) =>
-            near(t.route.at(-1)!, lane.route[0]),
-          )
-          const suffix = escapes.find(
-            (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
-          )
-          const prefixRoute = prefix?.route,
-            suffixRoute = suffix?.route
-          const reversed =
-            suffixRoute
-              ?.toReversed()
-              .map((p) =>
-                p.route_type === "via"
-                  ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
-                  : p,
-              ) ?? []
-          const offset = (prefix?.route.length ?? 1) - 1
-          return {
-            ...lane,
-            coupledSection: lane.coupledSection?.map((i) => i + offset) as
-              | [number, number]
-              | undefined,
-            curvedSegments: lane.curvedSegments?.map((i) => i + offset),
-            route: [
-              ...(prefixRoute?.slice(0, -1) ?? []),
-              ...lane.route,
-              ...reversed.slice(1),
+      if (this.child!.solved && this.remainingInput) {
+        this.completedLanes = this.child!.traces
+        this.child = new BusLanesSolver(
+          {
+            ...this.remainingInput,
+            traces: [
+              ...(this.remainingInput.traces ?? []),
+              ...this.completedLanes,
             ],
-          }
-        })
+          },
+          this.options,
+          this.terminalLayers,
+        )
+        this.remainingInput = undefined
+        return
+      }
+      if (this.child!.solved) {
+        this.traces = [...this.completedLanes, ...this.child!.traces].map(
+          (lane) => {
+            const signalLayer = lane.route.find(
+              (p) => p.route_type === "wire",
+            )!.layer
+            const escapes = this.escapes
+              .filter((t) => t.connection_name === lane.connection_name)
+              .map((t) => {
+                const via = t.route.find((p) => p.route_type === "via")!
+                return {
+                  ...t,
+                  route: t.route.map((p) =>
+                    p.route_type === "via"
+                      ? { ...p, to_layer: signalLayer }
+                      : p.layer === via.to_layer
+                        ? { ...p, layer: signalLayer }
+                        : p,
+                  ),
+                }
+              })
+            const near = (
+              a: { x: number; y: number },
+              b: { x: number; y: number },
+            ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
+            const prefix = escapes.find((t) =>
+              near(t.route.at(-1)!, lane.route[0]),
+            )
+            const suffix = escapes.find(
+              (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
+            )
+            const prefixRoute = prefix?.route,
+              suffixRoute = suffix?.route
+            const reversed =
+              suffixRoute
+                ?.toReversed()
+                .map((p) =>
+                  p.route_type === "via"
+                    ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
+                    : p,
+                ) ?? []
+            const offset = (prefix?.route.length ?? 1) - 1
+            return {
+              ...lane,
+              coupledSection: lane.coupledSection?.map((i) => i + offset) as
+                | [number, number]
+                | undefined,
+              curvedSegments: lane.curvedSegments?.map((i) => i + offset),
+              route: [
+                ...(prefixRoute?.slice(0, -1) ?? []),
+                ...lane.route,
+                ...reversed.slice(1),
+              ],
+            }
+          },
+        )
         this.solved = true
         this.phase = "solved"
       }
@@ -234,6 +334,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
       ) {
         this.child = undefined
         this.escapes = []
+        this.completedLanes = []
+        this.remainingInput = undefined
         this.phase = "retry_layers"
         return
       }

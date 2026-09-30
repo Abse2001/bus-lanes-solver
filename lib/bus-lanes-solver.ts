@@ -1,3 +1,5 @@
+import { spreadCoupledTuningLanes } from "./spread-coupled-tuning-lanes"
+import { simplifyMatchedTraces } from "./simplify-matched-traces"
 import { tuneCoupledLengths } from "./tune-coupled-lengths"
 import { negotiateLanes } from "./negotiate-lanes"
 import { pairCouplingReports } from "./pair-coupling"
@@ -51,9 +53,15 @@ export class BusLanesSolver extends BaseSolver {
   private bestPartial: Trace[] = []
   private pairedTraces: Trace[] = []
   private pairIndex = 0
+  private congestionPass = 0
+  private conflictingLanes = 0
   private negotiated?: Generator<Trace[], Trace[] | null>
   private pairSearch?: Generator<void, Trace[] | null>
-  constructor(input: SimpleRouteJson, options: SolverOptions = {}) {
+  constructor(
+    input: SimpleRouteJson,
+    options: SolverOptions = {},
+    private readonly terminalLayers: ReadonlyMap<string, string[]> = new Map(),
+  ) {
     super()
     this.input = structuredClone(input)
     this.options = options
@@ -156,8 +164,12 @@ export class BusLanesSolver extends BaseSolver {
           radius: this.widths.get(c.name)! / 2,
           owners: [c.name],
         })
+    const negotiatePairs =
+      this.options.denseSearch && input.connections.length > 12
     const paired = new Set(
-      this.coupledPairs().flatMap((p) => p.connectionNames),
+      negotiatePairs
+        ? []
+        : this.coupledPairs().flatMap((p) => p.connectionNames),
     )
     this.orders = windingOrders(
       input.connections.filter((c) => !paired.has(c.name)),
@@ -167,7 +179,7 @@ export class BusLanesSolver extends BaseSolver {
       this.phase = "solved"
       return
     }
-    if (this.coupledPairs().length) {
+    if (!negotiatePairs && this.coupledPairs().length) {
       this.phase = "coupled_pairs"
       return
     }
@@ -266,6 +278,11 @@ export class BusLanesSolver extends BaseSolver {
         this.fixed,
         this.pairedTraces,
         this.widths,
+        (pass, conflicts) => {
+          this.congestionPass = pass
+          this.conflictingLanes = conflicts
+        },
+        this.terminalLayers,
       )
       const step = this.negotiated.next()
       if (!step.done) {
@@ -316,7 +333,17 @@ export class BusLanesSolver extends BaseSolver {
     const input = this.input
     function* candidates() {
       yield original
-      if (original.some((t) => t.coupledSection)) return
+      if (original.some((t) => t.coupledSection)) {
+        for (const multiplier of [8, 12, 16, 20]) {
+          const spread = spreadCoupledTuningLanes(
+            input,
+            original,
+            input.minTraceWidth * multiplier,
+          )
+          if (spread) yield spread
+        }
+        return
+      }
       const width = Math.max(...original.map((t) => (t.route[0] as Wire).width))
       for (const multiplier of [16, 24, 28, 32]) {
         const spread = spreadTuningLanes(input, original, width * multiplier)
@@ -335,6 +362,8 @@ export class BusLanesSolver extends BaseSolver {
                 candidate,
                 targets,
               )
+        if (this.options.smoothTuning)
+          this.traces = simplifyMatchedTraces(input, this.traces)
         this.phase = "validate_output"
         return
       } catch (e) {
@@ -425,6 +454,8 @@ export class BusLanesSolver extends BaseSolver {
       attempt: this.attempt,
       lane: this.lane,
       totalLanes: this.input.connections.length,
+      congestionPass: this.congestionPass,
+      conflictingLanes: this.conflictingLanes,
       vertices:
         (this.search instanceof VectorVisibilitySearch
           ? this.search.vertices.length

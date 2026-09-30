@@ -1,10 +1,72 @@
-import type { Point } from "./types"
+import type { Point, SimpleRouteJson } from "./types"
 import { MinHeap } from "./min-heap"
 import { distance, length, simplify, segmentDistance } from "./geometry"
-import { VectorScene, clearanceToCopper, type Copper } from "./vector-scene"
+import {
+  VectorScene,
+  clearanceToCopper,
+  fixedCopper,
+  type Copper,
+} from "./vector-scene"
 import { connectors } from "./vector-visibility"
 
-/** Bounded auxiliary octilinear grid in board-world mm (+X right, +Y up).
+// The reference searches a compact rectangle around the packages. Derive that
+// rectangle from this layer's copper and terminals, leaving one lane pitch per
+// connection outside the occupied envelope. No board coordinates are assumed.
+function routingBounds(scene: VectorScene, step: number) {
+  const input = scene.input,
+    board = input.bounds
+  const layer = scene.connection.pointsToConnect[0].layer
+  const copper = fixedCopper(input).filter((c) => c.layer === layer)
+  const points = input.connections.flatMap((c) => c.pointsToConnect)
+  for (const c of copper) {
+    if (c.rect)
+      points.push(
+        { x: c.rect.minX, y: c.rect.minY, layer },
+        { x: c.rect.maxX, y: c.rect.maxY, layer },
+      )
+    else
+      points.push(
+        {
+          x: Math.min(c.a.x, c.b.x) - c.radius,
+          y: Math.min(c.a.y, c.b.y) - c.radius,
+          layer,
+        },
+        {
+          x: Math.max(c.a.x, c.b.x) + c.radius,
+          y: Math.max(c.a.y, c.b.y) + c.radius,
+          layer,
+        },
+      )
+  }
+  const minX = Math.min(...points.map((p) => p.x)),
+    maxX = Math.max(...points.map((p) => p.x))
+  const minY = Math.min(...points.map((p) => p.y)),
+    maxY = Math.max(...points.map((p) => p.y))
+  const pitch =
+    input.minTraceWidth +
+    (input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075)
+  const margin = Math.max(
+    2,
+    input.connections.length * pitch,
+    Math.min(maxX - minX, maxY - minY) / 2,
+  )
+  const lo = (n: number, origin: number) =>
+    origin + Math.floor((n - origin) / step) * step
+  const hi = (n: number, origin: number) =>
+    origin + Math.ceil((n - origin) / step) * step
+  return {
+    minX: Math.max(board.minX, lo(minX - margin, board.minX)),
+    maxX: Math.min(board.maxX, hi(maxX + margin, board.minX)),
+    minY: Math.max(board.minY, lo(minY - margin, board.minY)),
+    maxY: Math.min(board.maxY, hi(maxY + margin, board.minY)),
+  }
+}
+
+/** Single-layer A* adapted from the reference board's routing/single-layer.ts:
+ * https://tscircuit.com/seveibar/am3352-ram-dogbone-and-single-layer-route-test
+ * Uses its octile heuristic and additive occupancy/history costs. Continuous
+ * edge clearance and exact endpoint connectors extend the original raster search.
+ * Bounded octilinear grid in board-world mm (+X right, +Y up).
  * Conservative occupied cells accelerate dense pad fields. Every accepted edge
  * and endpoint connector is checked against continuous copper geometry. */
 export class GridVisibilitySearch {
@@ -13,12 +75,15 @@ export class GridVisibilitySearch {
   solved = false
   result: Point[] = []
   private heap = new MinHeap<{ id: number; g: number; f: number }>()
+  private travel?: Float64Array
+  private maxLength = Infinity
   private best: Float64Array
   private parent: Int32Array
   private blocked: Uint8Array
   private nx: number
   private ny: number
   private stepSize: number
+  private softMargin: number
   private softBuckets = new Map<string, Copper[]>()
   private softEdgeKnown: Uint8Array
   private softEdgeBlocked: Uint8Array
@@ -34,9 +99,25 @@ export class GridVisibilitySearch {
     softCopper: Copper[] = [],
     private penalty = 4,
     private history?: Float32Array,
+    grid?: {
+      step?: number
+      maxLength?: number
+      bounds?: SimpleRouteJson["bounds"]
+    },
   ) {
-    this.stepSize = Math.max(0.01, scene.input.minTraceWidth)
-    const b = scene.input.bounds
+    // The reference's successful dense-package search uses a half-trace-width
+    // grid; pair approaches use the separately bounded finer grid above.
+    const packageGrid = scene.input.obstacles.some((o) => o.componentId)
+    this.stepSize = Math.max(
+      0.01,
+      grid?.step ?? scene.input.minTraceWidth / (packageGrid ? 2 : 1),
+    )
+    // Legal parallel tracks must not cost more than crossing them. Inflating
+    // soft clearance closes nominal multi-track channels between BGA vias.
+    this.softMargin = scene.margin
+    const b =
+      grid?.bounds ??
+      (packageGrid ? routingBounds(scene, this.stepSize) : scene.input.bounds)
     this.origin = { x: b.minX, y: b.minY }
     this.nx = Math.ceil((b.maxX - b.minX) / this.stepSize) + 1
     this.ny = Math.ceil((b.maxY - b.minY) / this.stepSize) + 1
@@ -45,6 +126,8 @@ export class GridVisibilitySearch {
     this.softEdgeKnown = new Uint8Array(n)
     this.softEdgeBlocked = new Uint8Array(n)
     this.blocked = new Uint8Array(n)
+    this.maxLength = grid?.maxLength ?? Infinity
+    if (Number.isFinite(this.maxLength)) this.travel = new Float64Array(n)
     this.best = new Float64Array(n)
     this.best.fill(Infinity)
     this.parent = new Int32Array(n)
@@ -121,7 +204,7 @@ export class GridVisibilitySearch {
     for (const copper of softCopper.filter(
       (c) => c.layer === scene.connection.pointsToConnect[0].layer,
     )) {
-      const radius = scene.margin + copper.radius
+      const radius = this.softMargin + copper.radius
       for (
         let x = Math.floor(Math.min(copper.a.x, copper.b.x) - radius);
         x <= Math.floor(Math.max(copper.a.x, copper.b.x) + radius);
@@ -171,7 +254,8 @@ export class GridVisibilitySearch {
     this.endPath = z.path.toReversed()
     this.goal = z.id
     this.best[a.id] = 0
-    this.heap.push({ id: a.id, g: 0, f: distance(start, end) })
+    if (this.travel) this.travel[a.id] = length(a.path)
+    this.heap.push({ id: a.id, g: 0, f: this.heuristic(start) })
   }
   get cellCount() {
     return this.nx * this.ny
@@ -183,33 +267,51 @@ export class GridVisibilitySearch {
     c: Point,
     d: Point,
     radius: number,
+    wholeSegments = false,
   ) {
-    const samples = Math.max(1, Math.ceil(distance(a, b) / this.stepSize)),
-      touched = new Set<number>()
-    for (let i = 0; i <= samples; i++) {
-      const p = {
-        x: a.x + ((b.x - a.x) * i) / samples,
-        y: a.y + ((b.y - a.y) * i) / samples,
-      }
-      const cx = Math.round((p.x - this.origin.x) / this.stepSize),
-        cy = Math.round((p.y - this.origin.y) / this.stepSize),
-        n = Math.ceil(radius / this.stepSize)
-      for (let dy = -n; dy <= n; dy++)
-        for (let dx = -n; dx <= n; dx++) {
-          if (
-            cx + dx < 0 ||
-            cx + dx >= this.nx ||
-            cy + dy < 0 ||
-            cy + dy >= this.ny ||
-            Math.hypot(dx, dy) * this.stepSize > radius
-          )
-            continue
-          const id = cx + dx + (cy + dy) * this.nx,
-            point = this.point(id)
-          if (segmentDistance([point, point], [c, d]) <= radius) touched.add(id)
+    // Reference negotiated-route.ts accumulates history along both colliding
+    // segments. Charging only the crossing point lets it slide along the same
+    // corridor indefinitely without changing the routes' topology.
+    const touched = new Set<number>()
+    for (const [start, end] of [
+      [a, b],
+      [c, d],
+    ]) {
+      const samples = Math.max(
+        1,
+        Math.ceil(distance(start, end) / this.stepSize),
+      )
+      for (let i = 0; i <= samples; i++) {
+        const p = {
+          x: start.x + ((end.x - start.x) * i) / samples,
+          y: start.y + ((end.y - start.y) * i) / samples,
         }
+        const cx = Math.round((p.x - this.origin.x) / this.stepSize),
+          cy = Math.round((p.y - this.origin.y) / this.stepSize),
+          n = Math.ceil(radius / this.stepSize)
+        for (let dy = -n; dy <= n; dy++)
+          for (let dx = -n; dx <= n; dx++) {
+            if (
+              cx + dx < 0 ||
+              cx + dx >= this.nx ||
+              cy + dy < 0 ||
+              cy + dy >= this.ny
+            )
+              continue
+            const id = cx + dx + (cy + dy) * this.nx
+            const point = this.point(id)
+            if (segmentDistance([point, point], [start, end]) > radius) continue
+            if (
+              !wholeSegments &&
+              (segmentDistance([point, point], [a, b]) > radius ||
+                segmentDistance([point, point], [c, d]) > radius)
+            )
+              continue
+            touched.add(id)
+          }
+      }
     }
-    for (const id of touched) history[id] += 1
+    for (const id of touched) history[id] += wholeSegments ? 0.3 : 1
   }
   private point(id: number): Point {
     return {
@@ -221,6 +323,7 @@ export class GridVisibilitySearch {
     from: Point,
     to: Point,
     buckets: Map<string, Copper[]>,
+    margin = this.scene.margin,
   ): boolean {
     for (
       let x = Math.floor(Math.min(from.x, to.x));
@@ -233,9 +336,13 @@ export class GridVisibilitySearch {
         y++
       )
         for (const copper of buckets.get(`${x},${y}`) ?? [])
-          if (clearanceToCopper(from, to, copper) < this.scene.margin - 1e-8)
-            return false
+          if (clearanceToCopper(from, to, copper) < margin - 1e-8) return false
     return true
+  }
+  private heuristic(point: Point) {
+    const dx = Math.abs(point.x - this.end.x) / this.stepSize
+    const dy = Math.abs(point.y - this.end.y) / this.stepSize
+    return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)
   }
   step() {
     for (let batch = 0; batch < 500 && !this.failed && !this.solved; batch++) {
@@ -255,7 +362,10 @@ export class GridVisibilitySearch {
           ...path.reverse().slice(1),
           ...this.endPath.slice(1),
         ])
-        if (!this.scene.pathVisible(this.result)) {
+        if (
+          length(this.result) > this.maxLength + 1e-8 ||
+          !this.scene.pathVisible(this.result)
+        ) {
           this.failed = true
           return
         }
@@ -298,28 +408,38 @@ export class GridVisibilitySearch {
           const from = this.point(cur.id)
           if (!this.edgeClear(from, point, this.copperBuckets)) continue
           // Penalize continuous edges, not just occupied vertices: diagonal
-          // crossings can occur between clear cells. Exact-clearance parallel
-          // lanes must remain free of congestion cost.
+          // crossings can occur between clear cells. Use physical clearance
+          // so tightly packed but legal parallel lanes remain available.
           const direction = (dy + 1) * 3 + dx + 1
           const bit = 1 << (direction > 4 ? direction - 1 : direction)
           if (!(this.softEdgeKnown[cur.id] & bit)) {
             this.softEdgeKnown[cur.id] |= bit
-            if (!this.edgeClear(from, point, this.softBuckets))
+            if (!this.edgeClear(from, point, this.softBuckets, this.softMargin))
               this.softEdgeBlocked[cur.id] |= bit
           }
           const softCost = this.softEdgeBlocked[cur.id] & bit ? this.penalty : 0
+          const travelled =
+            (this.travel?.[cur.id] ?? 0) +
+            (dx && dy ? Math.SQRT2 : 1) * this.stepSize
+          if (
+            this.travel &&
+            travelled + this.heuristic(point) * this.stepSize >
+              this.maxLength + 1e-8
+          )
+            continue
           const g =
             cur.g +
-            this.stepSize *
-              (dx && dy ? Math.SQRT2 : 1) *
-              (1 + softCost + (this.history?.[id] ?? 0))
+            (dx && dy ? Math.SQRT2 : 1) +
+            softCost +
+            (this.history?.[id] ?? 0)
           if (g >= this.best[id] - 1e-10) continue
           this.best[id] = g
+          if (this.travel) this.travel[id] = travelled
           this.parent[id] = cur.id
           this.heap.push({
             id,
             g,
-            f: g + distance(point, this.end),
+            f: g + this.heuristic(point),
           })
         }
     }
