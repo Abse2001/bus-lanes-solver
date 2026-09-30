@@ -331,9 +331,7 @@ export class BusLanesSolver extends BaseSolver {
   }
   private match() {
     const input = this.input
-    const original = this.options.smoothTuning
-      ? refinePairApproaches(input, this.traces, this.fixed)
-      : this.traces
+    const original = this.traces
     function* candidates() {
       yield original
       if (original.some((t) => t.coupledSection)) {
@@ -354,7 +352,12 @@ export class BusLanesSolver extends BaseSolver {
       }
     }
     let error: unknown
-    for (const candidate of candidates()) {
+    for (const corridor of candidates()) {
+      // Preserve the original package handoffs while allocating tuning space;
+      // only then refine the paired approach geometry of this candidate.
+      const candidate = this.options.smoothTuning
+        ? refinePairApproaches(input, corridor, this.fixed)
+        : corridor
       const targets = minimumLengthTargets(input, candidate)
       try {
         this.traces =

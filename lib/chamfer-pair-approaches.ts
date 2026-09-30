@@ -32,7 +32,7 @@ export function chamferPairApproaches(
         v = { x: (c.x - b.x) / after, y: (c.y - b.y) / after }
       if (Math.abs(u.x * v.x + u.y * v.y + Math.SQRT1_2) > 1e-6) continue
       const turn = Math.sign(u.x * v.y - u.y * v.x)
-      const trim = Math.min(width * 3, before / 3, after / 3)
+      const trim = Math.min(width * 6, before / 2, after * 0.8)
       const start = { ...b, x: b.x - u.x * trim, y: b.y - u.y * trim }
       const bevel = (Math.SQRT2 - 1) * trim
       const middle = {

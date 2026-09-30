@@ -62,7 +62,20 @@ export function extendPairApproaches(
           ) > 1e-7
         )
           continue
-        if (distance(shared[0], originalStart) < 1e-8) shared = shared.slice(1)
+        // Offset bends stagger the two rails' vertices. Start at the mate's
+        // existing vertex on this same line, rather than walking backwards to
+        // the leader's projected vertex and creating a short self-overlap.
+        const firstDirection = {
+          x: shared[1].x - shared[0].x,
+          y: shared[1].y - shared[0].y,
+        }
+        if (
+          (shared[1].x - originalStart.x) * firstDirection.x +
+            (shared[1].y - originalStart.y) * firstDirection.y <=
+          1e-10
+        )
+          continue
+        shared = shared.slice(1)
         const route = [
           ...mate.route.slice(0, mateStart + 1),
           ...shared.map((p) => ({ ...mate.route[0], ...p })),

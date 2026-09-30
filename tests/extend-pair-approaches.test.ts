@@ -5,7 +5,7 @@ import { offsetPath } from "../lib/coupled-pair-routing"
 import { pointSegmentDistance, distance } from "../lib/geometry"
 import type { SimpleRouteJson, Trace } from "../lib/types"
 
-test("a paired bend continues onto parallel approaches at the declared pitch", () => {
+test("a paired bend with staggered rail vertices continues at the declared pitch", () => {
   const traces: Trace[] = [
     [
       [0, 10],
@@ -14,7 +14,7 @@ test("a paired bend continues onto parallel approaches at the declared pitch", (
       [5, 3],
     ],
     [
-      [-0.22, 10],
+      [-0.22, 9.95],
       [-0.22, -0.4],
       [0.3, -0.4],
       [3.48, 2.78],
