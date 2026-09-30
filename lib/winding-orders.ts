@@ -4,6 +4,7 @@ import type { Connection } from "./types"
  * rotate the sweep seam. Like fanout-solver's iterateUniqueRouteOrders, retain
  * deterministic alternatives: a greedy route can cut off a later terminal. */
 export function windingOrders(connections: Connection[]): Connection[][] {
+  if (!connections.length) return [[]]
   const orders: Connection[][] = []
   const seen = new Set<string>()
   const add = (order: Connection[]) => {

@@ -1,3 +1,10 @@
+import { tuneCoupledLengths } from "./tune-coupled-lengths"
+import { routeDenseLanes } from "./route-dense-lanes"
+import { negotiateLanes } from "./negotiate-lanes"
+import { pairCouplingReports } from "./pair-coupling"
+import { tuningPathIsSelfClear } from "./length-tuning"
+import { routeCoupledPair } from "./coupled-pair-routing"
+import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { BaseSolver } from "@tscircuit/solver-utils"
 import type { GraphicsObject } from "graphics-debug"
 import type {
@@ -14,6 +21,7 @@ import {
   VectorScene,
   type Copper,
 } from "./vector-scene"
+import { GridVisibilitySearch } from "./grid-visibility"
 import { VectorVisibilitySearch } from "./vector-visibility"
 import { length, distance } from "./geometry"
 import { windingOrders } from "./winding-orders"
@@ -24,6 +32,7 @@ import {
 } from "./route-lengths"
 import { busLengthReports } from "./route-lengths"
 import { spreadTuningLanes } from "./spread-tuning-lanes"
+import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { tuneLengths } from "./length-tuning"
 import { layerColor } from "./layer-colors"
 /** Routes on an implicit clearance-offset visibility graph in board-world mm.
@@ -39,8 +48,12 @@ export class BusLanesSolver extends BaseSolver {
   private orders: Connection[][] = []
   private attempt = 0
   private lane = 0
-  private search?: VectorVisibilitySearch
+  private search?: VectorVisibilitySearch | GridVisibilitySearch
   private bestPartial: Trace[] = []
+  private pairedTraces: Trace[] = []
+  private pairIndex = 0
+  private negotiated?: Generator<Trace[], Trace[] | null>
+  private pairSearch?: Generator<void, Trace[] | null>
   constructor(input: SimpleRouteJson, options: SolverOptions = {}) {
     super()
     this.input = structuredClone(input)
@@ -74,17 +87,6 @@ export class BusLanesSolver extends BaseSolver {
     const input = this.input
     if (input.outline?.length) {
       this.fail("unsupported_outline", "Custom board outlines are unsupported")
-      return
-    }
-    if (
-      input.differentialPairs?.some(
-        (p) => p.traceGap !== undefined || p.maxUncoupledLength !== undefined,
-      )
-    ) {
-      this.fail(
-        "unsupported_coupling",
-        "Coupled differential geometry is not supported",
-      )
       return
     }
     const names = new Set<string>()
@@ -155,14 +157,53 @@ export class BusLanesSolver extends BaseSolver {
           radius: this.widths.get(c.name)! / 2,
           owners: [c.name],
         })
-    this.orders = windingOrders(input.connections)
+    const paired = new Set(
+      this.coupledPairs().flatMap((p) => p.connectionNames),
+    )
+    this.orders = windingOrders(
+      input.connections.filter((c) => !paired.has(c.name)),
+    )
     if (!input.connections.length) {
       this.solved = true
       this.phase = "solved"
       return
     }
+    if (this.coupledPairs().length) {
+      this.phase = "coupled_pairs"
+      return
+    }
     this.phase = "route"
     this.startLane()
+  }
+  private coupledPairs() {
+    return (this.input.differentialPairs ?? []).filter(
+      (p) => p.traceGap !== undefined || p.maxUncoupledLength !== undefined,
+    )
+  }
+  private routePair() {
+    const pair = this.coupledPairs()[this.pairIndex]
+    if (!pair) {
+      this.pairedTraces = structuredClone(this.traces)
+      this.phase = "route"
+      this.startLane()
+      return
+    }
+    this.pairSearch ??= routeCoupledPair(this.input, pair, [
+      ...this.fixed,
+      ...this.traces.flatMap(routeCopper),
+    ])
+    const step = this.pairSearch.next()
+    if (!step.done) return
+    if (!step.value) {
+      this.fail(
+        "coupled_routing_failed",
+        "No legal coupled corridor and package approaches",
+      )
+      return
+    }
+    this.traces.push(...step.value)
+    this.pairSearch = undefined
+    this.pairIndex++
   }
   private scene(c: Connection) {
     return new VectorScene(this.input, c, this.widths.get(c.name)!, [
@@ -171,17 +212,40 @@ export class BusLanesSolver extends BaseSolver {
     ])
   }
   private startLane() {
-    if (this.lane === this.input.connections.length) {
+    if (this.lane === this.orders[this.attempt].length) {
       this.phase = "match"
       return
     }
     const c = this.orders[this.attempt][this.lane],
       [a, b] = c.pointsToConnect
-    this.search = new VectorVisibilitySearch(this.scene(c), a, b)
+    this.search =
+      this.options.denseSearch && this.input.connections.length > 12
+        ? new GridVisibilitySearch(this.scene(c), a, b)
+        : new VectorVisibilitySearch(this.scene(c), a, b)
   }
   private retry() {
     if (this.traces.length > this.bestPartial.length)
       this.bestPartial = structuredClone(this.traces)
+    if (this.options.denseSearch && this.attempt < 300) {
+      const current = this.orders[this.attempt]
+      const failed = current[this.lane]
+      if (failed) {
+        const next = [...current]
+        next.splice(this.lane, 1)
+        next.splice(
+          Math.max(0, this.lane - 1 - Math.floor(this.attempt / 8)),
+          0,
+          failed,
+        )
+        const key = next.map((c) => c.name).join("\0")
+        if (
+          !this.orders
+            .slice(0, this.attempt + 1)
+            .some((order) => order.map((c) => c.name).join("\0") === key)
+        )
+          this.orders.splice(this.attempt + 1, 0, next)
+      }
+    }
     this.attempt++
     if (this.attempt >= this.orders.length) {
       this.traces = this.bestPartial
@@ -191,11 +255,32 @@ export class BusLanesSolver extends BaseSolver {
       )
       return
     }
-    this.traces = []
+    this.traces = structuredClone(this.pairedTraces)
     this.lane = 0
     this.startLane()
   }
   private route() {
+    if (this.options.denseSearch && this.input.connections.length > 12) {
+      this.negotiated ??= (
+        this.input.connections.length > 32 ? negotiateLanes : routeDenseLanes
+      )(this.input, this.orders[0], this.fixed, this.pairedTraces, this.widths)
+      const step = this.negotiated.next()
+      if (!step.done) {
+        this.traces = step.value
+        this.lane = this.traces.length - this.pairedTraces.length
+        return
+      }
+      if (!step.value) {
+        this.fail(
+          "no_planar_route",
+          "Negotiated lane search exhausted without a complete route",
+        )
+        return
+      }
+      this.traces = step.value
+      this.phase = "match"
+      return
+    }
     const s = this.search!
     s.step()
     if (s.solved) {
@@ -205,7 +290,7 @@ export class BusLanesSolver extends BaseSolver {
         pcb_trace_id: `bus_lane_${c.name}`,
         connection_name: c.name,
         source_trace_id: c.source_trace_id ?? c.name,
-        route: s.result.map((p) => ({
+        route: reduceOrdinaryTurns(s.result, this.scene(c)).map((p) => ({
           route_type: "wire",
           x: p.x,
           y: p.y,
@@ -217,7 +302,9 @@ export class BusLanesSolver extends BaseSolver {
       this.startLane()
     } else if (
       s.failed ||
-      s.expanded >= (this.options.maxLaneIterations ?? 4000)
+      s.expanded >=
+        (this.options.maxLaneIterations ??
+          (s instanceof GridVisibilitySearch ? 1_000_000 : 4000))
     )
       this.retry()
   }
@@ -226,6 +313,7 @@ export class BusLanesSolver extends BaseSolver {
     const input = this.input
     function* candidates() {
       yield original
+      if (original.some((t) => t.coupledSection)) return
       const width = Math.max(...original.map((t) => (t.route[0] as Wire).width))
       for (const multiplier of [16, 24, 28, 32]) {
         const spread = spreadTuningLanes(input, original, width * multiplier)
@@ -236,7 +324,14 @@ export class BusLanesSolver extends BaseSolver {
     for (const candidate of candidates()) {
       const targets = minimumLengthTargets(input, candidate)
       try {
-        this.traces = tuneLengths(input, candidate, targets)
+        this.traces =
+          this.options.smoothTuning && candidate.some((t) => t.coupledSection)
+            ? tuneCoupledLengths(input, candidate)
+            : (this.options.smoothTuning ? tuneSmoothLengths : tuneLengths)(
+                input,
+                candidate,
+                targets,
+              )
         this.phase = "validate_output"
         return
       } catch (e) {
@@ -250,7 +345,26 @@ export class BusLanesSolver extends BaseSolver {
     for (const c of this.input.connections) {
       const t = this.traces.find((t) => t.connection_name === c.name)
       if (!t) throw Error("Missing lane")
+      if (
+        t.route.length < 2 ||
+        t.route.some(
+          (p) =>
+            !Number.isFinite(p.x) ||
+            !Number.isFinite(p.y) ||
+            p.route_type !== "wire" ||
+            !Number.isFinite(p.width) ||
+            p.width <= 0,
+        )
+      )
+        throw Error("Invalid lane geometry")
       const scene = this.scene(c)
+      if (
+        !tuningPathIsSelfClear(
+          t.route,
+          this.widths.get(c.name)! / 2 + scene.margin,
+        )
+      )
+        throw Error("Final self-clearance violation")
       if (
         distance(t.route[0], c.pointsToConnect[0]) > 1e-8 ||
         distance(t.route.at(-1)!, c.pointsToConnect[1]) > 1e-8
@@ -267,7 +381,11 @@ export class BusLanesSolver extends BaseSolver {
           a.layer !== b.layer
         )
           throw Error("Forbidden layer transition")
-        if (Math.min(dx, dy) > 1e-8 && Math.abs(dx - dy) > 1e-8)
+        if (
+          Math.min(dx, dy) > 1e-8 &&
+          Math.abs(dx - dy) > 1e-8 &&
+          !t.curvedSegments?.includes(i)
+        )
           throw Error("Non-octilinear segment")
         if (!scene.visible(a, b))
           throw Error("Final copper clearance violation")
@@ -280,12 +398,15 @@ export class BusLanesSolver extends BaseSolver {
       ].some((b) => b.toleranceMm !== null && !b.matched)
     )
       throw Error("Final bus length skew violation")
+    if (pairCouplingReports(this.input, this.traces).some((p) => !p.matched))
+      throw Error("Final pair uncoupled length violation")
     this.phase = "solved"
     this.solved = true
   }
   _step() {
     try {
       if (this.phase === "validate") this.initialize()
+      else if (this.phase === "coupled_pairs") this.routePair()
       else if (this.phase === "route") this.route()
       else if (this.phase === "match") this.match()
       else if (this.phase === "validate_output") this.validateOutput()
@@ -301,9 +422,15 @@ export class BusLanesSolver extends BaseSolver {
       attempt: this.attempt,
       lane: this.lane,
       totalLanes: this.input.connections.length,
-      vertices: this.search?.vertices.length ?? 0,
+      vertices:
+        (this.search instanceof VectorVisibilitySearch
+          ? this.search.vertices.length
+          : 0) ?? 0,
       expandedVertices: this.search?.expanded ?? 0,
-      frontier: this.search?.open.length ?? 0,
+      frontier:
+        (this.search instanceof VectorVisibilitySearch
+          ? this.search.open.length
+          : 0) ?? 0,
       failureCode: this.failureCode,
       traceLengthsMm: this.traces.map((t) => ({
         name: t.connection_name,
@@ -366,7 +493,10 @@ export class BusLanesSolver extends BaseSolver {
           color: i ? "#d97706" : "#2563eb",
           label: `${c.name} ${i ? "target" : "source"} [${p.layer}]`,
         })
-    if (this.search && this.phase === "route") {
+    if (
+      this.search instanceof VectorVisibilitySearch &&
+      this.phase === "route"
+    ) {
       const layer =
         this.orders[this.attempt][this.lane]?.pointsToConnect[0].layer
       for (const edge of this.search.visibleEdges)

@@ -124,3 +124,22 @@ Future changes must be submitted through pull requests with reviewed visual snap
 Length tuning prioritizes long runs over short terminal approaches and centers evenly pitched, chamfered serpentine lobes along them. Lobe count scales with the required added length, spreading large corrections without turning small corrections into dense teeth. Chamfers scale with lobe dimensions instead of a fixed microscopic corner cut. Returning arms retain at least three trace widths of center-to-center spacing (and the requested copper clearance). When the shortest lanes leave no room, the router opens an octilinear central corridor in winding order and rematches all affected bus lengths. Endpoints and fixed fanouts remain unchanged.
 
 Snapshots include [individual layer views](./docs/iterations/skew-tolerances) as well as complete boards. All new carrier bends in the DDR samples are checked to turn by at most 45 degrees; length matching and combined-copper DRC remain mandatory.
+
+## Integrated local-dogbone pipeline (experimental)
+
+`BusLanesPipelineSolver(input, { fanout: "auto" })` composes local terminal
+escapes with the fixed-layer lane solver. It honors bus layer restrictions and
+preferences, keeps overlapping bus/pair groups atomic, and uses existing local
+via access when assigning remaining unconstrained signals. `fanout: "none"`
+retains the fixed-layer input contract. A failed pipeline emits no partial
+successful trace output.
+
+The pipeline enables smooth length tuning and dense routing search. Declared
+pairs use a common corridor and shared tuning curves; skew checks include fixed
+fanout copper. Ordinary-run cleanup minimizes turns without increasing length.
+The strict `BusLanesSolver` export remains available for callers that already
+supply fanout handoffs.
+
+The AM3352/RAM integration regression is still a blocking case for this
+experimental pipeline. Existing two-fanout DDR benchmark success does not imply
+that arbitrary dense original-pad inputs route successfully.
