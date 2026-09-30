@@ -1,3 +1,4 @@
+import { refinePairApproaches } from "./refine-pair-approaches"
 import { spreadCoupledTuningLanes } from "./spread-coupled-tuning-lanes"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
 import { tuneCoupledLengths } from "./tune-coupled-lengths"
@@ -329,8 +330,10 @@ export class BusLanesSolver extends BaseSolver {
       this.retry()
   }
   private match() {
-    const original = this.traces
     const input = this.input
+    const original = this.options.smoothTuning
+      ? refinePairApproaches(input, this.traces, this.fixed)
+      : this.traces
     function* candidates() {
       yield original
       if (original.some((t) => t.coupledSection)) {

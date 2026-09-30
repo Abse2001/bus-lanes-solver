@@ -1,6 +1,3 @@
-import { extendPairApproaches } from "./extend-pair-approaches"
-import { chamferPairApproaches } from "./chamfer-pair-approaches"
-import { tightenPairApproaches } from "./tighten-pair-approaches"
 import { extendCoupledSectionEnds } from "./extend-coupled-section"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { tuningPathIsSelfClear } from "./length-tuning"
@@ -463,48 +460,22 @@ export function* routeCoupledPair(
                 )
               }
             if (failed) continue
-            const approaches = tightenPairApproaches(
-              input,
-              members,
-              extendCoupledSectionEnds(
-                members.map((c, i) => ({
-                  ...makeTrace(
-                    c,
-                    [
-                      ...escapes[i][0].route,
-                      ...ordered[i].slice(1),
-                      ...escapes[i][1].route.toReversed().slice(1),
-                    ],
-                    true,
-                  ),
-                  coupledSection: [
-                    escapes[i][0].route.length - 1,
-                    escapes[i][0].route.length + ordered[i].length - 2,
-                  ] as [number, number],
-                })),
-              ),
-              fixed,
-              width,
-              gap,
-              clearance,
-            )
-            const chamfered = chamferPairApproaches(
-              input,
-              members,
-              approaches,
-              fixed,
-              width,
-              clearance,
-            )
-            const traces = extendPairApproaches(
-              input,
-              members,
-              chamfered,
-              fixed,
-              width,
-              gap,
-              clearance,
-              offsetPath,
+            const traces = extendCoupledSectionEnds(
+              members.map((c, i) => ({
+                ...makeTrace(
+                  c,
+                  [
+                    ...escapes[i][0].route,
+                    ...ordered[i].slice(1),
+                    ...escapes[i][1].route.toReversed().slice(1),
+                  ],
+                  true,
+                ),
+                coupledSection: [
+                  escapes[i][0].route.length - 1,
+                  escapes[i][0].route.length + ordered[i].length - 2,
+                ] as [number, number],
+              })),
             )
             if (
               !traces.every((t, i) =>
