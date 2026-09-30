@@ -1,5 +1,12 @@
 import type { Point } from "./types"
-export const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y)
+/** Euclidean distance between board-world points in mm (+X right, +Y up).
+ * Use IEEE-754 arithmetic and sqrt: native hypot implementations differ by an
+ * ulp across ARM and x86, which can reorder equal-length routing candidates. */
+export function distance(a: Point, b: Point) {
+  const dx = a.x - b.x,
+    dy = a.y - b.y
+  return Math.sqrt(dx * dx + dy * dy)
+}
 export function pointSegmentDistance(p: Point, edge: [Point, Point]) {
   const [a, b] = edge,
     dx = b.x - a.x,
