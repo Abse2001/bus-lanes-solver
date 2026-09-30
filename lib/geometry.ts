@@ -37,10 +37,31 @@ export function segmentDistance(ab: [Point, Point], cd: [Point, Point]) {
 export const length = (path: Point[]) =>
   path.slice(1).reduce((sum, p, i) => sum + distance(path[i], p), 0)
 export function simplify(path: Point[]) {
-  return path.filter(
-    (p, i) =>
-      !i ||
-      i === path.length - 1 ||
-      Math.abs(cross(path[i - 1], p, path[i + 1])) > 1e-9,
-  )
+  const result: Point[] = []
+  for (const [index, point] of path.entries()) {
+    if (result.length && distance(result.at(-1)!, point) < 1e-12) {
+      if (index === path.length - 1) result[result.length - 1] = point
+      continue
+    }
+    while (result.length > 1) {
+      const a = result[result.length - 2],
+        b = result.at(-1)!
+      const ux = b.x - a.x,
+        uy = b.y - a.y
+      const vx = point.x - b.x,
+        vy = point.y - b.y
+      const scale = Math.hypot(ux, uy) * Math.hypot(vx, vy)
+      // Absolute triangle area erases real corners on tiny pad/grid
+      // connectors. Compare directions and retain returning segments.
+      if (
+        ux * vx + uy * vy <= 0 ||
+        Math.abs(ux * vy - uy * vx) > scale * 1e-8 ||
+        pointSegmentDistance(b, [a, point]) > 1e-10
+      )
+        break
+      result.pop()
+    }
+    result.push(point)
+  }
+  return result
 }

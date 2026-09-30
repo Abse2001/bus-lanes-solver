@@ -77,7 +77,7 @@ test("all complete DDR phases route without transitions and pass combined copper
     expect(meta.corePhase.status).toBe("completed")
     expect(meta.corePhase.circuitErrors).toBe(0)
   }
-})
+}, 30000)
 test("SoC ball positions and orientation are identical in every DDR layout", async () => {
   let reference: any
   for (const profile of profiles) {

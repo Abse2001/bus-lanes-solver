@@ -10,21 +10,32 @@ export interface Copper {
 }
 export function fixedCopper(input: SimpleRouteJson): Copper[] {
   const result: Copper[] = []
-  for (const o of input.obstacles)
+  for (const o of input.obstacles) {
+    // A rotated rectangle uses a conservative axis-aligned envelope. Circular
+    // pads retain their exact radius, independent of rotation.
+    const angle = ((o.ccwRotationDegrees ?? 0) * Math.PI) / 180
+    const width =
+      Math.abs(Math.cos(angle)) * o.width + Math.abs(Math.sin(angle)) * o.height
+    const height =
+      Math.abs(Math.sin(angle)) * o.width + Math.abs(Math.cos(angle)) * o.height
     for (const layer of o.layers)
       result.push({
         a: o.center,
         b: o.center,
-        radius: 0,
+        radius: o.shape === "circle" ? o.width / 2 : 0,
         layer,
         owners: o.connectedTo,
-        rect: {
-          minX: o.center.x - o.width / 2,
-          maxX: o.center.x + o.width / 2,
-          minY: o.center.y - o.height / 2,
-          maxY: o.center.y + o.height / 2,
-        },
+        rect:
+          o.shape === "circle"
+            ? undefined
+            : {
+                minX: o.center.x - width / 2,
+                maxX: o.center.x + width / 2,
+                minY: o.center.y - height / 2,
+                maxY: o.center.y + height / 2,
+              },
       })
+  }
   const layers = Array.from({ length: input.layerCount }, (_, i) =>
     i === 0 ? "top" : i === input.layerCount - 1 ? "bottom" : `inner${i}`,
   )

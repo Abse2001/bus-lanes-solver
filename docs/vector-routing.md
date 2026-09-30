@@ -2,7 +2,7 @@
 
 The previous raster search has been removed. The router now builds a visibility graph from the corners of clearance-offset copper. Each graph edge is an analytic horizontal, vertical, or 45-degree polyline. Collision predicates operate on continuous segments, rectangles and via disks; there is no cell size or coordinate stepping. Terminal fields are swept perpendicular to the channel direction, grouped by layer, with alternate winding orders on failure.
 
-Snapshots are reproducible with `bun scripts/snapshot-vector-iterations.ts`.
+Completed DDR snapshots are reproducible with `bun scripts/snapshot-routed-ddr.ts`. PR artifacts contain completed routing only; the iteration captures described below are historical diagnostics, not the PR artifact policy.
 
 ## Examined iterations
 
