@@ -1,5 +1,20 @@
 # @tscircuit/bus-lanes-solver
 
+## Installation
+
+Releases are published to GitHub Packages and served publicly through jscdn:
+
+```sh
+bun add https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/latest.tgz
+```
+
+Pin the resolved release version in your dependency URL for reproducible installs.
+The release contains bundled JavaScript and TypeScript declarations in `dist`;
+Git checkouts, test fixtures, examples, and development dependencies are excluded.
+
+Run `bun run test:package` to build and validate the actual tarball in an isolated
+consumer before publishing.
+
 Step-based, via-free bus routing for `SimpleRouteJson`, with `BaseSolver` and `GenericSolverDebugger` from `@tscircuit/solver-utils`.
 
 ```ts

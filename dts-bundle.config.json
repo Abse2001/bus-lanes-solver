@@ -1,0 +1,17 @@
+{
+  "compilationOptions": {
+    "preferredConfigPath": "tsconfig.build.json"
+  },
+  "entries": [
+    {
+      "filePath": "lib/index.ts",
+      "outFile": "dist/index.d.ts",
+      "libraries": {
+        "inlinedLibraries": ["graphics-debug", "@tscircuit/solver-utils"]
+      },
+      "output": {
+        "exportReferencedTypes": false
+      }
+    }
+  ]
+}

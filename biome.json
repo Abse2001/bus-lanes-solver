@@ -8,6 +8,7 @@
       "!examples/fanout-solver-outputs/**",
       "!cosmos-export/**",
       "!node_modules/**",
+      "!dist/**",
       "!.cache/**"
     ]
   },
