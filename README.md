@@ -141,6 +141,9 @@ complete DDR timing closure or equal-transition-count claims for fixed fanouts.
 Samples run one at a time in separate processes to avoid timing interference, with the solver's ordinary 200,000
 iteration budget and a one-second benchmark deadline. Override the deadline with
 `./benchmark.sh --timeout-seconds 2`. Timeouts and partial paths are failures.
+GitHub Actions uses a five-second deadline per sample to allow for shared-runner
+CPU variability; it records actual runtimes and applies the same connectivity,
+DRC, and length-matching gates. The local default remains one second.
 Results are written to `benchmark-results.json`; a failed positive sample makes
 the command exit nonzero. Four original mixed-layer negatives are counted separately.
 
