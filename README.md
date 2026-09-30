@@ -15,12 +15,13 @@ Each connection must have exactly two terminals on the same fixed layer. The sol
 
 ## Review target
 
-The integrated preset is being developed against the
-[AM3352/RAM reference](https://tscircuit.com/seveibar/am3352-ram-dogbone-and-single-layer-route-test).
-It is not ready until the original TSX, with its custom algorithms replaced by
-`autorouter="bus_lanes"`, produces all 47 signal routes and a reviewed full-board
-snapshot. The reference's saved route plan is not an implementation of a general
-solver and must not be replayed by this preset.
+The integrated preset routes the original TSX from the
+[AM3352/RAM reference](https://tscircuit.com/seveibar/am3352-ram-dogbone-and-single-layer-route-test)
+with its custom algorithms replaced by `autorouter="bus_lanes"` in
+[core #4237](https://github.com/tscircuit/core/pull/4237). All 47 signals are computed
+from pads, obstacles, and constraints. No saved route plan is replayed.
+
+![Completed AM3352 routing across all three signal layers](docs/routed-am3352/solved.png)
 
 Acceptance requires zero DRC errors, via-free interconnects after local escapes,
 short ordinary runs with few direction changes, no self-touching copper or acute
@@ -30,14 +31,15 @@ this result.
 
 The AM3352 regression measures these limits independently of the solver:
 
-| Measurement | Reviewed reference | Regression limit |
-| --- | ---: | ---: |
-| Connected signals | 47 | 47 |
-| Total planar copper | 1696.53 mm | ≤1700 mm |
-| Maximum / mean detour ratio | 2.536 / 1.723 | ≤2.6 / ≤1.75 |
-| Ordinary turns / short jogs | 888 / 451 | ≤900 / ≤460 |
-| Byte-bus / differential skew | Within declared bounds | ≤0.635 / ≤0.127 mm |
-| Pair interior edge gap | 0.11979–0.13813 mm | 0.0999–0.155 mm |
+| Measurement | Reviewed reference | Generated result | Regression limit |
+| --- | ---: | ---: | ---: |
+| Connected signals / native DRC errors | 47 / 0 | 47 / 0 | 47 / 0 |
+| Total planar copper | 1696.53 mm | 1549.71 mm | ≤1700 mm |
+| Maximum / mean detour ratio | 2.536 / 1.723 | 2.047 / 1.546 | ≤2.6 / ≤1.75 |
+| Ordinary turns / short jogs | 888 / 451 | 540 / 145 | ≤900 / ≤460 |
+| Acute corners | — | 0 | 0 |
+| Byte-bus / maximum differential skew | Within declared bounds | 0.635 / 0.127 mm | ≤0.635 / ≤0.127 mm |
+| Pair interior edge gap | 0.11979–0.13813 mm | 0.11213–0.13813 mm | 0.0999–0.155 mm |
 
 The pair audit allows 6.2 mm at each end for package approaches, matching the
 reference audit. This is a board-specific test limit, not a hidden solver default.
@@ -50,9 +52,12 @@ The main review path is:
 2. `bus-lanes-solver.ts`: complete fixed-layer connections and validate the result.
 3. `coupled-pair-routing.ts` and `tune-coupled-lengths.ts`: shared pair corridors
    and shared smooth meanders.
-4. The AM3352 TSX regression in the accompanying core PR, followed by its full
-   routed visual snapshot. That regression is currently failing; there is no
-   accepted full-board solver snapshot yet.
+4. `refine-pair-approaches.ts`: tighten parallel approaches, replace acute
+   corners with legal bevels, and continue shared pair geometry through bends.
+   Refinement runs after allocating tuning space and preserves other-net copper.
+5. The AM3352 TSX regression in core: 47 routes, native DRC, independent quality
+   measurements, and three routed signal-layer snapshots. The fresh run passed
+   in approximately 281 seconds; every snapshot was visually inspected.
 
 ## Constraints
 
@@ -186,13 +191,18 @@ fanout copper. Ordinary-run cleanup minimizes turns without increasing length.
 The strict `BusLanesSolver` export remains available for callers that already
 supply fanout handoffs.
 
-The AM3352/RAM integration regression is still a blocking case for this
-experimental pipeline. Existing two-fanout DDR benchmark success does not imply
-that arbitrary dense original-pad inputs route successfully.
+The AM3352/RAM integration regression passes without saved geometry or a custom
+algorithm. Dense original-pad inputs can require minutes of negotiation; bounded
+search still reports failure when no acceptable route set is found.
 
 ### Routed PR artifacts
 
-PR images show completed routing only. Generate the four DDR artifacts with
+PR images show completed routing only. The AM3352 overview above is rendered
+from the three core acceptance snapshots: 16 inner1, 18 inner2, and 13 bottom
+signals. Each panel shows its signal layer, with all 47 routes accounted for.
+The core test writes snapshots only after connectivity, DRC, and quality checks.
+
+Generate the four DDR artifacts with
 `bun scripts/snapshot-routed-ddr.ts`; it verifies all cases solve and every
 connection has a route before writing any images. Keep intermediate and failed
 captures outside the repository.
