@@ -1,0 +1,149 @@
+{
+  "runtime": "Bun 1.3.14",
+  "platform": "macOS 26.6.2 arm64",
+  "method": "Three fresh processes per version, alternating baseline and optimized, source modules, no competing routing jobs",
+  "baselineCommit": "c530ad6",
+  "inputSource": {
+    "repository": "tscircuit/core",
+    "commit": "3583eb470f353c2c29f22198a6ac7b192dac28ef",
+    "fixture": "tests/fixtures/am3352-ram-bus-lanes/index.tsx",
+    "bytes": 166914,
+    "sha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+    "connections": 47,
+    "padObstacles": 420,
+    "existingTraces": 0
+  },
+  "medianMilliseconds": {
+    "baseline": 17725.724833,
+    "optimized": 8870.7185
+  },
+  "medianSpeedup": 1.9982287605000653,
+  "validation": {
+    "solverTests": 83,
+    "solverAssertions": 286289,
+    "nativeCoreAssertions": 169,
+    "nativeDrcErrors": 0,
+    "completedAm3352Connections": 47,
+    "completedDdrCases": 4,
+    "completedConnectionsPerDdrCase": 33,
+    "fixedFanoutsPerDdrCase": 66,
+    "maximumDdrBusSkewMm": 0.1,
+    "am3352": {
+      "totalPlanarLengthMm": 1483.8694985162197,
+      "ordinaryTurns": 539,
+      "shortJogs": 106,
+      "acuteCorners": 0,
+      "maximumDetourRatio": 2.0286343215295704,
+      "maximumBusSkewMm": 0.635,
+      "maximumPairSkewMm": 0.127,
+      "pairInteriorGapMm": {
+        "min": 0.1,
+        "max": 0.13812628406432814
+      }
+    }
+  },
+  "trials": [
+    {
+      "version": "baseline",
+      "trial": 1,
+      "solveMilliseconds": 18065.417625000002,
+      "cpuMilliseconds": 19409.677,
+      "phaseMilliseconds": {
+        "resolve_layers": 70.337542,
+        "lanes_route": 16196.171323000159,
+        "lanes_match": 1408.896417,
+        "lanes_validate_output": 380.9221670000006,
+        "lanes_solved": 4.861708999997063
+      },
+      "iterations": 62893,
+      "routedConnections": 47,
+      "inputSha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+      "outputSha256": "902c7ba6300019bcdcdd413f85b7bff911d5af8a607aab754a05e69efa16f478"
+    },
+    {
+      "version": "optimized",
+      "trial": 1,
+      "solveMilliseconds": 8870.7185,
+      "cpuMilliseconds": 9995.396,
+      "phaseMilliseconds": {
+        "resolve_layers": 64.175,
+        "lanes_route": 7978.397567000318,
+        "lanes_match": 599.217208,
+        "lanes_validate_output": 220.93574999999873,
+        "lanes_solved": 4.210291000000325
+      },
+      "iterations": 56127,
+      "routedConnections": 47,
+      "inputSha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+      "outputSha256": "8b29b90eb3dba3dbdece568a0fb089747d92714c230e7f937340ece2e1303698"
+    },
+    {
+      "version": "baseline",
+      "trial": 2,
+      "solveMilliseconds": 17725.724833,
+      "cpuMilliseconds": 19012.117,
+      "phaseMilliseconds": {
+        "resolve_layers": 61.183166,
+        "lanes_route": 15929.709659000073,
+        "lanes_match": 1363.95075,
+        "lanes_validate_output": 361.90612500000134,
+        "lanes_solved": 4.686791000000085
+      },
+      "iterations": 62893,
+      "routedConnections": 47,
+      "inputSha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+      "outputSha256": "902c7ba6300019bcdcdd413f85b7bff911d5af8a607aab754a05e69efa16f478"
+    },
+    {
+      "version": "optimized",
+      "trial": 2,
+      "solveMilliseconds": 8668.198459000001,
+      "cpuMilliseconds": 9761.975,
+      "phaseMilliseconds": {
+        "resolve_layers": 62.464833,
+        "lanes_route": 7791.548443000074,
+        "lanes_match": 594.2287080000006,
+        "lanes_validate_output": 212.48895900000025,
+        "lanes_solved": 3.788166999999703
+      },
+      "iterations": 56127,
+      "routedConnections": 47,
+      "inputSha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+      "outputSha256": "8b29b90eb3dba3dbdece568a0fb089747d92714c230e7f937340ece2e1303698"
+    },
+    {
+      "version": "baseline",
+      "trial": 3,
+      "solveMilliseconds": 17426.139833,
+      "cpuMilliseconds": 18809.631,
+      "phaseMilliseconds": {
+        "resolve_layers": 61.802209000000005,
+        "lanes_route": 15631.148002999209,
+        "lanes_match": 1368.6379159999997,
+        "lanes_validate_output": 355.67425100000037,
+        "lanes_solved": 4.799665999998979
+      },
+      "iterations": 62893,
+      "routedConnections": 47,
+      "inputSha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+      "outputSha256": "902c7ba6300019bcdcdd413f85b7bff911d5af8a607aab754a05e69efa16f478"
+    },
+    {
+      "version": "optimized",
+      "trial": 3,
+      "solveMilliseconds": 9037.243167,
+      "cpuMilliseconds": 10181.319,
+      "phaseMilliseconds": {
+        "resolve_layers": 64.78191600000001,
+        "lanes_route": 8123.0949679999685,
+        "lanes_match": 618.766873999999,
+        "lanes_validate_output": 222.48354199999994,
+        "lanes_solved": 4.2047079999993
+      },
+      "iterations": 56127,
+      "routedConnections": 47,
+      "inputSha256": "8fc7c1902c1c75c72a5bba4b1ab7378acb413c5c326781516f55e4d0e1032e79",
+      "outputSha256": "8b29b90eb3dba3dbdece568a0fb089747d92714c230e7f937340ece2e1303698"
+    }
+  ]
+}

@@ -165,3 +165,43 @@ test("repeated unsatisfiable selections remain recoverable without losing collis
     expect.arrayContaining([detour, crossing]),
   )
 })
+
+test("retired geometry can be added again and selections respect the requested units", () => {
+  const pool = new RouteCandidatePool(0.1, 2)
+  const detour = trace("a", [
+    [0, 0],
+    [0, 2],
+    [2, 2],
+    [2, 0],
+  ])
+  const crossing = trace("b", [
+    [1, -1],
+    [1, 1],
+  ])
+  pool.add("a", [detour])
+  pool.add("b", [crossing])
+  expect(pool.select(["a", "b"])).toEqual(
+    expect.arrayContaining([detour, crossing]),
+  )
+  pool.add("a", [
+    trace("a", [
+      [0, 0],
+      [2, 0],
+    ]),
+  ])
+  pool.add("a", [
+    trace("a", [
+      [0, 0.05],
+      [2, 0.05],
+    ]),
+  ])
+  expect(pool.select(["a", "b"])).toBeNull()
+  pool.add("a", [detour])
+  expect(pool.select(["a", "b"])).toEqual(
+    expect.arrayContaining([detour, crossing]),
+  )
+  expect(pool.select(["b"])).toEqual([crossing])
+  expect(pool.select(["a", "b"])).toEqual(
+    expect.arrayContaining([detour, crossing]),
+  )
+})

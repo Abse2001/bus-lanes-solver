@@ -166,6 +166,129 @@ export function copperTooClose(a: Point, b: Point, c: Copper, margin: number) {
     pointSegmentDistanceToPoints(v, a, b) - radius < margin
   )
 }
+/** Geometry shared by the many tiny grid edges tested against one copper
+ * item. Preparation only caches immutable differences, without rounding. */
+export interface PreparedCopper {
+  copper: Copper
+  ax: number
+  ay: number
+  bx: number
+  by: number
+  dx: number
+  dy: number
+  denominator: number
+}
+export function prepareCopper(copper: Copper): PreparedCopper {
+  const dx = copper.b.x - copper.a.x,
+    dy = copper.b.y - copper.a.y
+  return {
+    copper,
+    ax: copper.a.x,
+    ay: copper.a.y,
+    bx: copper.b.x,
+    by: copper.b.y,
+    dx,
+    dy,
+    denominator: dx * dx + dy * dy,
+  }
+}
+function pointPreparedSegmentDistance(
+  px: number,
+  py: number,
+  ax: number,
+  ay: number,
+  dx: number,
+  dy: number,
+  denominator: number,
+) {
+  const ex = px - ax,
+    ey = py - ay
+  if (dx === 0 && dy === 0) return Math.sqrt(ex * ex + ey * ey)
+  const t = Math.max(0, Math.min(1, (ex * dx + ey * dy) / (denominator || 1)))
+  const rx = ex - t * dx,
+    ry = ey - t * dy
+  return Math.sqrt(rx * rx + ry * ry)
+}
+/** Scalar version of copperTooClose for grid edges. It retains the exact
+ * projection, sqrt and radius-subtraction arithmetic of the public predicate. */
+export function copperTooClosePrepared(
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
+  dx: number,
+  dy: number,
+  denominator: number,
+  c: PreparedCopper,
+  margin: number,
+): boolean {
+  const radius = c.copper.radius
+  if (c.copper.rect)
+    return copperTooClose({ x: ax, y: ay }, { x: bx, y: by }, c.copper, margin)
+  if (c.dx === 0 && c.dy === 0)
+    return (
+      pointPreparedSegmentDistance(c.ax, c.ay, ax, ay, dx, dy, denominator) -
+        radius <
+      margin
+    )
+  if (dx === 0 && dy === 0)
+    return (
+      pointPreparedSegmentDistance(
+        ax,
+        ay,
+        c.ax,
+        c.ay,
+        c.dx,
+        c.dy,
+        c.denominator,
+      ) -
+        radius <
+      margin
+    )
+  if (
+    Math.max(ax, bx) >= Math.min(c.ax, c.bx) &&
+    Math.max(c.ax, c.bx) >= Math.min(ax, bx) &&
+    Math.max(ay, by) >= Math.min(c.ay, c.by) &&
+    Math.max(c.ay, c.by) >= Math.min(ay, by) &&
+    (dx * (c.ay - ay) - dy * (c.ax - ax)) *
+      (dx * (c.by - ay) - dy * (c.bx - ax)) <=
+      0 &&
+    (c.dx * (ay - c.ay) - c.dy * (ax - c.ax)) *
+      (c.dx * (by - c.ay) - c.dy * (bx - c.ax)) <=
+      0
+  )
+    return -radius < margin
+  return (
+    pointPreparedSegmentDistance(
+      ax,
+      ay,
+      c.ax,
+      c.ay,
+      c.dx,
+      c.dy,
+      c.denominator,
+    ) -
+      radius <
+      margin ||
+    pointPreparedSegmentDistance(
+      bx,
+      by,
+      c.ax,
+      c.ay,
+      c.dx,
+      c.dy,
+      c.denominator,
+    ) -
+      radius <
+      margin ||
+    pointPreparedSegmentDistance(c.ax, c.ay, ax, ay, dx, dy, denominator) -
+      radius <
+      margin ||
+    pointPreparedSegmentDistance(c.bx, c.by, ax, ay, dx, dy, denominator) -
+      radius <
+      margin
+  )
+}
 /** Continuous board-world geometry in mm. Bounds checks and segment/capsule
  * predicates are exact; no coordinate quantization or raster cells are used. */
 export class VectorScene {

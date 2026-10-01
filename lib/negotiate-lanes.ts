@@ -1,9 +1,10 @@
 import { routeViaWaypoint } from "./route-via-waypoint"
 import { RouteCandidatePool } from "./select-route-candidates"
 import { routeCoupledPair } from "./coupled-pair-routing"
-import { GridVisibilitySearch } from "./grid-visibility"
+import { GridHistoryProjector, GridVisibilitySearch } from "./grid-visibility"
 import { VectorScene, routeCopper, type Copper } from "./vector-scene"
-import { segmentsTooClose, length } from "./geometry"
+import { length } from "./geometry"
+import { RouteConflictIndex } from "./route-conflict-index"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import type { SimpleRouteJson, Connection, Trace, Wire } from "./types"
 
@@ -22,7 +23,7 @@ export function* negotiateLanes(
 ): Generator<Trace[], Trace[] | null> {
   const routed = new Map<string, Trace>()
   const histories = new Map<string, Float32Array>()
-  const searches = new Map<string, GridVisibilitySearch>()
+  const searches = new Map<string, GridHistoryProjector>()
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
   const pairs = (input.differentialPairs ?? []).filter(
@@ -60,6 +61,37 @@ export function* negotiateLanes(
     }
   }
   const candidates = new RouteCandidatePool(clearance)
+  const conflicts = new RouteConflictIndex()
+  const unitNames = units.map((unit) => unit.connections[0].name)
+  const matchingGroups = [
+    ...(input.buses ?? []).map((bus) =>
+      units
+        .filter((unit) =>
+          unit.connections.some((c) => bus.connectionNames.includes(c.name)),
+        )
+        .map((unit) => unit.connections[0].name),
+    ),
+    ...units
+      .filter(
+        (unit) =>
+          !unit.connections.some((c) =>
+            (input.buses ?? []).some((bus) =>
+              bus.connectionNames.includes(c.name),
+            ),
+          ),
+      )
+      .map((unit) => [unit.connections[0].name]),
+  ]
+  const copperCache = new WeakMap<Trace, Copper[]>()
+  const getCopper = (trace: Trace) => {
+    let copper = copperCache.get(trace)
+    if (!copper) {
+      copper = routeCopper(trace)
+      copperCache.set(trace, copper)
+    }
+    return copper
+  }
+  const pairedCopper = paired.flatMap(getCopper)
   const visits = new Map<string, number>()
   const queue = [...units]
   let bestCount = 0,
@@ -67,6 +99,7 @@ export function* negotiateLanes(
     pairRefresh = 0
   for (let iteration = 0; iteration < 12000 && queue.length; iteration++) {
     const pass = Math.floor(iteration / Math.max(1, connections.length / 4))
+    const congestionPenalty = 10 + pass * 4
     // A locked pair corridor can impose a poor topology on the entire bus.
     // Recompute one coupled alternative after a full stagnant routing sweep;
     // candidate selection keeps each pair atomic and checks it against all lanes.
@@ -123,55 +156,53 @@ export function* negotiateLanes(
         let cost = layer === connection.pointsToConnect[0].layer ? 0 : 0.25
         for (const other of routed.values()) {
           if ((other.route[0] as Wire).layer !== layer) continue
-          let hit = false
-          for (const trace of projected)
-            for (let i = 1; i < trace.route.length && !hit; i++)
-              for (let j = 1; j < other.route.length && !hit; j++)
-                if (
-                  segmentsTooClose(
-                    [trace.route[i - 1], trace.route[i]],
-                    [other.route[j - 1], other.route[j]],
-                    (widths.get(trace.connection_name!)! +
-                      (other.route[0] as Wire).width) /
-                      2 +
-                      clearance -
-                      1e-8,
-                  )
-                )
-                  hit = true
+          const hit = projected.some((trace) =>
+            conflicts.firstConflict(
+              trace.route,
+              other.route,
+              (widths.get(trace.connection_name!)! +
+                (other.route[0] as Wire).width) /
+                2 +
+                clearance -
+                1e-8,
+            ),
+          )
           if (hit) cost++
         }
         return cost
       }
-      available.sort((a, b) => layerCost(a) - layerCost(b))
+      if (available.length > 1) {
+        const layerCosts = new Map(
+          available.map((layer) => [layer, layerCost(layer)]),
+        )
+        available.sort((a, b) => layerCosts.get(a)! - layerCosts.get(b)!)
+      }
       const chosenLayer = available[0]
       for (const c of unit.connections)
         for (const point of c.pointsToConnect) point.layer = chosenLayer
       const width = widths.get(connection.name)!,
         layer = connection.pointsToConnect[0].layer
       routed.delete(connection.name)
-      const scene = new VectorScene(input, connection, width, [
+      const routedLanes = [...routed.values()]
+      const progressRoutes = [...paired, ...routedLanes]
+      const routedCopper = routedLanes.flatMap(getCopper)
+      const sceneCopper = [
         ...fixed,
-        ...paired.flatMap(routeCopper),
+        ...pairedCopper,
         ...(!unit.pair
-          ? [...routed.values()]
+          ? routedLanes
               .filter((t) => pairedNames.has(t.connection_name!))
-              .flatMap(routeCopper)
+              .flatMap(getCopper)
           : []),
-      ])
-      const search = new GridVisibilitySearch(
-        scene,
-        connection.pointsToConnect[0],
-        connection.pointsToConnect[1],
-        [...routed.values()].flatMap(routeCopper),
-        10 + pass,
-        histories.get(layer),
-        { maxLength: limits.get(connection.name) },
-      )
-      if (!histories.has(layer))
-        histories.set(layer, new Float32Array(search.cellCount))
-      searches.set(layer, search)
+      ]
+      const scene = new VectorScene(input, connection, width, sceneCopper)
       if (unit.pair) {
+        // Paired alternatives use their own coupled search. They only need
+        // the shared grid coordinates for accumulated intersection history.
+        const projector = new GridHistoryProjector(scene)
+        if (!histories.has(layer))
+          histories.set(layer, new Float32Array(projector.cellCount))
+        searches.set(layer, projector)
         // Generate rigid paired alternatives independently of provisional
         // lanes; compatibility selection can then move those lanes around the
         // new corridor instead of forcing every retry back to the old topology.
@@ -182,11 +213,14 @@ export function* negotiateLanes(
         })
         let step = generator.next(),
           iterations = 0
-        while (!step.done && iterations++ < 8000) {
-          yield [...routed.values()]
-          step = generator.next()
+        try {
+          while (!step.done && iterations++ < 8000) {
+            yield routedLanes
+            step = generator.next()
+          }
+        } finally {
+          if (!step.done) step = generator.return(null)
         }
-        if (!step.done) step = generator.return(null)
         if (!step.value) {
           if (previous.length !== unit.connections.length) return null
           for (const trace of previous) {
@@ -204,19 +238,28 @@ export function* negotiateLanes(
           routed.set(trace.connection_name!, trace)
         continue
       }
+      const search = new GridVisibilitySearch(
+        scene,
+        connection.pointsToConnect[0],
+        connection.pointsToConnect[1],
+        routedCopper,
+        congestionPenalty,
+        histories.get(layer),
+        { maxLength: limits.get(connection.name) },
+      )
+      if (!histories.has(layer))
+        histories.set(layer, new Float32Array(search.cellCount))
+      searches.set(layer, search)
       // Port of compact-bays/route-controls.ts: search every reachable signal
       // layer and compare actual routes, rather than projecting a guessed path.
       let bestChoice: { trace: Trace; score: number } | undefined
       for (const candidateLayer of available) {
         for (const point of connection.pointsToConnect)
           point.layer = candidateLayer
-        const candidateScene = new VectorScene(input, connection, width, [
-          ...fixed,
-          ...paired.flatMap(routeCopper),
-          ...[...routed.values()]
-            .filter((t) => pairedNames.has(t.connection_name!))
-            .flatMap(routeCopper),
-        ])
+        const candidateScene =
+          candidateLayer === layer
+            ? scene
+            : new VectorScene(input, connection, width, sceneCopper)
         let candidateSearch =
           candidateLayer === layer
             ? search
@@ -224,8 +267,8 @@ export function* negotiateLanes(
                 candidateScene,
                 connection.pointsToConnect[0],
                 connection.pointsToConnect[1],
-                [...routed.values()].flatMap(routeCopper),
-                10 + pass,
+                routedCopper,
+                congestionPenalty,
                 histories.get(candidateLayer),
                 { maxLength: limits.get(connection.name) },
               )
@@ -235,13 +278,18 @@ export function* negotiateLanes(
             new Float32Array(candidateSearch.cellCount),
           )
         searches.set(candidateLayer, candidateSearch)
-        while (
-          !candidateSearch.solved &&
-          !candidateSearch.failed &&
-          candidateSearch.expanded < candidateSearch.cellCount
-        ) {
-          candidateSearch.step()
-          yield [...paired, ...routed.values()]
+        try {
+          while (
+            !candidateSearch.solved &&
+            !candidateSearch.failed &&
+            candidateSearch.expanded < candidateSearch.cellCount
+          ) {
+            candidateSearch.step()
+            yield progressRoutes
+          }
+        } finally {
+          if (!candidateSearch.solved && !candidateSearch.failed)
+            candidateSearch.cancel()
         }
         if (!candidateSearch.solved && limits.has(connection.name)) {
           // A soft-cost length-constrained search can exhaust its current
@@ -252,9 +300,14 @@ export function* negotiateLanes(
             connection.pointsToConnect[0],
             connection.pointsToConnect[1],
           )
-          while (!candidateSearch.solved && !candidateSearch.failed) {
-            candidateSearch.step()
-            yield [...paired, ...routed.values()]
+          try {
+            while (!candidateSearch.solved && !candidateSearch.failed) {
+              candidateSearch.step()
+              yield progressRoutes
+            }
+          } finally {
+            if (!candidateSearch.solved && !candidateSearch.failed)
+              candidateSearch.cancel()
           }
           if (
             candidateSearch.solved &&
@@ -292,15 +345,19 @@ export function* negotiateLanes(
           const generator = routeViaWaypoint(
             candidateScene,
             waypoint,
-            [...routed.values()].flatMap(routeCopper),
-            10 + pass,
+            routedCopper,
+            congestionPenalty,
             histories.get(candidateLayer),
             limits.get(connection.name)!,
           )
           let step = generator.next()
-          while (!step.done) {
-            yield [...paired, ...routed.values()]
-            step = generator.next()
+          try {
+            while (!step.done) {
+              yield progressRoutes
+              step = generator.next()
+            }
+          } finally {
+            if (!step.done) generator.return(null)
           }
           if (step.value) paths.push(step.value)
         }
@@ -308,19 +365,11 @@ export function* negotiateLanes(
           let hits = 0
           for (const other of routed.values()) {
             if ((other.route[0] as Wire).layer !== candidateLayer) continue
-            let hit = false
-            for (let i = 1; i < path.length && !hit; i++)
-              for (let j = 1; j < other.route.length && !hit; j++)
-                if (
-                  segmentsTooClose(
-                    [path[i - 1], path[i]],
-                    [other.route[j - 1], other.route[j]],
-                    (width + (other.route[0] as Wire).width) / 2 +
-                      clearance -
-                      1e-8,
-                  )
-                )
-                  hit = true
+            const hit = conflicts.firstConflict(
+              path,
+              other.route,
+              (width + (other.route[0] as Wire).width) / 2 + clearance - 1e-8,
+            )
             if (hit) hits++
           }
           const score = length(path) + hits * length(connection.pointsToConnect)
@@ -349,30 +398,7 @@ export function* negotiateLanes(
       candidates.add(connection.name, [bestChoice.trace])
       routed.set(connection.name, bestChoice.trace)
     }
-    const selected = candidates.select(
-      units.map((unit) => unit.connections[0].name),
-      [
-        ...(input.buses ?? []).map((bus) =>
-          units
-            .filter((unit) =>
-              unit.connections.some((c) =>
-                bus.connectionNames.includes(c.name),
-              ),
-            )
-            .map((unit) => unit.connections[0].name),
-        ),
-        ...units
-          .filter(
-            (unit) =>
-              !unit.connections.some((c) =>
-                (input.buses ?? []).some((bus) =>
-                  bus.connectionNames.includes(c.name),
-                ),
-              ),
-          )
-          .map((unit) => [unit.connections[0].name]),
-      ],
-    )
+    const selected = candidates.select(unitNames, matchingGroups)
     if (selected) {
       routed.clear()
       for (const trace of selected) {
@@ -396,31 +422,27 @@ export function* negotiateLanes(
           ((first.route[0] as Wire).width + (second.route[0] as Wire).width) /
             2 +
           clearance
-        conflict: for (let i = 1; i < first.route.length; i++)
-          for (let j = 1; j < second.route.length; j++) {
-            if (
-              !segmentsTooClose(
-                [first.route[i - 1], first.route[i]],
-                [second.route[j - 1], second.route[j]],
-                required - 1e-8,
-              )
+        const conflict = conflicts.firstConflict(
+          first.route,
+          second.route,
+          required - 1e-8,
+        )
+        if (conflict) {
+          const [i, j] = conflict
+          pending.add(first.connection_name!)
+          pending.add(second.connection_name!)
+          searches
+            .get(layer)!
+            .penalizeIntersection(
+              histories.get(layer)!,
+              first.route[i - 1],
+              first.route[i],
+              second.route[j - 1],
+              second.route[j],
+              required * 1.25,
+              true,
             )
-              continue
-            pending.add(first.connection_name!)
-            pending.add(second.connection_name!)
-            searches
-              .get(layer)!
-              .penalizeIntersection(
-                histories.get(layer)!,
-                first.route[i - 1],
-                first.route[i],
-                second.route[j - 1],
-                second.route[j],
-                required * 1.25,
-                true,
-              )
-            break conflict
-          }
+        }
       }
     // Rip up only the conflicting older units; the new route remains in place.
     // All candidates remain available for conflict-constrained selection.

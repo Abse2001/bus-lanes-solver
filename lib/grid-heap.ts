@@ -16,6 +16,24 @@ export class GridHeap {
   get length() {
     return this.size
   }
+  get storageBytes() {
+    return (
+      this.positions.byteLength +
+      this.ids.byteLength +
+      this.costs.byteLength +
+      this.priorities.byteLength +
+      this.sequences.byteLength
+    )
+  }
+  clear() {
+    // Removed cells already have a zero position. Clear only queued cells so
+    // a completed or canceled search can reuse its buffers without a grid fill.
+    for (let i = 0; i < this.size; i++) this.positions[this.ids[i]] = 0
+    this.size = 0
+    this.sequence = 0
+    this.id = 0
+    this.g = 0
+  }
   push(id: number, g: number, f: number) {
     const seq = this.sequence++
     const previous = this.positions[id]
@@ -42,38 +60,38 @@ export class GridHeap {
       this.priorities = priorities
       this.sequences = sequences
     }
+    const { ids, positions, costs, priorities, sequences } = this
     while (i > 0) {
       const p = (i - 1) >> 2
-      const pf = this.priorities[p]
+      const pf = priorities[p]
       if (
         f > pf ||
-        (f === pf &&
-          (g < this.costs[p] ||
-            (g === this.costs[p] && seq >= this.sequences[p])))
+        (f === pf && (g < costs[p] || (g === costs[p] && seq >= sequences[p])))
       )
         break
-      this.ids[i] = this.ids[p]
-      this.positions[this.ids[i]] = i + 1
-      this.costs[i] = this.costs[p]
-      this.priorities[i] = pf
-      this.sequences[i] = this.sequences[p]
+      ids[i] = ids[p]
+      positions[ids[i]] = i + 1
+      costs[i] = costs[p]
+      priorities[i] = pf
+      sequences[i] = sequences[p]
       i = p
     }
-    this.ids[i] = id
-    this.positions[id] = i + 1
-    this.costs[i] = g
-    this.priorities[i] = f
-    this.sequences[i] = seq
+    ids[i] = id
+    positions[id] = i + 1
+    costs[i] = g
+    priorities[i] = f
+    sequences[i] = seq
   }
   pop() {
-    this.id = this.ids[0]
-    this.g = this.costs[0]
-    this.positions[this.id] = 0
+    const { ids, positions, costs, priorities, sequences } = this
+    this.id = ids[0]
+    this.g = costs[0]
+    positions[this.id] = 0
     const n = --this.size
-    const id = this.ids[n],
-      g = this.costs[n],
-      f = this.priorities[n],
-      seq = this.sequences[n]
+    const id = ids[n],
+      g = costs[n],
+      f = priorities[n],
+      seq = sequences[n]
     if (!n) return
     this.sink(0, id, g, f, seq)
   }
@@ -83,6 +101,7 @@ export class GridHeap {
     while (i * 4 + 1 < n) {
       let child = i * 4 + 1
       let cf = priorities[child],
+        cg = costs[child],
         cs = sequences[child]
       const end = Math.min(child + 4, n)
       for (let other = child + 1; other < end; other++) {
@@ -90,24 +109,21 @@ export class GridHeap {
         if (
           of < cf ||
           (of === cf &&
-            (costs[other] > costs[child] ||
-              (costs[other] === costs[child] && sequences[other] < cs)))
+            (costs[other] > cg ||
+              (costs[other] === cg && sequences[other] < cs)))
         ) {
           child = other
           cf = of
+          cg = costs[other]
           cs = sequences[other]
         }
       }
-      if (
-        cf > f ||
-        (cf === f && (costs[child] < g || (costs[child] === g && cs >= seq)))
-      )
-        break
+      if (cf > f || (cf === f && (cg < g || (cg === g && cs >= seq)))) break
       ids[i] = ids[child]
       positions[ids[i]] = i + 1
-      costs[i] = costs[child]
+      costs[i] = cg
       priorities[i] = cf
-      sequences[i] = sequences[child]
+      sequences[i] = cs
       i = child
     }
     ids[i] = id

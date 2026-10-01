@@ -1,6 +1,7 @@
 import { tightenPairApproaches } from "./tighten-pair-approaches"
 import { chamferPairApproaches } from "./chamfer-pair-approaches"
 import { extendPairApproaches } from "./extend-pair-approaches"
+import { alignPairTransitions } from "./align-pair-transitions"
 import { offsetPath } from "./coupled-pair-routing"
 import { routeCopper, type Copper } from "./vector-scene"
 import type { SimpleRouteJson, Trace, Wire } from "./types"
@@ -48,10 +49,20 @@ export function refinePairApproaches(
       width,
       clearance,
     )
-    const extended = extendPairApproaches(
+    const aligned = alignPairTransitions(
       input,
       members,
       chamfered,
+      copper,
+      width,
+      gap,
+      clearance,
+      offsetPath,
+    )
+    const extended = extendPairApproaches(
+      input,
+      members,
+      aligned,
       copper,
       width,
       gap,

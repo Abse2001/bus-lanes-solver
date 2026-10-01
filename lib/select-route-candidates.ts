@@ -1,4 +1,5 @@
-import { segmentDistance, length } from "./geometry"
+import { length } from "./geometry"
+import { RouteConflictIndex } from "./route-conflict-index"
 import type { Trace, Wire } from "./types"
 
 // Dense early candidate ids dominate compatibility checks. Keep that cache
@@ -51,6 +52,11 @@ export class RouteCandidatePool {
   private nextId = 0
   private additions = 0
   private assignments = new Map<string, Candidate[] | null>()
+  private routeConflicts = new RouteConflictIndex()
+  private signatures = new Map<string, Set<string>>()
+  private routeSignatures = new WeakMap<Trace["route"], string>()
+  private revision = 0
+  private selection?: { revision: number; key: string; result: Trace[] | null }
   constructor(
     private clearance: number,
     private limit = 120,
@@ -58,13 +64,28 @@ export class RouteCandidatePool {
 
   add(unit: string, traces: Trace[]) {
     const pool = this.pools.get(unit) ?? []
-    const signature = JSON.stringify(traces.map((t) => t.route))
-    if (pool.some((c) => c.key === signature)) return
+    let signatures = this.signatures.get(unit)
+    if (!signatures) {
+      signatures = new Set()
+      this.signatures.set(unit, signatures)
+    }
+    const signature = `[${traces
+      .map((trace) => {
+        let value = this.routeSignatures.get(trace.route)
+        if (value === undefined) {
+          value = JSON.stringify(trace.route)
+          this.routeSignatures.set(trace.route, value)
+        }
+        return value
+      })
+      .join(",")}]`
+    if (signatures.has(signature)) return
+    const lengths = traces.map((trace) => length(trace.route))
     const candidate = {
       traces,
       key: signature,
-      length: traces.reduce((sum, t) => sum + length(t.route), 0),
-      peak: Math.max(...traces.map((t) => length(t.route))),
+      length: lengths.reduce((sum, value) => sum + value, 0),
+      peak: Math.max(...lengths),
       layers: [...new Set(traces.map((t) => (t.route[0] as Wire).layer))],
       singleLayer: traces.every(
         (t) =>
@@ -76,9 +97,11 @@ export class RouteCandidatePool {
       id: this.nextId++,
     }
     pool.push(candidate)
-    if (pool.length > this.limit) pool.shift()
+    signatures.add(signature)
+    if (pool.length > this.limit) signatures.delete(pool.shift()!.key)
     this.pools.set(unit, pool)
     this.additions++
+    this.revision++
   }
 
   private collides(a: Candidate, b: Candidate): boolean {
@@ -106,24 +129,12 @@ export class RouteCandidatePool {
             2 +
           this.clearance -
           1e-8
-        for (let i = 1; i < first.route.length; i++)
-          for (let j = 1; j < second.route.length; j++) {
-            const p = first.route[i - 1],
-              q = first.route[i],
-              r = second.route[j - 1],
-              s = second.route[j]
-            if (
-              Math.max(p.x, q.x) + required < Math.min(r.x, s.x) ||
-              Math.max(r.x, s.x) + required < Math.min(p.x, q.x) ||
-              Math.max(p.y, q.y) + required < Math.min(r.y, s.y) ||
-              Math.max(r.y, s.y) + required < Math.min(p.y, q.y)
-            )
-              continue
-            if (segmentDistance([p, q], [r, s]) < required) {
-              row.set(high, true)
-              return true
-            }
-          }
+        if (
+          this.routeConflicts.firstConflict(first.route, second.route, required)
+        ) {
+          row.set(high, true)
+          return true
+        }
       }
     row.set(high, false)
     return false
@@ -225,6 +236,21 @@ export class RouteCandidatePool {
   }
 
   select(units: string[], matchingGroups: string[][] = []): Trace[] | null {
+    const key = JSON.stringify([units, matchingGroups])
+    if (
+      this.selection?.revision === this.revision &&
+      this.selection.key === key
+    )
+      return this.selection.result?.slice() ?? null
+    const result = this.computeSelection(units, matchingGroups)
+    this.selection = { revision: this.revision, key, result }
+    return result?.slice() ?? null
+  }
+
+  private computeSelection(
+    units: string[],
+    matchingGroups: string[][],
+  ): Trace[] | null {
     if (this.additions >= 100) this.pruneConflicts()
     let domains = units.map((unit) => this.pools.get(unit) ?? [])
     let best = this.compatible(domains)
