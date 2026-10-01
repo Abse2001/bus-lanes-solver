@@ -1,177 +1,228 @@
-import { busLengthReports } from "../lib/route-lengths"
-import { validateFanoutProvenance } from "./validate-fanout-provenance"
-import { validateTwoFanoutSample } from "./validate-two-fanout-sample"
-import { Glob } from "bun"
-import { BusLanesSolver, type SimpleRouteJson } from "../lib"
-const workerFile = process.argv.includes("--worker")
-  ? process.argv[process.argv.indexOf("--worker") + 1]
-  : undefined
-const timeoutSeconds = Number(
-  process.argv.includes("--timeout-seconds")
-    ? process.argv[process.argv.indexOf("--timeout-seconds") + 1]
-    : 1,
-)
-if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
-  throw Error("Invalid timeout")
-const legacy = process.argv.includes("--legacy")
-const files = workerFile
-  ? [workerFile]
-  : legacy
-    ? Array.from(new Glob("tests/fixtures/ddr_*.json").scanSync(".")).sort()
-    : [
-        ...Array.from(
-          new Glob("tests/fixtures/two-fanouts/ddr_*.json").scanSync("."),
-        ).filter((f) => !f.endsWith(".meta.json")),
-        ...Array.from(new Glob("tests/fixtures/ddr_*-raw.json").scanSync(".")),
-      ].sort()
-if (!files.length) throw Error("No DDR samples found")
-if (!legacy && !workerFile) {
-  for (const profile of [
-    "ddr_left_io_right",
-    "ddr_right_io_left",
-    "ddr_top_io_bottom",
-    "ddr_bottom_io_top",
-  ]) {
-    if (!files.includes(`tests/fixtures/two-fanouts/${profile}.json`))
-      throw Error(`Missing full DDR phase: ${profile}`)
-  }
+import { BusLanesPipelineSolver } from "../lib"
+import { am3352SamplePlacements, loadAm3352Sample } from "./am3352-samples"
+import { validateAm3352Sample } from "./validate-am3352-sample"
+
+const args = process.argv.slice(2)
+const option = (name: string) => {
+  const index = args.indexOf(name)
+  if (index < 0) return undefined
+  if (!args[index + 1] || args[index + 1].startsWith("--"))
+    throw Error(`Missing value for ${name}`)
+  return args[index + 1]
 }
-if (!workerFile) {
-  // Keep per-sample wall-clock measurements free from competing workers.
-  const reports = []
-  for (const file of files) {
+const workerName = option("--worker")
+const outputPath = option("--output") ?? "benchmark-results.json"
+const timeoutSeconds = Number(option("--timeout-seconds") ?? 180)
+if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
+  throw Error("--timeout-seconds must be a positive finite number")
+for (let i = 0; i < args.length; i++) {
+  if (["--worker", "--timeout-seconds", "--output"].includes(args[i])) i++
+  else if (args[i] !== "--require-all-solved")
+    throw Error(`Unknown option: ${args[i]}`)
+}
+
+type SampleName = (typeof am3352SamplePlacements)[number]["name"]
+type ValidationReport = Awaited<ReturnType<typeof validateAm3352Sample>>
+type BenchmarkStatus = "solved" | "failed" | "timed_out" | "validation_failed"
+interface BenchmarkReport {
+  sample: SampleName
+  cpu: { x: number; y: number }
+  ram: { x: number; y: number }
+  status: BenchmarkStatus
+  solved: boolean
+  timeoutSeconds: number
+  solveMilliseconds: number
+  milliseconds: number
+  iterations: number
+  requestedSignals: number
+  routedSignals: number
+  fixedPowerDogbones: number
+  inputUnchanged: boolean
+  fixedPowerPreserved: boolean
+  failureCode: string | null
+  error: string | null
+  validation: ValidationReport | null
+}
+
+const placement = workerName
+  ? am3352SamplePlacements.find((placement) => placement.name === workerName)
+  : undefined
+if (workerName && !placement)
+  throw Error(`Unknown AM3352 sample: ${workerName}`)
+
+if (!workerName) {
+  const reports: BenchmarkReport[] = []
+  let invalidRun = false
+  // Exactly four cases, serially, in fresh processes. Keep failed routing in
+  // the score and continue collecting the remaining placements.
+  for (const placement of am3352SamplePlacements) {
+    const workerStart = performance.now()
     const child = Bun.spawn(
       [
         process.execPath,
         import.meta.path,
         "--worker",
-        file,
+        placement.name,
         "--timeout-seconds",
         String(timeoutSeconds),
-        ...(legacy ? ["--legacy"] : []),
       ],
       { stdout: "pipe", stderr: "pipe" },
     )
-    const [stdout, stderr] = await Promise.all([
+    let killed = false
+    const deadline = setTimeout(
+      () => {
+        killed = true
+        child.kill()
+      },
+      (timeoutSeconds + 15) * 1000,
+    )
+    const [stdout, stderr, exitCode] = await Promise.all([
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
+      child.exited,
     ])
-    await child.exited
+    clearTimeout(deadline)
     const serialized = stdout
       .split("\n")
       .find((line) => line.startsWith("REPORT "))
-    if (!serialized) throw Error(`${file}: ${stderr || stdout}`)
-    const report = JSON.parse(serialized.slice(7))
+    const workerFailure = (
+      error: string,
+      status: BenchmarkStatus = "validation_failed",
+    ): BenchmarkReport => ({
+      sample: placement.name,
+      cpu: { x: 0, y: 0 },
+      ram: placement.ram,
+      status,
+      solved: false,
+      timeoutSeconds,
+      solveMilliseconds: 0,
+      milliseconds: performance.now() - workerStart,
+      iterations: 0,
+      requestedSignals: 47,
+      routedSignals: 0,
+      fixedPowerDogbones: 0,
+      inputUnchanged: false,
+      fixedPowerPreserved: false,
+      failureCode: null,
+      error,
+      validation: null,
+    })
+    if (!serialized) {
+      invalidRun = true
+      reports.push(
+        workerFailure(
+          killed
+            ? "Worker exceeded its process deadline"
+            : stderr || stdout || `Worker exited ${exitCode}`,
+          killed ? "timed_out" : "validation_failed",
+        ),
+      )
+    } else {
+      try {
+        const report: BenchmarkReport = JSON.parse(serialized.slice(7))
+        if (report.sample !== placement.name)
+          throw Error("Worker reported wrong sample")
+        invalidRun ||= exitCode !== 0 || report.status === "validation_failed"
+        reports.push(report)
+      } catch (error) {
+        invalidRun = true
+        reports.push(workerFailure(`Invalid worker report: ${String(error)}`))
+      }
+    }
+    const report = reports.at(-1)!
     console.log(
-      `${report.expectedRejection ? (report.failureCode === "layer_change_required" ? "REJECT OK" : "REJECT FAIL") : report.solved ? "PASS" : "FAIL"} ${file.split("/").at(-1)} ${report.routedLanes}/33 ${report.timedOut ? "timeout" : (report.failureCode ?? "")}`,
+      `${report.solved ? "PASS" : "FAIL"} ${report.sample} RAM=(${report.ram.x},${report.ram.y}) ${report.routedSignals}/${report.requestedSignals} signals ${(report.solveMilliseconds / 1000).toFixed(3)}s ${report.solved ? "DRC + matching passed" : (report.error ?? report.status)}`,
     )
-    reports.push(report)
   }
-  await Bun.write(
-    legacy ? "legacy-benchmark-results.json" : "benchmark-results.json",
-    JSON.stringify(reports, null, 2) + "\n",
-  )
-  const positives = reports.filter((r) => !r.expectedRejection),
-    negatives = reports.filter((r) => r.expectedRejection)
+  await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")
   console.log(
-    `Full DDR phases solved: ${positives.filter((r) => r.solved).length}/${positives.length}; expected layer-change rejections: ${negatives.filter((r) => r.failureCode === "layer_change_required").length}/${negatives.length}`,
+    `AM3352 placements completed: ${reports.filter((report) => report.solved).length}/4; results: ${outputPath}`,
   )
+  // Exhausted searches are measured outcomes. Corrupt fixtures, crashes and
+  // invalid completed copper fail the command. Optional strict mode requires
+  // all four placements to solve; failures are never counted as passes.
   process.exit(
-    positives.some((r) => !r.solved) ||
-      negatives.some((r) => r.failureCode !== "layer_change_required")
+    invalidRun ||
+      (args.includes("--require-all-solved") &&
+        reports.some((report) => !report.solved))
       ? 1
       : 0,
   )
 }
-const reports = []
-for (const file of files) {
-  const input: SimpleRouteJson = await Bun.file(file).json()
-  const dataset =
-    !legacy && !file.endsWith("-raw.json")
-      ? validateTwoFanoutSample(
-          input,
-          await Bun.file(file.replace(".json", ".meta.json")).json(),
-        )
-      : undefined
-  const provenance = dataset
-    ? await validateFanoutProvenance(
-        await Bun.file(file.replace(".json", ".meta.json")).json(),
-      )
-    : undefined
+
+const start = performance.now()
+let report: BenchmarkReport = {
+  sample: placement!.name,
+  cpu: { x: 0, y: 0 },
+  ram: placement!.ram,
+  status: "validation_failed",
+  solved: false,
+  timeoutSeconds,
+  solveMilliseconds: 0,
+  milliseconds: 0,
+  iterations: 0,
+  requestedSignals: 47,
+  routedSignals: 0,
+  fixedPowerDogbones: 0,
+  inputUnchanged: false,
+  fixedPowerPreserved: false,
+  failureCode: null,
+  error: null,
+  validation: null,
+}
+try {
+  const { input, metadata } = await loadAm3352Sample(placement!.name)
+  report.requestedSignals = input.connections.length
+  report.fixedPowerDogbones = input.traces?.length ?? 0
+  report.validation = await validateAm3352Sample(input, metadata)
+  if (!report.validation.fixedDrc.valid)
+    throw Error("Pre-dogboned power copper failed DRC")
   const before = JSON.stringify(input)
-  const solver = new BusLanesSolver(input)
-  const start = performance.now()
-  let timedOut = false
+  const fixedBefore = JSON.stringify(input.traces ?? [])
+  const solver = new BusLanesPipelineSolver(input)
+  const solveStart = performance.now()
   while (!solver.solved && !solver.failed) {
-    if (performance.now() - start >= timeoutSeconds * 1000) {
-      timedOut = true
-      break
-    }
+    if (performance.now() - solveStart >= timeoutSeconds * 1000) break
     solver.step()
   }
-  const solveMilliseconds = performance.now() - start
-  timedOut ||= solveMilliseconds > timeoutSeconds * 1000
-  if (JSON.stringify(input) !== before) throw Error("Benchmark input mutated")
-  const negative = file.endsWith("-raw.json")
-  const busLengths = busLengthReports(input, solver.traces)
-  const lengthMatchingValid =
-    !dataset ||
-    (busLengths.length === 3 &&
-      busLengths.every((b) => b.toleranceMm !== null && b.matched))
-  const valid =
-    lengthMatchingValid &&
-    !timedOut &&
-    solver.solved &&
-    solver.traces.length === input.connections.length &&
-    input.connections.every((c) => {
-      const routes = solver.traces.filter((t) => t.connection_name === c.name)
-      if (routes.length !== 1 || routes[0].route.length < 2) return false
-      const first = routes[0].route[0],
-        last = routes[0].route.at(-1)!
-      const [a, b] = c.pointsToConnect
-      const same = (p: { x: number; y: number }, q: { x: number; y: number }) =>
-        Math.hypot(p.x - q.x, p.y - q.y) < 1e-8
-      return (
-        (same(first, a) && same(last, b)) || (same(first, b) && same(last, a))
-      )
-    }) &&
-    solver.traces.every((t) =>
-      t.route.every(
-        (p) =>
-          p.route_type === "wire" &&
-          p.layer ===
-            input.connections.find((c) => c.name === t.connection_name)!
-              .pointsToConnect[0].layer,
-      ),
-    )
-  if (valid && !legacy && !negative) {
-    validateTwoFanoutSample(
+  report.solveMilliseconds = performance.now() - solveStart
+  report.iterations = solver.iterations
+  report.routedSignals = solver.traces.length
+  report.failureCode = solver.failureCode
+  report.inputUnchanged = JSON.stringify(input) === before
+  report.fixedPowerPreserved =
+    JSON.stringify(solver.input.traces ?? []) === fixedBefore
+  if (!report.inputUnchanged || !report.fixedPowerPreserved)
+    throw Error("Routing changed immutable input or power dogbones")
+  if (report.solveMilliseconds >= timeoutSeconds * 1000) {
+    report.status = "timed_out"
+    report.error = `Routing exceeded ${timeoutSeconds} seconds`
+  } else if (!solver.solved) {
+    report.status = "failed"
+    report.error = solver.error ?? "Routing failed"
+  } else {
+    report.validation = await validateAm3352Sample(
       input,
-      await Bun.file(file.replace(".json", ".meta.json")).json(),
+      metadata,
       solver.traces,
     )
+    const output = solver.getOutput()
+    report.fixedPowerPreserved &&=
+      JSON.stringify(output.traces.slice(0, input.traces?.length ?? 0)) ===
+      fixedBefore
+    if (!report.fixedPowerPreserved)
+      throw Error("Output changed immutable power dogbones")
+    report.solved = report.validation.valid
+    report.status = report.solved ? "solved" : "validation_failed"
+    report.error = report.solved
+      ? null
+      : "Completed routing failed connectivity, DRC, or matching validation"
   }
-  const report = {
-    file,
-    timedOut,
-    timeoutSeconds,
-    dataset,
-    provenance,
-    busLengths,
-    lengthMatchingValid,
-    expectedRejection: negative,
-    solved: valid,
-    failureCode: solver.failureCode,
-    error: solver.error,
-    iterations: solver.iterations,
-    attempts: Number(solver.stats.attempt ?? 0) + 1,
-    routedLanes: solver.traces.length,
-    solveMilliseconds: Math.round(solveMilliseconds),
-    milliseconds: Math.round(performance.now() - start),
-  }
-  reports.push(report)
-  console.log("REPORT " + JSON.stringify(report))
-  console.log(
-    `${negative ? (solver.failureCode === "layer_change_required" ? "REJECT OK" : "REJECT FAIL") : valid ? "PASS" : "FAIL"} ${file.split("/").at(-1)} ${report.routedLanes}/${input.connections.length} lanes ${report.milliseconds}ms ${report.failureCode ?? ""}`,
-  )
+} catch (error) {
+  report.status = "validation_failed"
+  report.solved = false
+  report.error = error instanceof Error ? error.message : String(error)
 }
+report.milliseconds = performance.now() - start
+console.log("REPORT " + JSON.stringify(report))
+if (report.status === "validation_failed") process.exitCode = 1
