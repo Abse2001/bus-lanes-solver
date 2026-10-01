@@ -340,6 +340,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
   }>
   private travel?: Float64Array
   private maxLength = Infinity
+  private allowDiagonalPassages = false
   private best!: Float64Array
   private parent!: Int32Array
   private blocked: Uint8Array
@@ -367,6 +368,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     grid?: {
       step?: number
       maxLength?: number
+      allowDiagonalPassages?: boolean
       bounds?: SimpleRouteJson["bounds"]
     },
   ) {
@@ -425,6 +427,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.hardEdgeBlocked = cachedGrid?.edgeBlocked ?? new Uint8Array(n)
     if (cachedGrid) this.copperBuckets = cachedGrid.buckets
     this.maxLength = grid?.maxLength ?? Infinity
+    this.allowDiagonalPassages = grid?.allowDiagonalPassages ?? false
     if (!cachedGrid) {
       // Adjacent samples of a long segment overlap. Test each cell at most
       // once per copper item, including clear cells in its bounding halo.
@@ -866,9 +869,14 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         .neighbors) {
         if (x + dx < 0 || x + dx >= nx || y + dy < 0 || y + dy >= ny) continue
         const id = curId + offset
+        // Neighbor occupancy is conservative; a diagonal corridor can be
+        // physically clear even when its two orthogonal neighbors are blocked.
+        // The continuous edge predicate below remains authoritative.
         if (
           blocked[id] ||
-          (diagonal && (blocked[curId + dx] || blocked[curId + dy * nx]))
+          (!this.allowDiagonalPassages &&
+            diagonal &&
+            (blocked[curId + dx] || blocked[curId + dy * nx]))
         )
           continue
         // With nonnegative occupancy cost, this is a lower bound on g.

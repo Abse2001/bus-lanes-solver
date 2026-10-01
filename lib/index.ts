@@ -4,3 +4,5 @@ export {
   BusLanesPipelineSolver,
   type BusLanesPipelineOptions,
 } from "./bus-lanes-pipeline-solver"
+
+export { HypergraphBusLanesSolver } from "./hypergraph-bus-lanes-solver"

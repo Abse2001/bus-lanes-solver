@@ -18,3 +18,24 @@ jobs:
         with:
           name: am3352-placement-benchmark-results
           path: benchmark-results.json
+
+  hypergraph:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install
+      - run: >-
+          ./benchmark.sh --solver hypergraph --require-all-solved
+          --timeout-seconds 600 --output benchmark-hypergraph-results.json
+          --artifacts docs/hypergraph-am3352
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hypergraph-am3352-results
+          path: |
+            benchmark-hypergraph-results.json
+            docs/hypergraph-am3352/

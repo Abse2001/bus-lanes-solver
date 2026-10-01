@@ -11,15 +11,24 @@ export function tuneSmoothLengths(
   input: SimpleRouteJson,
   traces: Trace[],
   targets: Map<string, number>,
+  distribute = false,
 ) {
   const fixed = fixedCopper(input)
-  function* candidates(t: Trace, scene: VectorScene): Generator<Trace> {
+  function* candidates(
+    t: Trace,
+    scene: VectorScene,
+    maximumDelta = Infinity,
+  ): Generator<Trace> {
     const connection = input.connections.find(
       (c) => c.name === t.connection_name,
     )!
     const width = (t.route[0] as Wire).width
     const fixedLength = fixedRouteLength(input, connection.name)
-    const delta = targets.get(connection.name)! - length(t.route) - fixedLength
+    const delta = Math.min(
+      maximumDelta,
+      targets.get(connection.name)! - length(t.route) - fixedLength,
+    )
+    const target = length(t.route) + fixedLength + Math.max(0, delta)
     if (delta < 1e-8) {
       yield t
       return
@@ -87,11 +96,7 @@ export function tuneSmoothLengths(
                 const next = (
                   t.coupledSection ? (points: Point[]) => points : simplify
                 )([...t.route.slice(0, i), ...bump, ...t.route.slice(i + 2)])
-                if (
-                  Math.abs(
-                    length(next) + fixedLength - targets.get(connection.name)!,
-                  ) > 1e-6
-                )
+                if (Math.abs(length(next) + fixedLength - target) > 1e-6)
                   continue
                 if (!tuningPathIsSelfClear(next, returnSpacing)) continue
                 yield {
@@ -123,7 +128,12 @@ export function tuneSmoothLengths(
   const result = [...traces]
   const pending = new Set(traces.map((_, i) => i))
   let changed = true
-  while (pending.size && changed) {
+  let passes = 0
+  while (
+    pending.size &&
+    changed &&
+    passes++ < (distribute ? 32 : traces.length + 1)
+  ) {
     changed = false
     for (const index of pending) {
       const connection = input.connections.find(
@@ -135,16 +145,32 @@ export function tuneSmoothLengths(
         (traces[index].route[0] as Wire).width,
         [...fixed, ...result.flatMap(routeCopper)],
       )
-      const next = candidates(traces[index], scene).next().value
+      const trace = result[index]
+      const missing =
+        targets.get(connection.name)! -
+        length(trace.route) -
+        fixedRouteLength(input, connection.name)
+      let next = candidates(trace, scene).next().value
+      if (!next && distribute) {
+        for (const fraction of [0.5, 0.25, 0.125, 0.0625]) {
+          if (missing * fraction < 0.01) break
+          next = candidates(trace, scene, missing * fraction).next().value
+          if (next) break
+        }
+      }
       if (!next) continue
       result[index] = next
-      pending.delete(index)
+      if (
+        length(next.route) + fixedRouteLength(input, connection.name) >=
+        targets.get(connection.name)! - 1e-6
+      )
+        pending.delete(index)
       changed = true
     }
   }
   if (pending.size)
     throw Error(
-      `Insufficient tuning clearance for ${[...pending].map((i) => traces[i].connection_name).join(", ")}`,
+      `Insufficient tuning clearance for ${[...pending].map((i) => `${traces[i].connection_name}${distribute ? ` (${(targets.get(traces[i].connection_name!)! - length(result[i].route) - fixedRouteLength(input, traces[i].connection_name!)).toFixed(3)} mm)` : ""}`).join(", ")}`,
     )
   return result
 }

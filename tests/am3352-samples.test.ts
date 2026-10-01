@@ -19,7 +19,11 @@ test("the four AM3352 samples translate only RAM and retain every real power dog
   const ramPorts = new Set(
     control.input.obstacles
       .filter((o) => o.componentId === ramComponentId)
-      .flatMap((o) => o.connectedTo),
+      .map(
+        (o) =>
+          (o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } })
+            .circuitJsonMetadata.pcb_port_id,
+      ),
   )
   for (const placement of am3352SamplePlacements) {
     const { input, metadata } = await loadAm3352Sample(placement.name)
@@ -177,4 +181,29 @@ test("a failed or empty routing is recorded as incomplete rather than a matching
   expect(report.pairLengths.every((p) => p.skewMm === null && !p.matched)).toBe(
     true,
   )
+})
+
+test("every signal terminal stays on its own physical pad in all placements", async () => {
+  for (const placement of am3352SamplePlacements) {
+    const { input } = await loadAm3352Sample(placement.name)
+    for (const connection of input.connections) {
+      const components = []
+      for (const point of connection.pointsToConnect) {
+        const pad = input.obstacles.find(
+          (o) =>
+            (o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } })
+              .circuitJsonMetadata.pcb_port_id === point.pcb_port_id,
+        )!
+        expect(pad).toBeDefined()
+        expect(point.x).toBeCloseTo(pad.center.x, 8)
+        expect(point.y).toBeCloseTo(pad.center.y, 8)
+        expect(point.x).toBeGreaterThan(input.bounds.minX)
+        expect(point.x).toBeLessThan(input.bounds.maxX)
+        expect(point.y).toBeGreaterThan(input.bounds.minY)
+        expect(point.y).toBeLessThan(input.bounds.maxY)
+        components.push(pad.componentId)
+      }
+      expect(new Set(components).size).toBe(2)
+    }
+  }
 })

@@ -47,6 +47,7 @@ async function invokeBenchmark(options: {
       mkdirSync(join(runner, "scripts"), { recursive: true })
       for (const file of [
         "benchmark.ts",
+        "export-am3352-solution.ts",
         "am3352-samples.ts",
         "validate-am3352-sample.ts",
       ])

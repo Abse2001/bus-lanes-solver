@@ -1,3 +1,4 @@
+import { spreadHypergraphCorridors } from "./spread-hypergraph-corridors"
 import { refinePairApproaches } from "./refine-pair-approaches"
 import { spreadCoupledTuningLanes } from "./spread-coupled-tuning-lanes"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
@@ -177,7 +178,8 @@ export class BusLanesSolver extends BaseSolver {
           owners: [c.name],
         })
     const negotiatePairs =
-      this.options.denseSearch && input.connections.length > 12
+      this.options.initialRouting === "hypergraph" ||
+      (this.options.denseSearch && input.connections.length > 12)
     const paired = new Set(
       negotiatePairs
         ? []
@@ -242,7 +244,8 @@ export class BusLanesSolver extends BaseSolver {
     const c = this.orders[this.attempt][this.lane],
       [a, b] = c.pointsToConnect
     this.search =
-      this.options.denseSearch && this.input.connections.length > 12
+      this.options.initialRouting === "hypergraph" ||
+      (this.options.denseSearch && this.input.connections.length > 12)
         ? new GridVisibilitySearch(this.scene(c), a, b)
         : new VectorVisibilitySearch(this.scene(c), a, b)
   }
@@ -283,7 +286,10 @@ export class BusLanesSolver extends BaseSolver {
     this.startLane()
   }
   private route() {
-    if (this.options.denseSearch && this.input.connections.length > 12) {
+    if (
+      this.options.initialRouting === "hypergraph" ||
+      (this.options.denseSearch && this.input.connections.length > 12)
+    ) {
       // Dense negotiation owns its searches; the initial lane search is unused.
       if (this.search instanceof GridVisibilitySearch) this.search.cancel()
       this.search = undefined
@@ -298,6 +304,7 @@ export class BusLanesSolver extends BaseSolver {
           this.conflictingLanes = conflicts
         },
         this.terminalLayers,
+        this.options.initialRouting === "hypergraph",
       )
       const step = this.negotiated.next()
       if (!step.done) {
@@ -348,8 +355,25 @@ export class BusLanesSolver extends BaseSolver {
   private match() {
     const input = this.input
     const original = this.traces
+    const hypergraph = this.options.initialRouting === "hypergraph"
+    const scale =
+      Math.max(...original.map((t) => (t.route[0] as Wire).width)) / 0.1
     function* candidates() {
       yield original
+      if (hypergraph && !original.some((t) => t.coupledSection)) {
+        for (const inset of [1, 0.5, 2, 3])
+          for (const pitch of [0.9, 0.7, 1, 1.2, 0.6, 0.8]) {
+            const spread = spreadHypergraphCorridors(
+              input,
+              original,
+              pitch * scale,
+              0.1 * scale,
+              inset * scale,
+            )
+            if (spread) yield spread
+          }
+        yield [...original]
+      }
       if (original.some((t) => t.coupledSection)) {
         for (const multiplier of [8, 12, 16, 20]) {
           const spread = spreadCoupledTuningLanes(
@@ -379,11 +403,14 @@ export class BusLanesSolver extends BaseSolver {
         this.traces =
           this.options.smoothTuning && candidate.some((t) => t.coupledSection)
             ? tuneCoupledLengths(input, candidate)
-            : (this.options.smoothTuning ? tuneSmoothLengths : tuneLengths)(
-                input,
-                candidate,
-                targets,
-              )
+            : this.options.smoothTuning
+              ? tuneSmoothLengths(
+                  input,
+                  candidate,
+                  targets,
+                  hypergraph && corridor !== original,
+                )
+              : tuneLengths(input, candidate, targets)
         if (this.options.smoothTuning)
           this.traces = simplifyMatchedTraces(input, this.traces)
         this.phase = "validate_output"
@@ -495,7 +522,10 @@ export class BusLanesSolver extends BaseSolver {
     this.stats = {
       ...this.lengthStats,
       phase: this.phase,
-      algorithm: "octilinear_visibility",
+      algorithm:
+        this.options.initialRouting === "hypergraph"
+          ? "route_hypergraph"
+          : "octilinear_visibility",
       attempt: this.attempt,
       lane: this.lane,
       totalLanes: this.input.connections.length,

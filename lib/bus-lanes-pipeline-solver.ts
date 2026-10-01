@@ -1,3 +1,4 @@
+import { routeHypergraphDogbones } from "./hypergraph-dogbones"
 import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
 import { BaseSolver } from "@tscircuit/solver-utils"
 import {
@@ -19,6 +20,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
   phase = "resolve_layers"
   traces: Trace[] = []
   failureCode: string | null = null
+  readonly attemptFailures: Array<{
+    attempt: number
+    phase: string
+    error: string
+  }> = []
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
@@ -121,7 +127,14 @@ export class BusLanesPipelineSolver extends BaseSolver {
               )
                 crossings++
             }
-          return crossings * (this.attempt === 1 ? 0 : 4) + load.get(layer)!
+          return (
+            crossings *
+              (this.attempt === 1 &&
+              this.options.initialRouting !== "hypergraph"
+                ? 0
+                : 4) +
+            load.get(layer)!
+          )
         }
         return (
           rank(a) - rank(b) ||
@@ -130,7 +143,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
           layers.indexOf(a) - layers.indexOf(b)
         )
       })
-      const target = allowed[Math.max(0, this.attempt - 1) % allowed.length]
+      const target =
+        allowed[
+          this.options.initialRouting === "hypergraph"
+            ? 0
+            : Math.max(0, this.attempt - 1) % allowed.length
+        ]
       for (const name of group) targets.set(name, target)
       load.set(target, load.get(target)! + group.size)
     }
@@ -143,7 +161,19 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.input.minTraceWidth,
     )
     // The shared site matcher uses a conservative width while reserving sites.
-    const result = routeLocalSignalDogbones(
+    const dogboneRouter =
+      this.options.initialRouting === "hypergraph"
+        ? (
+            input: Parameters<typeof routeLocalSignalDogbones>[0],
+            options: Parameters<typeof routeLocalSignalDogbones>[1],
+          ) =>
+            routeHypergraphDogbones(
+              input as SimpleRouteJson,
+              options,
+              this.attempt,
+            )
+        : routeLocalSignalDogbones
+    const result = dogboneRouter(
       this.input as Parameters<typeof routeLocalSignalDogbones>[0],
       {
         targetLayers: targets,
@@ -218,7 +248,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
     )
     // The reference routes and tunes bus corridors before placing unrelated
     // controls, so those controls cannot consume space required for matching.
-    if (matching.length && remaining.length) {
+    if (
+      matching.length &&
+      remaining.length &&
+      (this.options.initialRouting !== "hypergraph" || this.attempt === 0)
+    ) {
       this.remainingInput = {
         ...laneInput,
         connections: remaining,
@@ -327,6 +361,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.phase = "solved"
       }
     } catch (error) {
+      this.attemptFailures.push({
+        attempt: this.attempt,
+        phase: this.child?.phase ?? this.phase,
+        error: String(error),
+      })
       this.attempt++
       if (
         this.options.fanout !== "none" &&

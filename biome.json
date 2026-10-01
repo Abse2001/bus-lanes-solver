@@ -9,9 +9,17 @@
       "!cosmos-export/**",
       "!node_modules/**",
       "!dist/**",
-      "!.cache/**"
+      "!.cache/**",
+      "!work/**",
+      "!docs/hypergraph-am3352/**"
     ]
   },
-  "formatter": { "indentStyle": "space" },
-  "javascript": { "formatter": { "semicolons": "asNeeded" } }
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "javascript": {
+    "formatter": {
+      "semicolons": "asNeeded"
+    }
+  }
 }

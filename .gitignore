@@ -11,3 +11,6 @@ cosmos-export
 dist
 
 *.tgz
+
+/work/
+/docs/hypergraph-am3352/*-solved.json

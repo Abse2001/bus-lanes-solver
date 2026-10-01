@@ -86,6 +86,7 @@ export interface SimpleRouteJson {
   }>
 }
 export interface SolverOptions {
+  initialRouting?: "visibility" | "hypergraph"
   smoothTuning?: boolean
   denseSearch?: boolean
   maxLaneIterations?: number

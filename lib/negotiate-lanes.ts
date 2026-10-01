@@ -1,3 +1,5 @@
+import { repairHypergraphRoutes } from "./repair-hypergraph-routes"
+import { RouteHypergraph } from "./route-hypergraph"
 import { routeViaWaypoint } from "./route-via-waypoint"
 import { RouteCandidatePool } from "./select-route-candidates"
 import { routeCoupledPair } from "./coupled-pair-routing"
@@ -20,6 +22,7 @@ export function* negotiateLanes(
   widths: Map<string, number>,
   reportProgress?: (pass: number, conflictingLanes: number) => void,
   terminalLayers: ReadonlyMap<string, string[]> = new Map(),
+  hypergraph = false,
 ): Generator<Trace[], Trace[] | null> {
   const routed = new Map<string, Trace>()
   const histories = new Map<string, Float32Array>()
@@ -27,7 +30,9 @@ export function* negotiateLanes(
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
   const pairs = (input.differentialPairs ?? []).filter(
-    (p) => p.traceGap !== undefined || p.maxUncoupledLength !== undefined,
+    (p) =>
+      p.maxUncoupledLength !== undefined ||
+      (!hypergraph && p.traceGap !== undefined),
   )
   const pairedNames = new Set(pairs.flatMap((p) => p.connectionNames))
   const units = [
@@ -54,13 +59,20 @@ export function* negotiateLanes(
     )
     const limit =
       // Reserve one percent of the compact search envelope for length tuning.
-      1.5 * 0.99 * Math.max(...members.map((c) => length(c.pointsToConnect)))
+      (hypergraph ? 2.5 : 1.5) *
+      0.99 *
+      Math.max(...members.map((c) => length(c.pointsToConnect)))
     for (const member of members) {
       limits.set(member.name, limit)
-      ceilings.set(member.name, (limit * 4) / 3)
+      ceilings.set(member.name, limit * (hypergraph ? 2 : 4 / 3))
     }
   }
-  const candidates = new RouteCandidatePool(clearance)
+  const candidates = hypergraph
+    ? new RouteHypergraph(
+        clearance,
+        (input.differentialPairs ?? []).map((p) => p.connectionNames),
+      )
+    : new RouteCandidatePool(clearance)
   const conflicts = new RouteConflictIndex()
   const unitNames = units.map((unit) => unit.connections[0].name)
   const matchingGroups = [
@@ -97,7 +109,11 @@ export function* negotiateLanes(
   let bestCount = 0,
     lastProgress = 0,
     pairRefresh = 0
-  for (let iteration = 0; iteration < 12000 && queue.length; iteration++) {
+  for (
+    let iteration = 0;
+    iteration < (hypergraph ? 600 : 12000) && queue.length;
+    iteration++
+  ) {
     const pass = Math.floor(iteration / Math.max(1, connections.length / 4))
     const congestionPenalty = 10 + pass * 4
     // A locked pair corridor can impose a poor topology on the entire bus.
@@ -189,7 +205,7 @@ export function* negotiateLanes(
       const sceneCopper = [
         ...fixed,
         ...pairedCopper,
-        ...(!unit.pair
+        ...(!hypergraph && !unit.pair
           ? routedLanes
               .filter((t) => pairedNames.has(t.connection_name!))
               .flatMap(getCopper)
@@ -214,7 +230,7 @@ export function* negotiateLanes(
         let step = generator.next(),
           iterations = 0
         try {
-          while (!step.done && iterations++ < 8000) {
+          while (!step.done && iterations++ < (hypergraph ? 100000 : 8000)) {
             yield routedLanes
             step = generator.next()
           }
@@ -326,13 +342,22 @@ export function* negotiateLanes(
           const [a, b] = connection.pointsToConnect
           const vertical = Math.abs(b.y - a.y) >= Math.abs(b.x - a.x)
           const coordinates = [
+            ...(hypergraph
+              ? input.obstacles
+                  .filter((o) => o.componentId)
+                  .map((o) => o.center)
+              : []),
             ...connections.flatMap((c) => c.pointsToConnect),
             ...[...routed.values()]
               .filter((t) => t.coupledSection)
               .flatMap((t) => t.route),
           ].map((p) => (vertical ? p.x : p.y))
-          const low = Math.min(...coordinates) - (width + clearance) * 2
-          const high = Math.max(...coordinates) + (width + clearance) * 2
+          const low =
+            Math.min(...coordinates) -
+            (width + clearance) * (hypergraph ? 12 : 2)
+          const high =
+            Math.max(...coordinates) +
+            (width + clearance) * (hypergraph ? 12 : 2)
           // Sweep interior corridors as well as the two outside channels.
           // A coprime traversal changes both axes on each retry without a
           // board-specific waypoint list or saved routing schedule.
@@ -482,6 +507,19 @@ export function* negotiateLanes(
         layer: connection.pointsToConnect[0].layer,
         width,
       }))
+    }
+    if (hypergraph) {
+      const repair = repairHypergraphRoutes(input, result, fixed)
+      let step = repair.next()
+      try {
+        while (!step.done) {
+          yield result
+          step = repair.next()
+        }
+      } finally {
+        if (!step.done) repair.return(false)
+      }
+      if (!step.value) return null
     }
     return result
   }

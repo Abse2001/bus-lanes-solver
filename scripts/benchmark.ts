@@ -1,4 +1,5 @@
-import { BusLanesPipelineSolver } from "../lib"
+import { BusLanesPipelineSolver, HypergraphBusLanesSolver } from "../lib"
+import { exportAm3352Solution } from "./export-am3352-solution"
 import { am3352SamplePlacements, loadAm3352Sample } from "./am3352-samples"
 import { validateAm3352Sample } from "./validate-am3352-sample"
 
@@ -10,13 +11,26 @@ const option = (name: string) => {
     throw Error(`Missing value for ${name}`)
   return args[index + 1]
 }
+const solverName = option("--solver") ?? "visibility"
+if (!["visibility", "hypergraph"].includes(solverName))
+  throw Error("--solver must be visibility or hypergraph")
 const workerName = option("--worker")
+const artifactDirectory = option("--artifacts")
 const outputPath = option("--output") ?? "benchmark-results.json"
 const timeoutSeconds = Number(option("--timeout-seconds") ?? 180)
 if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
   throw Error("--timeout-seconds must be a positive finite number")
 for (let i = 0; i < args.length; i++) {
-  if (["--worker", "--timeout-seconds", "--output"].includes(args[i])) i++
+  if (
+    [
+      "--worker",
+      "--timeout-seconds",
+      "--output",
+      "--solver",
+      "--artifacts",
+    ].includes(args[i])
+  )
+    i++
   else if (args[i] !== "--require-all-solved")
     throw Error(`Unknown option: ${args[i]}`)
 }
@@ -25,6 +39,7 @@ type SampleName = (typeof am3352SamplePlacements)[number]["name"]
 type ValidationReport = Awaited<ReturnType<typeof validateAm3352Sample>>
 type BenchmarkStatus = "solved" | "failed" | "timed_out" | "validation_failed"
 interface BenchmarkReport {
+  solver: string
   sample: SampleName
   cpu: { x: number; y: number }
   ram: { x: number; y: number }
@@ -63,6 +78,9 @@ if (!workerName) {
         import.meta.path,
         "--worker",
         placement.name,
+        "--solver",
+        solverName,
+        ...(artifactDirectory ? ["--artifacts", artifactDirectory] : []),
         "--timeout-seconds",
         String(timeoutSeconds),
       ],
@@ -89,6 +107,7 @@ if (!workerName) {
       error: string,
       status: BenchmarkStatus = "validation_failed",
     ): BenchmarkReport => ({
+      solver: solverName,
       sample: placement.name,
       cpu: { x: 0, y: 0 },
       ram: placement.ram,
@@ -152,6 +171,7 @@ if (!workerName) {
 
 const start = performance.now()
 let report: BenchmarkReport = {
+  solver: solverName,
   sample: placement!.name,
   cpu: { x: 0, y: 0 },
   ram: placement!.ram,
@@ -179,7 +199,10 @@ try {
     throw Error("Pre-dogboned power copper failed DRC")
   const before = JSON.stringify(input)
   const fixedBefore = JSON.stringify(input.traces ?? [])
-  const solver = new BusLanesPipelineSolver(input)
+  const solver =
+    solverName === "hypergraph"
+      ? new HypergraphBusLanesSolver(input)
+      : new BusLanesPipelineSolver(input)
   const solveStart = performance.now()
   while (!solver.solved && !solver.failed) {
     if (performance.now() - solveStart >= timeoutSeconds * 1000) break
@@ -214,6 +237,8 @@ try {
       throw Error("Output changed immutable power dogbones")
     report.solved = report.validation.valid
     report.status = report.solved ? "solved" : "validation_failed"
+    if (report.solved && artifactDirectory)
+      await exportAm3352Solution(artifactDirectory, solver, metadata)
     report.error = report.solved
       ? null
       : "Completed routing failed connectivity, DRC, or matching validation"

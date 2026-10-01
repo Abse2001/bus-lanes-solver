@@ -329,7 +329,11 @@ export async function loadAm3352Sample(name: Am3352SampleName) {
   const ramPorts = new Set(
     input.obstacles
       .filter((o) => o.componentId === ownership.components.ram.componentId)
-      .flatMap((o) => o.connectedTo),
+      .map(
+        (o) =>
+          (o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } })
+            .circuitJsonMetadata.pcb_port_id,
+      ),
   )
   for (const obstacle of input.obstacles)
     if (obstacle.componentId === ownership.components.ram.componentId)

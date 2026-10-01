@@ -28,6 +28,40 @@ const routed = solver.getOutput()
 
 Each connection must have exactly two terminals on the same fixed layer. The solver never emits vias, changes terminal layers, or falls back to a multilayer router. Existing copper and obstacles remain fixed. Geometric winding sweeps, seam rotations and reverse searches choose lane order; planar congestion, crossed lane orders, unsupported constraints, and exhausted search budgets produce explicit failures. A bounded visibility-graph search failure is not a proof that no continuous planar solution exists.
 
+## Hypergraph initial-routing variant
+
+`HypergraphBusLanesSolver` plans the initial routes as a conflict-constrained
+hypergraph cover, then opens tuning corridors and matches total pad-to-pad copper
+lengths. It first reserves matched bus corridors, then retries with buses and
+controls planned together when necessary. Fixed power copper stays immutable;
+only local signal dogbone vias are added.
+
+```ts
+import { HypergraphBusLanesSolver } from "@tscircuit/bus-lanes-solver"
+
+const solver = new HypergraphBusLanesSolver(simpleRouteJson)
+solver.solve()
+if (!solver.solved) throw new Error(solver.error ?? "Routing failed")
+const routed = solver.getOutput()
+```
+
+Run the four power-inclusive PR #10 placements with the strict completion gate:
+
+```sh
+./benchmark.sh --solver hypergraph --require-all-solved \
+  --timeout-seconds 600 --output benchmark-hypergraph-results.json \
+  --artifacts docs/hypergraph-am3352
+```
+
+The variant keeps differential pairs atomic during candidate selection and
+matches their declared total lengths. A pair with `maxUncoupledLength` uses the
+coupled-corridor router and must pass that bound. Without that field, including
+in these four samples, the variant permits separated pair conductors; it does
+not promise the original reference's additional pair-shape quality limits.
+The existing solver remains the default.
+
+See [algorithm, fixture correction and results](docs/hypergraph-routing.md).
+
 ## Review target
 
 The integrated preset routes the original TSX from the
@@ -80,7 +114,7 @@ The main review path is:
 - `buses[].maxLengthSkew`: maximum difference in total planar copper lengths, in millimeters, including fixed traces associated by `source_trace_id` or `connection_name`. The solver adds clearance-checked tuning detours and verifies the final result.
 - `buses[].traceWidth`: explicit width in millimeters; otherwise uses connection `nominalTraceWidth` / `width`, then `minTraceWidth`.
 - `buses[].allowedLayers`: must contain the fixed terminal layer.
-- `differentialPairs[].lengthTolerance`: supported as a routed-length constraint. Pairs with `traceGap` use a shared corridor. An explicit `maxUncoupledLength` bounds total uncoupled copper, including fixed fanouts.
+- `differentialPairs[].lengthTolerance`: supported as a routed-length constraint. The default solver routes pairs with `traceGap` through a shared corridor. An explicit `maxUncoupledLength` bounds total uncoupled copper, including fixed fanouts.
 
 Matching includes both fixed fanouts and the routes produced by this phase. It measures XY copper length; via depth, layer-dependent propagation velocity, and package delays are not inferred. No impedance or delay defaults are supplied. Matching uses the existing core SRJ fields: bus `maxLengthSkew` and differential-pair `lengthTolerance` (mapped from the JSX pair’s `maxLengthSkew`). Routes already inside the bound remain untuned; shorter routes grow only to the permitted lower bound. Overlapping bus and pair constraints are resolved together without forcing exact equality.
 
