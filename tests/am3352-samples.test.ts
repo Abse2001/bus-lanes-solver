@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import {
   am3352SamplePlacements,
+  loadAm3352NativeInput,
   loadAm3352Sample,
 } from "../scripts/am3352-samples"
 import { validateAm3352Sample } from "../scripts/validate-am3352-sample"
@@ -19,7 +20,11 @@ test("the four AM3352 samples translate only RAM and retain every real power dog
   const ramPorts = new Set(
     control.input.obstacles
       .filter((o) => o.componentId === ramComponentId)
-      .flatMap((o) => o.connectedTo),
+      .map(
+        (o) =>
+          (o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } })
+            .circuitJsonMetadata.pcb_port_id,
+      ),
   )
   for (const placement of am3352SamplePlacements) {
     const { input, metadata } = await loadAm3352Sample(placement.name)
@@ -74,6 +79,65 @@ test("the four AM3352 samples translate only RAM and retain every real power dog
     expect(audit.fixedPowerPadJoins).toBe(161)
     expect(audit.fixedDrc.issues).toEqual([])
     expect(JSON.stringify({ input, metadata })).toBe(before)
+  }
+})
+
+test("moving RAM translates only its physical terminals, including the clock's shared-net CPU pad", async () => {
+  const native = await loadAm3352NativeInput()
+  const { metadata } = await loadAm3352Sample("control")
+  const ramComponentId = metadata.powerPadManifest.find(
+    (p) => p.component === "ram",
+  )!.componentId
+  const ramPorts = new Set(
+    native.obstacles
+      .filter((o) => o.componentId === ramComponentId)
+      .map(
+        (o) =>
+          (o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } })
+            .circuitJsonMetadata.pcb_port_id,
+      ),
+  )
+  const cpuPorts = new Set(
+    native.obstacles
+      .filter((o) => o.componentId !== ramComponentId)
+      .map(
+        (o) =>
+          (o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } })
+            .circuitJsonMetadata.pcb_port_id,
+      ),
+  )
+  for (const placement of am3352SamplePlacements) {
+    const { input, metadata } = await loadAm3352Sample(placement.name)
+    let cpuTerminals = 0,
+      ramTerminals = 0
+    for (const [i, connection] of input.connections.entries()) {
+      for (const [j, point] of connection.pointsToConnect.entries()) {
+        const original = native.connections[i].pointsToConnect[j]
+        const port = original.pcb_port_id ?? original.pointId ?? ""
+        if (cpuPorts.has(port)) {
+          expect(point).toEqual(original)
+          cpuTerminals++
+        } else {
+          expect(ramPorts.has(port)).toBe(true)
+          expect(point).toEqual({
+            ...original,
+            x: original.x + placement.ram.x,
+            y: original.y + (placement.ram.y + 27),
+          })
+          ramTerminals++
+        }
+      }
+    }
+    expect(cpuTerminals).toBe(47)
+    expect(ramTerminals).toBe(47)
+    expect(
+      input.connections.find((c) => c.name === "source_trace_15")!
+        .pointsToConnect[0],
+    ).toEqual(
+      native.connections.find((c) => c.name === "source_trace_15")!
+        .pointsToConnect[0],
+    )
+    expect((await validateAm3352Sample(input, metadata)).valid).toBe(true)
   }
 })
 

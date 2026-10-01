@@ -139,7 +139,12 @@ export async function validateAm3352Sample(
   const ramPorts = new Set(
     native.obstacles
       .filter((o) => o.componentId === ramComponentId)
-      .flatMap((o) => o.connectedTo),
+      .map((o) => {
+        const port = (
+          o as typeof o & { circuitJsonMetadata: { pcb_port_id: string } }
+        ).circuitJsonMetadata?.pcb_port_id
+        return port ?? fail("RAM pad is missing its native port identity")
+      }),
   )
   const translatedConnections = native.connections.map((c) => ({
     ...c,
