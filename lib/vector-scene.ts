@@ -1,4 +1,10 @@
-import { distance, segmentDistance } from "./geometry"
+import { CopperIndex } from "./copper-index"
+import {
+  distance,
+  segmentDistance,
+  pointSegmentDistance,
+  pointSegmentDistanceToPoints,
+} from "./geometry"
 import type { Point, SimpleRouteJson, Connection, Trace } from "./types"
 export interface Copper {
   a: Point
@@ -104,7 +110,17 @@ const intersectsRect = (a: Point, b: Point, r: NonNullable<Copper["rect"]>) => {
   return true
 }
 export function clearanceToCopper(a: Point, b: Point, c: Copper) {
-  if (!c.rect) return segmentDistance([a, b], [c.a, c.b]) - c.radius
+  if (!c.rect) {
+    // Raster occupancy asks about points, and circular pads/vias have a
+    // zero-length centerline. Avoid four equivalent segment projections.
+    if (a.x === b.x && a.y === b.y) {
+      if (c.a.x === c.b.x && c.a.y === c.b.y) return distance(a, c.a) - c.radius
+      return pointSegmentDistance(a, [c.a, c.b]) - c.radius
+    }
+    if (c.a.x === c.b.x && c.a.y === c.b.y)
+      return pointSegmentDistance(c.a, [a, b]) - c.radius
+    return segmentDistance([a, b], [c.a, c.b]) - c.radius
+  }
   const r = c.rect
   if (intersectsRect(a, b, r)) return 0
   const corners = [
@@ -119,9 +135,42 @@ export function clearanceToCopper(a: Point, b: Point, c: Copper) {
     ),
   )
 }
+/** Predicate equivalent to clearanceToCopper(a, b, c) < margin. Stop after
+ * the first colliding projection; retain the same sqrt/subtraction arithmetic. */
+export function copperTooClose(a: Point, b: Point, c: Copper, margin: number) {
+  if (c.rect) return clearanceToCopper(a, b, c) < margin
+  const u = c.a,
+    v = c.b,
+    radius = c.radius
+  if (u.x === v.x && u.y === v.y)
+    return pointSegmentDistanceToPoints(u, a, b) - radius < margin
+  if (a.x === b.x && a.y === b.y)
+    return pointSegmentDistanceToPoints(a, u, v) - radius < margin
+  if (
+    Math.max(a.x, b.x) >= Math.min(u.x, v.x) &&
+    Math.max(u.x, v.x) >= Math.min(a.x, b.x) &&
+    Math.max(a.y, b.y) >= Math.min(u.y, v.y) &&
+    Math.max(u.y, v.y) >= Math.min(a.y, b.y) &&
+    ((b.x - a.x) * (u.y - a.y) - (b.y - a.y) * (u.x - a.x)) *
+      ((b.x - a.x) * (v.y - a.y) - (b.y - a.y) * (v.x - a.x)) <=
+      0 &&
+    ((v.x - u.x) * (a.y - u.y) - (v.y - u.y) * (a.x - u.x)) *
+      ((v.x - u.x) * (b.y - u.y) - (v.y - u.y) * (b.x - u.x)) <=
+      0
+  )
+    return -radius < margin
+  return (
+    pointSegmentDistanceToPoints(a, u, v) - radius < margin ||
+    pointSegmentDistanceToPoints(b, u, v) - radius < margin ||
+    pointSegmentDistanceToPoints(u, a, b) - radius < margin ||
+    pointSegmentDistanceToPoints(v, a, b) - radius < margin
+  )
+}
 /** Continuous board-world geometry in mm. Bounds checks and segment/capsule
  * predicates are exact; no coordinate quantization or raster cells are used. */
 export class VectorScene {
+  private visibleCalls = 0
+  private copperIndex?: CopperIndex
   readonly copper: Copper[]
   readonly owners: Set<string>
   readonly margin: number
@@ -167,6 +216,12 @@ export class VectorScene {
       maxX = Math.max(a.x, b.x) + this.margin,
       minY = Math.min(a.y, b.y) - this.margin,
       maxY = Math.max(a.y, b.y) + this.margin
+    if (++this.visibleCalls === 16)
+      this.copperIndex = new CopperIndex(this.copper)
+    if (this.copperIndex)
+      return !this.copperIndex.some({ minX, maxX, minY, maxY }, (c) =>
+        copperTooClose(a, b, c, this.margin - 1e-8),
+      )
     for (const c of this.copper) {
       const r = c.rect ?? {
         minX: Math.min(c.a.x, c.b.x) - c.radius,
@@ -176,7 +231,7 @@ export class VectorScene {
       }
       if (r.minX > maxX || r.maxX < minX || r.minY > maxY || r.maxY < minY)
         continue
-      if (clearanceToCopper(a, b, c) < this.margin - 1e-8) return false
+      if (copperTooClose(a, b, c, this.margin - 1e-8)) return false
     }
     return true
   }

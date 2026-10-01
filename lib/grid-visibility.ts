@@ -1,13 +1,116 @@
 import type { Point, SimpleRouteJson } from "./types"
-import { MinHeap } from "./min-heap"
+import { GridHeap } from "./grid-heap"
 import { distance, length, simplify, segmentDistance } from "./geometry"
 import {
   VectorScene,
   clearanceToCopper,
+  copperTooClose,
   fixedCopper,
   type Copper,
 } from "./vector-scene"
 import { connectors } from "./vector-visibility"
+
+class CopperBuckets {
+  private buckets = new Map<number, CopperEntry[]>()
+  readonly minX: number
+  readonly minY: number
+  readonly maxX: number
+  readonly maxY: number
+  readonly width: number
+  constructor(bounds: SimpleRouteJson["bounds"]) {
+    this.minX = Math.floor(bounds.minX)
+    this.minY = Math.floor(bounds.minY)
+    this.maxX = Math.ceil(bounds.maxX) + 1
+    this.maxY = Math.ceil(bounds.maxY) + 1
+    this.width = this.maxX - this.minX + 1
+  }
+  add(x: number, y: number, entry: CopperEntry) {
+    if (x < this.minX || x > this.maxX || y < this.minY || y > this.maxY) return
+    const key = x - this.minX + (y - this.minY) * this.width
+    let bucket = this.buckets.get(key)
+    if (!bucket) this.buckets.set(key, (bucket = []))
+    if (bucket.at(-1) !== entry) bucket.push(entry)
+  }
+  addCopper(entry: CopperEntry, margin: number) {
+    const c = entry.copper
+    const box = (minX: number, maxX: number, minY: number, maxY: number) => {
+      for (let x = Math.floor(minX); x <= Math.floor(maxX); x++)
+        for (let y = Math.floor(minY); y <= Math.floor(maxY); y++)
+          this.add(x, y, entry)
+    }
+    if (c.rect) {
+      box(entry.minX, entry.maxX, entry.minY, entry.maxY)
+      return
+    }
+    const dx = c.b.x - c.a.x,
+      dy = c.b.y - c.a.y
+    const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))))
+    // Each segment point lies within half a sample interval on each axis.
+    // Expand by that interval and the copper clearance to cover the entire
+    // capsule, without filling a long diagonal's mostly empty bounding box.
+    const rx = c.radius + margin + Math.abs(dx) / (2 * steps) + 1e-9
+    const ry = c.radius + margin + Math.abs(dy) / (2 * steps) + 1e-9
+    for (let i = 0; i <= steps; i++) {
+      const x = c.a.x + (dx * i) / steps,
+        y = c.a.y + (dy * i) / steps
+      box(x - rx, x + rx, y - ry, y + ry)
+    }
+  }
+  get(x: number, y: number) {
+    if (x < this.minX || x > this.maxX || y < this.minY || y > this.maxY)
+      return undefined
+    return this.buckets.get(x - this.minX + (y - this.minY) * this.width)
+  }
+  values() {
+    return this.buckets.values()
+  }
+}
+
+interface CopperEntry {
+  copper: Copper
+  minX: number
+  maxX: number
+  minY: number
+  maxY: number
+}
+
+type Attachment = { id: number; path: Point[] }
+
+interface HardGrid {
+  attachments: Map<string, Attachment | undefined>
+  blocked: Uint8Array
+  edgeKnown: Uint8Array
+  edgeBlocked: Uint8Array
+  buckets: CopperBuckets
+  bytes: number
+}
+// Request-local memoization, never saved route geometry. A content key prevents
+// stale occupancy when negotiated copper changes; cap retained grids at 64 MiB.
+const hardGrids = new WeakMap<SimpleRouteJson, Map<string, HardGrid>>()
+const maxHardGridBytes = 64 * 1024 * 1024
+
+// Bounds include the routing clearance. They only reject distant geometry;
+// possible contacts still use the original continuous distance predicate.
+function copperEntry(copper: Copper, margin: number): CopperEntry {
+  const r = copper.rect ?? {
+    minX: Math.min(copper.a.x, copper.b.x) - copper.radius,
+    maxX: Math.max(copper.a.x, copper.b.x) + copper.radius,
+    minY: Math.min(copper.a.y, copper.b.y) - copper.radius,
+    maxY: Math.max(copper.a.y, copper.b.y) + copper.radius,
+  }
+  return {
+    copper: {
+      ...copper,
+      a: { ...copper.a },
+      b: { ...copper.b },
+      rect: copper.rect ? { ...copper.rect } : undefined,
+    },
+    minX: r.minX - margin,
+    maxX: r.maxX + margin,
+    minY: r.minY - margin,
+    maxY: r.maxY + margin,
+  }
+}
 
 // The reference searches a compact rectangle around the packages. Derive that
 // rectangle from this layer's copper and terminals, leaving one lane pitch per
@@ -74,7 +177,16 @@ export class GridVisibilitySearch {
   failed = false
   solved = false
   result: Point[] = []
-  private heap = new MinHeap<{ id: number; g: number; f: number }>()
+  private heap: GridHeap
+  private neighbors: Array<{
+    dx: number
+    dy: number
+    offset: number
+    cost: number
+    bit: number
+    reverse: number
+    diagonal: boolean
+  }>
   private travel?: Float64Array
   private maxLength = Infinity
   private best: Float64Array
@@ -84,14 +196,20 @@ export class GridVisibilitySearch {
   private ny: number
   private stepSize: number
   private softMargin: number
-  private softBuckets = new Map<string, Copper[]>()
+  private softBuckets: CopperBuckets
   private softEdgeKnown: Uint8Array
   private softEdgeBlocked: Uint8Array
-  private copperBuckets = new Map<string, Copper[]>()
+  private hardEdgeKnown: Uint8Array
+  private hardEdgeBlocked: Uint8Array
+  private copperBuckets: CopperBuckets
   private goal = -1
   private startPath: Point[] = []
   private endPath: Point[] = []
   private origin: Point
+  private xs: Float64Array
+  private ys: Float64Array
+  private hx: Float64Array
+  private hy: Float64Array
   constructor(
     readonly scene: VectorScene,
     readonly start: Point,
@@ -119,109 +237,176 @@ export class GridVisibilitySearch {
       grid?.bounds ??
       (packageGrid ? routingBounds(scene, this.stepSize) : scene.input.bounds)
     this.origin = { x: b.minX, y: b.minY }
+    this.softBuckets = new CopperBuckets(b)
+    this.copperBuckets = new CopperBuckets(b)
     this.nx = Math.ceil((b.maxX - b.minX) / this.stepSize) + 1
     this.ny = Math.ceil((b.maxY - b.minY) / this.stepSize) + 1
+    this.neighbors = []
+    for (let dy = -1; dy <= 1; dy++)
+      for (let dx = -1; dx <= 1; dx++) {
+        if (!(dx || dy)) continue
+        const direction = (dy + 1) * 3 + dx + 1
+        const index = direction > 4 ? direction - 1 : direction
+        this.neighbors.push({
+          dx,
+          dy,
+          offset: dx + dy * this.nx,
+          diagonal: !!(dx && dy),
+          cost: dx && dy ? Math.SQRT2 : 1,
+          bit: 1 << index,
+          reverse: 1 << (7 - index),
+        })
+      }
+    this.xs = Float64Array.from(
+      { length: this.nx },
+      (_, x) => this.origin.x + x * this.stepSize,
+    )
+    this.ys = Float64Array.from(
+      { length: this.ny },
+      (_, y) => this.origin.y + y * this.stepSize,
+    )
+    this.hx = this.xs.map((x) => Math.abs(x - this.end.x) / this.stepSize)
+    this.hy = this.ys.map((y) => Math.abs(y - this.end.y) / this.stepSize)
     const n = this.nx * this.ny
     if (n > 8_000_000) throw Error("Dense grid search budget exceeded")
+    this.heap = new GridHeap(n)
     this.softEdgeKnown = new Uint8Array(n)
     this.softEdgeBlocked = new Uint8Array(n)
-    this.blocked = new Uint8Array(n)
+    const grids = hardGrids.get(scene.input) ?? new Map<string, HardGrid>()
+    hardGrids.set(scene.input, grids)
+    const gridKey = JSON.stringify([
+      b.minX,
+      b.minY,
+      b.maxX,
+      b.maxY,
+      this.nx,
+      this.ny,
+      this.stepSize,
+      scene.margin,
+      scene.width,
+      scene.input.minBoardEdgeClearance,
+      scene.input.bounds,
+      scene.copper.map((c) => [c.a.x, c.a.y, c.b.x, c.b.y, c.radius, c.rect]),
+    ])
+    const cachedGrid = grids.get(gridKey)
+    const attachments =
+      cachedGrid?.attachments ?? new Map<string, Attachment | undefined>()
+    if (cachedGrid) {
+      grids.delete(gridKey)
+      grids.set(gridKey, cachedGrid)
+    }
+    this.blocked = cachedGrid?.blocked ?? new Uint8Array(n)
+    this.hardEdgeKnown = cachedGrid?.edgeKnown ?? new Uint8Array(n)
+    this.hardEdgeBlocked = cachedGrid?.edgeBlocked ?? new Uint8Array(n)
+    if (cachedGrid) this.copperBuckets = cachedGrid.buckets
     this.maxLength = grid?.maxLength ?? Infinity
     if (Number.isFinite(this.maxLength)) this.travel = new Float64Array(n)
     this.best = new Float64Array(n)
     this.best.fill(Infinity)
     this.parent = new Int32Array(n)
     this.parent.fill(-1)
-    const markBox = (
-      minX: number,
-      maxX: number,
-      minY: number,
-      maxY: number,
-      predicate: (p: Point) => boolean,
-    ) => {
-      for (
-        let y = Math.max(0, Math.floor((minY - b.minY) / this.stepSize));
-        y <= Math.min(this.ny - 1, Math.ceil((maxY - b.minY) / this.stepSize));
-        y++
-      )
-        for (
-          let x = Math.max(0, Math.floor((minX - b.minX) / this.stepSize));
-          x <=
-          Math.min(this.nx - 1, Math.ceil((maxX - b.minX) / this.stepSize));
-          x++
-        ) {
-          const id = x + y * this.nx
-          if (!this.blocked[id] && predicate(this.point(id)))
-            this.blocked[id] = 1
-        }
-    }
-    for (const copper of scene.copper) {
-      const r = scene.margin + copper.radius
-      const box = copper.rect ?? {
-        minX: Math.min(copper.a.x, copper.b.x),
-        maxX: Math.max(copper.a.x, copper.b.x),
-        minY: Math.min(copper.a.y, copper.b.y),
-        maxY: Math.max(copper.a.y, copper.b.y),
-      }
-      for (let x = Math.floor(box.minX - r); x <= Math.floor(box.maxX + r); x++)
-        for (
-          let y = Math.floor(box.minY - r);
-          y <= Math.floor(box.maxY + r);
-          y++
-        ) {
-          const key = `${x},${y}`,
-            items = this.copperBuckets.get(key) ?? []
-          items.push(copper)
-          this.copperBuckets.set(key, items)
-        }
-      if (copper.rect) {
-        const q = copper.rect
-        markBox(
-          q.minX - r,
-          q.maxX + r,
-          q.minY - r,
-          q.maxY + r,
-          (p) => clearanceToCopper(p, p, copper) < scene.margin - 1e-8,
+    if (!cachedGrid) {
+      // Adjacent samples of a long segment overlap. Test each cell at most
+      // once per copper item, including clear cells in its bounding halo.
+      const testedBy = new Uint32Array(n)
+      let copperStamp = 0
+      const markBox = (
+        minX: number,
+        maxX: number,
+        minY: number,
+        maxY: number,
+        copper: Copper,
+      ) => {
+        const loX = Math.max(0, Math.floor((minX - b.minX) / this.stepSize))
+        const hiX = Math.min(
+          this.nx - 1,
+          Math.ceil((maxX - b.minX) / this.stepSize),
         )
-        continue
-      }
-      const span = distance(copper.a, copper.b),
-        steps = Math.max(1, Math.ceil(span / this.stepSize))
-      for (let i = 0; i <= steps; i++) {
-        const p = {
-          x: copper.a.x + ((copper.b.x - copper.a.x) * i) / steps,
-          y: copper.a.y + ((copper.b.y - copper.a.y) * i) / steps,
-        }
-        markBox(
-          p.x - r,
-          p.x + r,
-          p.y - r,
-          p.y + r,
-          (q) => clearanceToCopper(q, q, copper) < scene.margin - 1e-8,
+        const loY = Math.max(0, Math.floor((minY - b.minY) / this.stepSize))
+        const hiY = Math.min(
+          this.ny - 1,
+          Math.ceil((maxY - b.minY) / this.stepSize),
         )
+        const circle =
+          !copper.rect && copper.a.x === copper.b.x && copper.a.y === copper.b.y
+        const threshold = scene.margin - 1e-8
+        for (let y = loY; y <= hiY; y++) {
+          const py = this.ys[y],
+            dy = py - copper.a.y
+          const row = y * this.nx
+          for (let x = loX; x <= hiX; x++) {
+            const id = x + row
+            if (this.blocked[id] || testedBy[id] === copperStamp) continue
+            testedBy[id] = copperStamp
+            if (circle) {
+              const dx = this.xs[x] - copper.a.x
+              if (Math.sqrt(dx * dx + dy * dy) - copper.radius < threshold)
+                this.blocked[id] = 1
+            } else {
+              const p = { x: this.xs[x], y: py }
+              if (clearanceToCopper(p, p, copper) < threshold)
+                this.blocked[id] = 1
+            }
+          }
+        }
+      }
+      for (const copper of scene.copper) {
+        copperStamp++
+        const entry = copperEntry(copper, scene.margin)
+        const r = scene.margin + copper.radius
+        this.copperBuckets.addCopper(entry, scene.margin)
+        if (copper.rect) {
+          const q = copper.rect
+          markBox(q.minX - r, q.maxX + r, q.minY - r, q.maxY + r, copper)
+          continue
+        }
+        const span = distance(copper.a, copper.b),
+          steps = Math.max(1, Math.ceil(span / this.stepSize))
+        for (let i = 0; i <= steps; i++) {
+          const p = {
+            x: copper.a.x + ((copper.b.x - copper.a.x) * i) / steps,
+            y: copper.a.y + ((copper.b.y - copper.a.y) * i) / steps,
+          }
+          markBox(p.x - r, p.x + r, p.y - r, p.y + r, copper)
+        }
+      }
+      const bytes =
+        n * 3 +
+        gridKey.length * 2 +
+        [...this.copperBuckets.values()].reduce(
+          (sum, bucket) => sum + bucket.length * 8 + 64,
+          0,
+        ) +
+        scene.copper.length * 80
+      if (bytes <= maxHardGridBytes) {
+        let retained = [...grids.values()].reduce(
+          (sum, value) => sum + value.bytes,
+          0,
+        )
+        while (retained + bytes > maxHardGridBytes && grids.size) {
+          const oldest = grids.keys().next().value!
+          retained -= grids.get(oldest)!.bytes
+          grids.delete(oldest)
+        }
+        grids.set(gridKey, {
+          attachments,
+          blocked: this.blocked,
+          edgeKnown: this.hardEdgeKnown,
+          edgeBlocked: this.hardEdgeBlocked,
+          buckets: this.copperBuckets,
+          bytes,
+        })
       }
     }
     for (const copper of softCopper.filter(
       (c) => c.layer === scene.connection.pointsToConnect[0].layer,
     )) {
-      const radius = this.softMargin + copper.radius
-      for (
-        let x = Math.floor(Math.min(copper.a.x, copper.b.x) - radius);
-        x <= Math.floor(Math.max(copper.a.x, copper.b.x) + radius);
-        x++
-      )
-        for (
-          let y = Math.floor(Math.min(copper.a.y, copper.b.y) - radius);
-          y <= Math.floor(Math.max(copper.a.y, copper.b.y) + radius);
-          y++
-        ) {
-          const key = `${x},${y}`,
-            items = this.softBuckets.get(key) ?? []
-          items.push(copper)
-          this.softBuckets.set(key, items)
-        }
+      const entry = copperEntry(copper, this.softMargin)
+      this.softBuckets.addCopper(entry, this.softMargin)
     }
-    const attach = (p: Point) => {
+    const attach = (p: Point): Attachment | undefined => {
+      const key = JSON.stringify(p)
+      if (attachments.has(key)) return structuredClone(attachments.get(key))
       const x = Math.round((p.x - b.minX) / this.stepSize),
         y = Math.round((p.y - b.minY) / this.stepSize)
       const candidates: Array<{ id: number; path: Point[] }> = []
@@ -242,7 +427,13 @@ export class GridVisibilitySearch {
               break
             }
         }
-      return candidates.sort((a, b) => length(a.path) - length(b.path))[0]
+      const result = candidates.sort(
+        (a, b) => length(a.path) - length(b.path),
+      )[0]
+      if (attachments.size >= 128)
+        attachments.delete(attachments.keys().next().value!)
+      attachments.set(key, structuredClone(result))
+      return result
     }
     const a = attach(start),
       z = attach(end)
@@ -255,7 +446,7 @@ export class GridVisibilitySearch {
     this.goal = z.id
     this.best[a.id] = 0
     if (this.travel) this.travel[a.id] = length(a.path)
-    this.heap.push({ id: a.id, g: 0, f: this.heuristic(start) })
+    this.heap.push(a.id, 0, this.heuristic(start))
   }
   get cellCount() {
     return this.nx * this.ny
@@ -315,28 +506,33 @@ export class GridVisibilitySearch {
   }
   private point(id: number): Point {
     return {
-      x: this.origin.x + (id % this.nx) * this.stepSize,
-      y: this.origin.y + Math.floor(id / this.nx) * this.stepSize,
+      x: this.xs[id % this.nx],
+      y: this.ys[Math.floor(id / this.nx)],
     }
   }
   private edgeClear(
     from: Point,
     to: Point,
-    buckets: Map<string, Copper[]>,
+    buckets: CopperBuckets,
     margin = this.scene.margin,
   ): boolean {
-    for (
-      let x = Math.floor(Math.min(from.x, to.x));
-      x <= Math.floor(Math.max(from.x, to.x));
-      x++
-    )
-      for (
-        let y = Math.floor(Math.min(from.y, to.y));
-        y <= Math.floor(Math.max(from.y, to.y));
-        y++
-      )
-        for (const copper of buckets.get(`${x},${y}`) ?? [])
-          if (clearanceToCopper(from, to, copper) < margin - 1e-8) return false
+    const minX = Math.min(from.x, to.x),
+      maxX = Math.max(from.x, to.x)
+    const minY = Math.min(from.y, to.y),
+      maxY = Math.max(from.y, to.y)
+    for (let x = Math.floor(minX); x <= Math.floor(maxX); x++)
+      for (let y = Math.floor(minY); y <= Math.floor(maxY); y++)
+        for (const entry of buckets.get(x, y) ?? []) {
+          if (
+            entry.minX > maxX ||
+            entry.maxX < minX ||
+            entry.minY > maxY ||
+            entry.maxY < minY
+          )
+            continue
+          if (copperTooClose(from, to, entry.copper, margin - 1e-8))
+            return false
+        }
     return true
   }
   private heuristic(point: Point) {
@@ -345,25 +541,57 @@ export class GridVisibilitySearch {
     return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)
   }
   step() {
+    const {
+      heap,
+      best,
+      parent,
+      blocked,
+      nx,
+      ny,
+      xs,
+      ys,
+      hx,
+      hy,
+      history,
+      travel,
+      stepSize,
+      maxLength,
+      penalty,
+      softEdgeKnown,
+      softEdgeBlocked,
+      hardEdgeKnown,
+      hardEdgeBlocked,
+      softBuckets,
+      copperBuckets,
+      softMargin,
+    } = this
+    const bounds = this.scene.input.bounds
+    const edge =
+      this.scene.width / 2 + (this.scene.input.minBoardEdgeClearance ?? 0)
+    const minX = bounds.minX + edge,
+      maxX = bounds.maxX - edge
+    const minY = bounds.minY + edge,
+      maxY = bounds.maxY - edge
     for (let batch = 0; batch < 500 && !this.failed && !this.solved; batch++) {
-      if (!this.heap.length) {
+      if (!heap.length) {
         this.failed = true
         return
       }
-      const cur = this.heap.pop()
-      if (cur.g !== this.best[cur.id]) continue
+      heap.pop()
+      const curId = heap.id,
+        curG = heap.g
+      if (curG !== best[curId]) continue
       this.expanded++
-      if (cur.id === this.goal) {
+      if (curId === this.goal) {
         const path: Point[] = []
-        for (let id = cur.id; id >= 0; id = this.parent[id])
-          path.push(this.point(id))
+        for (let id = curId; id >= 0; id = parent[id]) path.push(this.point(id))
         this.result = simplify([
           ...this.startPath,
           ...path.reverse().slice(1),
           ...this.endPath.slice(1),
         ])
         if (
-          length(this.result) > this.maxLength + 1e-8 ||
+          length(this.result) > maxLength + 1e-8 ||
           !this.scene.pathVisible(this.result)
         ) {
           this.failed = true
@@ -372,82 +600,75 @@ export class GridVisibilitySearch {
         this.solved = true
         return
       }
-      const x = cur.id % this.nx,
-        y = Math.floor(cur.id / this.nx)
-      for (let dy = -1; dy <= 1; dy++)
-        for (let dx = -1; dx <= 1; dx++) {
+      const x = curId % nx,
+        y = Math.floor(curId / nx)
+      let from: Point | undefined
+      for (const { dx, dy, offset, diagonal, cost, bit, reverse } of this
+        .neighbors) {
+        if (x + dx < 0 || x + dx >= nx || y + dy < 0 || y + dy >= ny) continue
+        const id = curId + offset
+        if (
+          blocked[id] ||
+          (diagonal && (blocked[curId + dx] || blocked[curId + dy * nx]))
+        )
+          continue
+        // With nonnegative occupancy cost, this is a lower bound on g.
+        // An edge that cannot improve the route needs no geometry checks.
+        // Keep the addition order used by g below to preserve tie decisions.
+        const minimumG = curG + cost + 0 + (history?.[id] ?? 0)
+        if (penalty >= 0 && minimumG >= best[id] - 1e-10) continue
+        const goalDx = hx[x + dx],
+          goalDy = hy[y + dy]
+        const heuristic =
+          Math.max(goalDx, goalDy) + (Math.SQRT2 - 1) * Math.min(goalDx, goalDy)
+        const travelled = (travel?.[curId] ?? 0) + cost * stepSize
+        if (travel && travelled + heuristic * stepSize > maxLength + 1e-8)
+          continue
+        const px = xs[x + dx],
+          py = ys[y + dy]
+        let point: Point | undefined
+        if (px < minX || px > maxX || py < minY || py > maxY) continue
+        // Penalize continuous edges, not just occupied vertices: diagonal
+        // crossings can occur between clear cells. Use physical clearance
+        // so tightly packed but legal parallel lanes remain available.
+        if (!(softEdgeKnown[curId] & bit)) {
+          softEdgeKnown[curId] |= bit
+          softEdgeKnown[id] |= reverse
           if (
-            !(dx || dy) ||
-            x + dx < 0 ||
-            x + dx >= this.nx ||
-            y + dy < 0 ||
-            y + dy >= this.ny
-          )
-            continue
-          const id = cur.id + dx + dy * this.nx
-          if (
-            this.blocked[id] ||
-            (dx &&
-              dy &&
-              (this.blocked[cur.id + dx] ||
-                this.blocked[cur.id + dy * this.nx]))
-          )
-            continue
-          // With nonnegative occupancy cost, this is a lower bound on g.
-          // An edge that cannot improve the route needs no geometry checks.
-          // Keep the addition order used by g below to preserve tie decisions.
-          const minimumG =
-            cur.g + (dx && dy ? Math.SQRT2 : 1) + 0 + (this.history?.[id] ?? 0)
-          if (this.penalty >= 0 && minimumG >= this.best[id] - 1e-10) continue
-          const point = this.point(id),
-            bounds = this.scene.input.bounds,
-            edge =
-              this.scene.width / 2 +
-              (this.scene.input.minBoardEdgeClearance ?? 0)
-          if (
-            point.x < bounds.minX + edge ||
-            point.x > bounds.maxX - edge ||
-            point.y < bounds.minY + edge ||
-            point.y > bounds.maxY - edge
-          )
-            continue
-          const from = this.point(cur.id)
-          // Penalize continuous edges, not just occupied vertices: diagonal
-          // crossings can occur between clear cells. Use physical clearance
-          // so tightly packed but legal parallel lanes remain available.
-          const direction = (dy + 1) * 3 + dx + 1
-          const bit = 1 << (direction > 4 ? direction - 1 : direction)
-          if (!(this.softEdgeKnown[cur.id] & bit)) {
-            this.softEdgeKnown[cur.id] |= bit
-            if (!this.edgeClear(from, point, this.softBuckets, this.softMargin))
-              this.softEdgeBlocked[cur.id] |= bit
+            !this.edgeClear(
+              (from ??= { x: xs[x], y: ys[y] }),
+              (point ??= { x: px, y: py }),
+              softBuckets,
+              softMargin,
+            )
+          ) {
+            softEdgeBlocked[curId] |= bit
+            softEdgeBlocked[id] |= reverse
           }
-          const softCost = this.softEdgeBlocked[cur.id] & bit ? this.penalty : 0
-          const travelled =
-            (this.travel?.[cur.id] ?? 0) +
-            (dx && dy ? Math.SQRT2 : 1) * this.stepSize
-          if (
-            this.travel &&
-            travelled + this.heuristic(point) * this.stepSize >
-              this.maxLength + 1e-8
-          )
-            continue
-          const g =
-            cur.g +
-            (dx && dy ? Math.SQRT2 : 1) +
-            softCost +
-            (this.history?.[id] ?? 0)
-          if (g >= this.best[id] - 1e-10) continue
-          if (!this.edgeClear(from, point, this.copperBuckets)) continue
-          this.best[id] = g
-          if (this.travel) this.travel[id] = travelled
-          this.parent[id] = cur.id
-          this.heap.push({
-            id,
-            g,
-            f: g + this.heuristic(point),
-          })
         }
+        const softCost = softEdgeBlocked[curId] & bit ? penalty : 0
+        const g = curG + cost + softCost + (history?.[id] ?? 0)
+        if (g >= best[id] - 1e-10) continue
+        if (!(hardEdgeKnown[curId] & bit)) {
+          hardEdgeKnown[curId] |= bit
+          hardEdgeKnown[id] |= reverse
+          if (
+            !this.edgeClear(
+              (from ??= { x: xs[x], y: ys[y] }),
+              (point ??= { x: px, y: py }),
+              copperBuckets,
+            )
+          ) {
+            hardEdgeBlocked[curId] |= bit
+            hardEdgeBlocked[id] |= reverse
+          }
+        }
+        if (hardEdgeBlocked[curId] & bit) continue
+        best[id] = g
+        if (travel) travel[id] = travelled
+        parent[id] = curId
+        heap.push(id, g, g + heuristic)
+      }
     }
   }
 }

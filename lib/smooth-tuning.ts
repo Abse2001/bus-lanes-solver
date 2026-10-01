@@ -117,42 +117,90 @@ export function roundedPairedLobes(
   if (deficit <= 0 || lobes < 1 || period < 4 * radius) return null
   const ux = (b.x - a.x) / span,
     uy = (b.y - a.y) / span
+  const samples = Math.max(
+    18,
+    Math.ceil((Math.PI * radius) / (2 * Math.max(0.005, minRadius / 6))),
+  )
+  const railCount = spacing === 0 ? 1 : 2
+  // Arc angles and offsets are invariant during the height bisection. Retain
+  // the original arithmetic order so the final sampled points are identical.
+  const templates: Array<{
+    px: number
+    sin: number
+    offsetY: number
+    raised: boolean
+    rail: number
+  }> = []
+  for (let l = 0; l < lobes; l++)
+    for (const [cx, raised, start, end] of [
+      [0, 0, -Math.PI / 2, 0],
+      [2 * radius, 1, Math.PI, Math.PI / 2],
+      [period - 2 * radius, 1, Math.PI / 2, 0],
+      [period, 0, Math.PI, Math.PI * 1.5],
+    ])
+      for (let i = 0; i <= samples; i++) {
+        const angle = start + ((end - start) * i) / samples,
+          direction = Math.sign(end - start)
+        const x = l * period + cx + radius * Math.cos(angle)
+        const tx = -Math.sin(angle) * direction,
+          ty = side * Math.cos(angle) * direction
+        for (let k = 0; k < railCount; k++) {
+          const offset = ((k === 0 ? 1 : -1) * spacing) / 2
+          templates.push({
+            px: x - ty * offset,
+            sin: radius * Math.sin(angle),
+            offsetY: tx * offset,
+            raised: !!raised,
+            rail: k,
+          })
+        }
+      }
   const generate = (height: number): [Point[], Point[]] => {
     const rails: [Point[], Point[]] = [[], []]
-    const samples = Math.max(
-      18,
-      Math.ceil((Math.PI * radius) / (2 * Math.max(0.005, minRadius / 6))),
-    )
-    for (let l = 0; l < lobes; l++)
-      for (const [cx, cy, start, end] of [
-        [0, radius, -Math.PI / 2, 0],
-        [2 * radius, height - radius, Math.PI, Math.PI / 2],
-        [period - 2 * radius, height - radius, Math.PI / 2, 0],
-        [period, radius, Math.PI, Math.PI * 1.5],
-      ])
-        for (let i = 0; i <= samples; i++) {
-          const angle = start + ((end - start) * i) / samples,
-            direction = Math.sign(end - start)
-          const x = l * period + cx + radius * Math.cos(angle),
-            y = side * (cy + radius * Math.sin(angle))
-          const tx = -Math.sin(angle) * direction,
-            ty = side * Math.cos(angle) * direction
-          for (let k = 0; k < 2; k++) {
-            const offset = ((k === 0 ? 1 : -1) * spacing) / 2
-            const px = x - ty * offset,
-              py = y + tx * offset
-            const point = {
-              x: a.x + ux * px - uy * py,
-              y: a.y + uy * px + ux * py,
-            }
-            if (!rails[k].length || distance(rails[k].at(-1)!, point) > 1e-10)
-              rails[k].push(point)
-          }
-        }
+    for (const t of templates) {
+      const cy = t.raised ? height - radius : radius
+      const py = side * (cy + t.sin) + t.offsetY
+      const point = {
+        x: a.x + ux * t.px - uy * py,
+        y: a.y + uy * t.px + ux * py,
+      }
+      const rail = rails[t.rail]
+      if (!rail.length || distance(rail.at(-1)!, point) > 1e-10)
+        rail.push(point)
+    }
+    if (railCount === 1) rails[1] = rails[0]
     return rails
   }
-  const added = (h: number) =>
-    Math.min(...generate(h).map((rail) => length(rail) - span))
+  const railTemplates = [
+    templates.filter((t) => t.rail === 0),
+    templates.filter((t) => t.rail === 1),
+  ]
+  const added = (height: number) => {
+    let shortest = Infinity
+    for (let k = 0; k < railCount; k++) {
+      let lastX = 0,
+        lastY = 0,
+        total = 0,
+        first = true
+      for (const t of railTemplates[k]) {
+        const cy = t.raised ? height - radius : radius
+        const py = side * (cy + t.sin) + t.offsetY
+        const x = a.x + ux * t.px - uy * py
+        const y = a.y + uy * t.px + ux * py
+        const dx = lastX - x,
+          dy = lastY - y
+        const d = Math.sqrt(dx * dx + dy * dy)
+        if (first || d > 1e-10) {
+          if (!first) total += d
+          lastX = x
+          lastY = y
+          first = false
+        }
+      }
+      shortest = Math.min(shortest, total - span)
+    }
+    return shortest
+  }
   let lo = 2 * radius,
     hi = lo + deficit / 2 + radius
   if (added(lo) > deficit + 1e-8) return null

@@ -236,7 +236,7 @@
     "attempts": 1,
     "routedLanes": 0,
     "solveMilliseconds": 1,
-    "milliseconds": 5
+    "milliseconds": 4
   },
   {
     "file": "tests/fixtures/ddr_left_io_right-raw.json",
@@ -714,7 +714,7 @@
     "attempts": 1,
     "routedLanes": 0,
     "solveMilliseconds": 1,
-    "milliseconds": 5
+    "milliseconds": 4
   },
   {
     "file": "tests/fixtures/ddr_top_io_bottom-raw.json",
@@ -953,7 +953,7 @@
     "attempts": 1,
     "routedLanes": 0,
     "solveMilliseconds": 1,
-    "milliseconds": 5
+    "milliseconds": 4
   },
   {
     "file": "tests/fixtures/two-fanouts/ddr_bottom_io_top.json",
@@ -974,26 +974,26 @@
       {
         "busId": "RAM_BYTE0",
         "toleranceMm": 0.1,
-        "skewMm": 0.10000000000002274,
+        "skewMm": 0.09999999999999432,
         "matched": true,
         "lengths": [
           {
             "name": "source_trace_0",
-            "carrierLengthMm": 31.68194854063,
+            "carrierLengthMm": 31.681948540629996,
             "fixedLengthMm": 41.05261776225553,
             "totalLengthMm": 72.73456630288553
           },
           {
             "name": "source_trace_1",
-            "carrierLengthMm": 31.963582382427916,
+            "carrierLengthMm": 31.963582382427912,
             "fixedLengthMm": 40.77098392045761,
             "totalLengthMm": 72.73456630288553
           },
           {
             "name": "source_trace_2",
-            "carrierLengthMm": 29.88928693310019,
+            "carrierLengthMm": 29.889286933100177,
             "fixedLengthMm": 42.845279369785345,
-            "totalLengthMm": 72.73456630288554
+            "totalLengthMm": 72.73456630288553
           },
           {
             "name": "source_trace_3",
@@ -1003,15 +1003,15 @@
           },
           {
             "name": "source_trace_4",
-            "carrierLengthMm": 30.784913186192803,
+            "carrierLengthMm": 30.784913186192828,
             "fixedLengthMm": 41.94965311669271,
-            "totalLengthMm": 72.73456630288551
+            "totalLengthMm": 72.73456630288554
           },
           {
             "name": "source_trace_5",
-            "carrierLengthMm": 31.559450707009415,
+            "carrierLengthMm": 31.55945070700944,
             "fixedLengthMm": 41.17511559587608,
-            "totalLengthMm": 72.7345663028855
+            "totalLengthMm": 72.73456630288553
           },
           {
             "name": "source_trace_6",
@@ -1027,19 +1027,19 @@
           },
           {
             "name": "source_trace_22",
-            "carrierLengthMm": 33.47840561024203,
+            "carrierLengthMm": 33.47840561024201,
             "fixedLengthMm": 39.256160692643526,
-            "totalLengthMm": 72.73456630288555
+            "totalLengthMm": 72.73456630288553
           },
           {
             "name": "source_trace_24",
-            "carrierLengthMm": 33.175125671753406,
+            "carrierLengthMm": 33.17512567175343,
             "fixedLengthMm": 39.559440631132105,
-            "totalLengthMm": 72.73456630288551
+            "totalLengthMm": 72.73456630288553
           },
           {
             "name": "source_trace_25",
-            "carrierLengthMm": 31.095089958378722,
+            "carrierLengthMm": 31.095089958378725,
             "fixedLengthMm": 41.6394763445068,
             "totalLengthMm": 72.73456630288553
           }
@@ -1048,7 +1048,7 @@
       {
         "busId": "RAM_BYTE1",
         "toleranceMm": 0.1,
-        "skewMm": 0.10000000000000853,
+        "skewMm": 0.10000000000002274,
         "matched": true,
         "lengths": [
           {
@@ -1065,9 +1065,9 @@
           },
           {
             "name": "source_trace_10",
-            "carrierLengthMm": 35.32909568520904,
+            "carrierLengthMm": 35.329095685209005,
             "fixedLengthMm": 35.240180895179066,
-            "totalLengthMm": 70.5692765803881
+            "totalLengthMm": 70.56927658038808
           },
           {
             "name": "source_trace_11",
@@ -1101,9 +1101,9 @@
           },
           {
             "name": "source_trace_23",
-            "carrierLengthMm": 35.939388263036825,
+            "carrierLengthMm": 35.93938826303682,
             "fixedLengthMm": 34.62988831735132,
-            "totalLengthMm": 70.56927658038815
+            "totalLengthMm": 70.56927658038813
           },
           {
             "name": "source_trace_26",
@@ -1113,16 +1113,16 @@
           },
           {
             "name": "source_trace_27",
-            "carrierLengthMm": 28.698671457471722,
+            "carrierLengthMm": 28.698671457471725,
             "fixedLengthMm": 41.87060512291637,
-            "totalLengthMm": 70.56927658038809
+            "totalLengthMm": 70.5692765803881
           }
         ]
       },
       {
         "busId": "RAM_CA",
         "toleranceMm": 0.1,
-        "skewMm": 0.09999999999999432,
+        "skewMm": 0.10000000000000853,
         "matched": true,
         "lengths": [
           {
@@ -1151,9 +1151,9 @@
           },
           {
             "name": "source_trace_20",
-            "carrierLengthMm": 34.69323768708507,
+            "carrierLengthMm": 34.693237687085016,
             "fixedLengthMm": 41.46798789427899,
-            "totalLengthMm": 76.16122558136406
+            "totalLengthMm": 76.16122558136401
           },
           {
             "name": "source_trace_21",
@@ -1163,9 +1163,9 @@
           },
           {
             "name": "source_trace_28",
-            "carrierLengthMm": 34.997905806507625,
+            "carrierLengthMm": 34.9979058065076,
             "fixedLengthMm": 41.163319774856404,
-            "totalLengthMm": 76.16122558136402
+            "totalLengthMm": 76.16122558136401
           },
           {
             "name": "source_trace_29",
@@ -1175,7 +1175,7 @@
           },
           {
             "name": "source_trace_30",
-            "carrierLengthMm": 27.57314787799652,
+            "carrierLengthMm": 27.57314787799651,
             "fixedLengthMm": 48.5880777033675,
             "totalLengthMm": 76.16122558136402
           },
@@ -1199,11 +1199,11 @@
     "solved": true,
     "failureCode": null,
     "error": null,
-    "iterations": 111,
+    "iterations": 109,
     "attempts": 1,
     "routedLanes": 33,
-    "solveMilliseconds": 306,
-    "milliseconds": 379
+    "solveMilliseconds": 196,
+    "milliseconds": 269
   },
   {
     "file": "tests/fixtures/two-fanouts/ddr_left_io_right.json",
@@ -1224,7 +1224,7 @@
       {
         "busId": "RAM_BYTE0",
         "toleranceMm": 0.1,
-        "skewMm": 0.10000000000000853,
+        "skewMm": 0.10000000000001563,
         "matched": true,
         "lengths": [
           {
@@ -1235,45 +1235,45 @@
           },
           {
             "name": "source_trace_1",
-            "carrierLengthMm": 27.575506425852357,
+            "carrierLengthMm": 27.575506425852332,
             "fixedLengthMm": 32.04464878393381,
-            "totalLengthMm": 59.62015520978616
+            "totalLengthMm": 59.62015520978614
           },
           {
             "name": "source_trace_2",
-            "carrierLengthMm": 26.959435126006536,
+            "carrierLengthMm": 26.959435126006525,
             "fixedLengthMm": 32.66072008377962,
-            "totalLengthMm": 59.62015520978616
-          },
-          {
-            "name": "source_trace_3",
-            "carrierLengthMm": 26.640805975905028,
-            "fixedLengthMm": 32.97934923388113,
-            "totalLengthMm": 59.62015520978616
-          },
-          {
-            "name": "source_trace_4",
-            "carrierLengthMm": 21.557805358372296,
-            "fixedLengthMm": 38.062349851413856,
             "totalLengthMm": 59.62015520978615
           },
           {
-            "name": "source_trace_5",
-            "carrierLengthMm": 23.812764726055384,
-            "fixedLengthMm": 35.80739048373077,
+            "name": "source_trace_3",
+            "carrierLengthMm": 26.640805975905025,
+            "fixedLengthMm": 32.97934923388113,
             "totalLengthMm": 59.620155209786155
           },
           {
+            "name": "source_trace_4",
+            "carrierLengthMm": 21.557805358372292,
+            "fixedLengthMm": 38.06234985141386,
+            "totalLengthMm": 59.620155209786155
+          },
+          {
+            "name": "source_trace_5",
+            "carrierLengthMm": 23.812764726055377,
+            "fixedLengthMm": 35.80739048373077,
+            "totalLengthMm": 59.62015520978615
+          },
+          {
             "name": "source_trace_6",
-            "carrierLengthMm": 27.84227783848117,
+            "carrierLengthMm": 27.842277838481163,
             "fixedLengthMm": 31.77787737130499,
-            "totalLengthMm": 59.62015520978616
+            "totalLengthMm": 59.62015520978615
           },
           {
             "name": "source_trace_7",
-            "carrierLengthMm": 28.067358880657245,
+            "carrierLengthMm": 28.067358880657235,
             "fixedLengthMm": 31.552796329128924,
-            "totalLengthMm": 59.62015520978617
+            "totalLengthMm": 59.62015520978616
           },
           {
             "name": "source_trace_22",
@@ -1283,13 +1283,13 @@
           },
           {
             "name": "source_trace_24",
-            "carrierLengthMm": 24.98841961516741,
+            "carrierLengthMm": 24.988419615167402,
             "fixedLengthMm": 34.63173559461875,
-            "totalLengthMm": 59.62015520978616
+            "totalLengthMm": 59.620155209786155
           },
           {
             "name": "source_trace_25",
-            "carrierLengthMm": 26.65618656813376,
+            "carrierLengthMm": 26.656186568133766,
             "fixedLengthMm": 32.9639686416524,
             "totalLengthMm": 59.62015520978616
           }
@@ -1303,69 +1303,69 @@
         "lengths": [
           {
             "name": "source_trace_8",
-            "carrierLengthMm": 41.297108042255836,
+            "carrierLengthMm": 42.864906375838046,
             "fixedLengthMm": 31.94568954794238,
-            "totalLengthMm": 73.24279759019822
+            "totalLengthMm": 74.81059592378043
           },
           {
             "name": "source_trace_9",
-            "carrierLengthMm": 35.260102273746995,
+            "carrierLengthMm": 36.82790060732915,
             "fixedLengthMm": 37.982695316451256,
-            "totalLengthMm": 73.24279759019825
+            "totalLengthMm": 74.8105959237804
           },
           {
             "name": "source_trace_10",
-            "carrierLengthMm": 20.325078451539486,
+            "carrierLengthMm": 21.89287678512165,
             "fixedLengthMm": 52.91771913865877,
-            "totalLengthMm": 73.24279759019825
+            "totalLengthMm": 74.81059592378043
           },
           {
             "name": "source_trace_11",
-            "carrierLengthMm": 39.429995978401514,
+            "carrierLengthMm": 40.997794311983704,
             "fixedLengthMm": 33.81280161179673,
-            "totalLengthMm": 73.24279759019825
+            "totalLengthMm": 74.81059592378043
           },
           {
             "name": "source_trace_12",
-            "carrierLengthMm": 38.382894479882765,
+            "carrierLengthMm": 39.95069281346496,
             "fixedLengthMm": 34.85990311031548,
-            "totalLengthMm": 73.24279759019825
+            "totalLengthMm": 74.81059592378044
           },
           {
             "name": "source_trace_13",
-            "carrierLengthMm": 37.63332557845035,
+            "carrierLengthMm": 39.201123912032536,
             "fixedLengthMm": 35.6094720117479,
-            "totalLengthMm": 73.24279759019825
+            "totalLengthMm": 74.81059592378043
           },
           {
             "name": "source_trace_14",
-            "carrierLengthMm": 19.980976362049326,
+            "carrierLengthMm": 21.548774695631494,
             "fixedLengthMm": 53.361821228148926,
-            "totalLengthMm": 73.34279759019824
+            "totalLengthMm": 74.91059592378042
           },
           {
             "name": "source_trace_15",
-            "carrierLengthMm": 42.614920218893275,
+            "carrierLengthMm": 44.18271855247542,
             "fixedLengthMm": 30.62787737130499,
-            "totalLengthMm": 73.24279759019826
+            "totalLengthMm": 74.81059592378041
           },
           {
             "name": "source_trace_23",
-            "carrierLengthMm": 40.857158548594754,
+            "carrierLengthMm": 42.424956882176886,
             "fixedLengthMm": 32.38563904160353,
-            "totalLengthMm": 73.24279759019828
+            "totalLengthMm": 74.81059592378043
           },
           {
             "name": "source_trace_26",
-            "carrierLengthMm": 37.2279144503844,
+            "carrierLengthMm": 38.795712783966565,
             "fixedLengthMm": 36.01488313981385,
-            "totalLengthMm": 73.24279759019825
+            "totalLengthMm": 74.81059592378041
           },
           {
             "name": "source_trace_27",
-            "carrierLengthMm": 38.10720377226569,
+            "carrierLengthMm": 39.675002105847874,
             "fixedLengthMm": 35.13559381793253,
-            "totalLengthMm": 73.24279759019822
+            "totalLengthMm": 74.8105959237804
           }
         ]
       },
@@ -1383,49 +1383,49 @@
           },
           {
             "name": "source_trace_17",
-            "carrierLengthMm": 28.1371027595881,
+            "carrierLengthMm": 28.137102759588068,
             "fixedLengthMm": 38.881044887001714,
-            "totalLengthMm": 67.01814764658981
-          },
-          {
-            "name": "source_trace_18",
-            "carrierLengthMm": 28.101747420528753,
-            "fixedLengthMm": 38.91640022606103,
             "totalLengthMm": 67.01814764658978
           },
           {
+            "name": "source_trace_18",
+            "carrierLengthMm": 28.10174742052879,
+            "fixedLengthMm": 38.91640022606103,
+            "totalLengthMm": 67.01814764658982
+          },
+          {
             "name": "source_trace_19",
-            "carrierLengthMm": 25.010147497418043,
+            "carrierLengthMm": 25.01014749741804,
             "fixedLengthMm": 42.00800014917175,
             "totalLengthMm": 67.0181476465898
           },
           {
             "name": "source_trace_20",
-            "carrierLengthMm": 32.04928239848589,
+            "carrierLengthMm": 32.04928239848591,
             "fixedLengthMm": 34.968865248103896,
             "totalLengthMm": 67.0181476465898
           },
           {
             "name": "source_trace_21",
-            "carrierLengthMm": 28.449234793944083,
+            "carrierLengthMm": 28.449234793944054,
             "fixedLengthMm": 38.56891285264574,
-            "totalLengthMm": 67.01814764658982
-          },
-          {
-            "name": "source_trace_28",
-            "carrierLengthMm": 31.883468326818743,
-            "fixedLengthMm": 35.134679319771045,
             "totalLengthMm": 67.0181476465898
           },
           {
-            "name": "source_trace_29",
-            "carrierLengthMm": 30.89499069573369,
-            "fixedLengthMm": 36.12315695085607,
+            "name": "source_trace_28",
+            "carrierLengthMm": 31.88346832681873,
+            "fixedLengthMm": 35.134679319771045,
             "totalLengthMm": 67.01814764658977
           },
           {
+            "name": "source_trace_29",
+            "carrierLengthMm": 30.89499069573372,
+            "fixedLengthMm": 36.12315695085607,
+            "totalLengthMm": 67.0181476465898
+          },
+          {
             "name": "source_trace_30",
-            "carrierLengthMm": 31.71600620657288,
+            "carrierLengthMm": 31.71600620657289,
             "fixedLengthMm": 35.302141440016925,
             "totalLengthMm": 67.01814764658981
           },
@@ -1452,8 +1452,8 @@
     "iterations": 36,
     "attempts": 1,
     "routedLanes": 33,
-    "solveMilliseconds": 152,
-    "milliseconds": 248
+    "solveMilliseconds": 156,
+    "milliseconds": 223
   },
   {
     "file": "tests/fixtures/two-fanouts/ddr_right_io_left.json",
@@ -1474,74 +1474,74 @@
       {
         "busId": "RAM_BYTE0",
         "toleranceMm": 0.1,
-        "skewMm": 0.10000000000002274,
+        "skewMm": 0.10000000000000853,
         "matched": true,
         "lengths": [
           {
             "name": "source_trace_0",
-            "carrierLengthMm": 28.470989714940796,
+            "carrierLengthMm": 30.45921481433168,
             "fixedLengthMm": 58.23789152552062,
-            "totalLengthMm": 86.70888124046141
+            "totalLengthMm": 88.6971063398523
           },
           {
             "name": "source_trace_1",
-            "carrierLengthMm": 20.135501032679066,
+            "carrierLengthMm": 22.123726132069926,
             "fixedLengthMm": 66.67338020778236,
-            "totalLengthMm": 86.80888124046143
+            "totalLengthMm": 88.79710633985229
           },
           {
             "name": "source_trace_2",
-            "carrierLengthMm": 31.048011330958182,
+            "carrierLengthMm": 33.03623643034902,
             "fixedLengthMm": 55.66086990950326,
-            "totalLengthMm": 86.70888124046144
+            "totalLengthMm": 88.69710633985228
           },
           {
             "name": "source_trace_3",
-            "carrierLengthMm": 31.48709862748414,
+            "carrierLengthMm": 33.47532372687504,
             "fixedLengthMm": 55.221782612977265,
-            "totalLengthMm": 86.70888124046141
+            "totalLengthMm": 88.6971063398523
           },
           {
             "name": "source_trace_4",
-            "carrierLengthMm": 30.881471319847247,
+            "carrierLengthMm": 32.86969641923807,
             "fixedLengthMm": 55.827409920614215,
-            "totalLengthMm": 86.70888124046147
+            "totalLengthMm": 88.69710633985228
           },
           {
             "name": "source_trace_5",
-            "carrierLengthMm": 25.740302495304093,
+            "carrierLengthMm": 27.72852759469495,
             "fixedLengthMm": 60.96857874515736,
-            "totalLengthMm": 86.70888124046145
+            "totalLengthMm": 88.69710633985231
           },
           {
             "name": "source_trace_6",
-            "carrierLengthMm": 31.975219124822402,
+            "carrierLengthMm": 33.963444224213234,
             "fixedLengthMm": 54.733662115639056,
-            "totalLengthMm": 86.70888124046147
+            "totalLengthMm": 88.6971063398523
           },
           {
             "name": "source_trace_7",
-            "carrierLengthMm": 30.321413202534952,
+            "carrierLengthMm": 32.309638301925816,
             "fixedLengthMm": 56.38746803792649,
-            "totalLengthMm": 86.70888124046144
+            "totalLengthMm": 88.6971063398523
           },
           {
             "name": "source_trace_22",
-            "carrierLengthMm": 25.23459361187291,
+            "carrierLengthMm": 27.222818711263788,
             "fixedLengthMm": 61.47428762858851,
-            "totalLengthMm": 86.70888124046142
+            "totalLengthMm": 88.6971063398523
           },
           {
             "name": "source_trace_24",
-            "carrierLengthMm": 19.555987920253333,
+            "carrierLengthMm": 21.544213019644182,
             "fixedLengthMm": 67.15289332020811,
-            "totalLengthMm": 86.70888124046144
+            "totalLengthMm": 88.6971063398523
           },
           {
             "name": "source_trace_25",
-            "carrierLengthMm": 21.530683087532815,
+            "carrierLengthMm": 23.51890818692369,
             "fixedLengthMm": 65.17819815292862,
-            "totalLengthMm": 86.70888124046144
+            "totalLengthMm": 88.6971063398523
           }
         ]
       },
@@ -1553,89 +1553,89 @@
         "lengths": [
           {
             "name": "source_trace_8",
-            "carrierLengthMm": 21.882868862987777,
+            "carrierLengthMm": 23.62256582495479,
             "fixedLengthMm": 42.78660584079137,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_9",
-            "carrierLengthMm": 21.14708242536089,
+            "carrierLengthMm": 22.886779387327902,
             "fixedLengthMm": 43.52239227841826,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_10",
-            "carrierLengthMm": 19.20315605351233,
+            "carrierLengthMm": 20.942853015479347,
             "fixedLengthMm": 45.466318650266814,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_11",
-            "carrierLengthMm": 18.346049272325786,
+            "carrierLengthMm": 20.085746234292802,
             "fixedLengthMm": 46.32342543145336,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_12",
-            "carrierLengthMm": 18.402969875665455,
+            "carrierLengthMm": 20.14266683763247,
             "fixedLengthMm": 46.26650482811369,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_13",
-            "carrierLengthMm": 19.311341211405008,
+            "carrierLengthMm": 21.05103817337202,
             "fixedLengthMm": 45.35813349237414,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_14",
-            "carrierLengthMm": 21.45879097212274,
+            "carrierLengthMm": 23.19848793408975,
             "fixedLengthMm": 43.2106837316564,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_15",
-            "carrierLengthMm": 21.194577409749645,
+            "carrierLengthMm": 22.934274371716654,
             "fixedLengthMm": 43.4748972940295,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_23",
-            "carrierLengthMm": 20.357132931699713,
-            "fixedLengthMm": 44.312341772079435,
-            "totalLengthMm": 64.66947470377914
+            "carrierLengthMm": 22.09682989366673,
+            "fixedLengthMm": 44.31234177207943,
+            "totalLengthMm": 66.40917166574616
           },
           {
             "name": "source_trace_26",
-            "carrierLengthMm": 19.175330983233657,
+            "carrierLengthMm": 20.915027945200656,
             "fixedLengthMm": 45.59414372054549,
-            "totalLengthMm": 64.76947470377914
+            "totalLengthMm": 66.50917166574615
           },
           {
             "name": "source_trace_27",
-            "carrierLengthMm": 18.974290219225097,
+            "carrierLengthMm": 20.713987181192106,
             "fixedLengthMm": 45.69518448455405,
-            "totalLengthMm": 64.66947470377914
+            "totalLengthMm": 66.40917166574616
           }
         ]
       },
       {
         "busId": "RAM_CA",
         "toleranceMm": 0.1,
-        "skewMm": 0.10000000000002274,
+        "skewMm": 0.10000000000000853,
         "matched": true,
         "lengths": [
           {
             "name": "source_trace_16",
-            "carrierLengthMm": 34.56183841109468,
+            "carrierLengthMm": 34.56183841109472,
             "fixedLengthMm": 52.06588755169924,
-            "totalLengthMm": 86.62772596279393
+            "totalLengthMm": 86.62772596279396
           },
           {
             "name": "source_trace_17",
-            "carrierLengthMm": 27.049096711297747,
+            "carrierLengthMm": 27.04909671129776,
             "fixedLengthMm": 59.57862925149618,
-            "totalLengthMm": 86.62772596279393
+            "totalLengthMm": 86.62772596279395
           },
           {
             "name": "source_trace_18",
@@ -1645,15 +1645,15 @@
           },
           {
             "name": "source_trace_19",
-            "carrierLengthMm": 39.893811315460724,
+            "carrierLengthMm": 39.89381131546072,
             "fixedLengthMm": 46.733914647333236,
             "totalLengthMm": 86.62772596279396
           },
           {
             "name": "source_trace_20",
-            "carrierLengthMm": 39.95699172479871,
+            "carrierLengthMm": 39.95699172479874,
             "fixedLengthMm": 46.670734237995234,
-            "totalLengthMm": 86.62772596279395
+            "totalLengthMm": 86.62772596279397
           },
           {
             "name": "source_trace_21",
@@ -1669,27 +1669,27 @@
           },
           {
             "name": "source_trace_29",
-            "carrierLengthMm": 37.95974927210409,
+            "carrierLengthMm": 37.95974927210412,
             "fixedLengthMm": 48.667976690689834,
-            "totalLengthMm": 86.62772596279393
-          },
-          {
-            "name": "source_trace_30",
-            "carrierLengthMm": 34.871450207892536,
-            "fixedLengthMm": 51.75627575490145,
-            "totalLengthMm": 86.62772596279399
-          },
-          {
-            "name": "source_trace_31",
-            "carrierLengthMm": 36.023539346883105,
-            "fixedLengthMm": 50.60418661591085,
             "totalLengthMm": 86.62772596279396
           },
           {
+            "name": "source_trace_30",
+            "carrierLengthMm": 34.87145020789251,
+            "fixedLengthMm": 51.75627575490145,
+            "totalLengthMm": 86.62772596279396
+          },
+          {
+            "name": "source_trace_31",
+            "carrierLengthMm": 36.0235393468831,
+            "fixedLengthMm": 50.60418661591085,
+            "totalLengthMm": 86.62772596279395
+          },
+          {
             "name": "source_trace_32",
-            "carrierLengthMm": 35.415139269993794,
+            "carrierLengthMm": 35.41513926999383,
             "fixedLengthMm": 51.21258669280013,
-            "totalLengthMm": 86.62772596279393
+            "totalLengthMm": 86.62772596279396
           }
         ]
       }
@@ -1702,8 +1702,8 @@
     "iterations": 36,
     "attempts": 1,
     "routedLanes": 33,
-    "solveMilliseconds": 120,
-    "milliseconds": 204
+    "solveMilliseconds": 152,
+    "milliseconds": 213
   },
   {
     "file": "tests/fixtures/two-fanouts/ddr_top_io_bottom.json",
@@ -1729,69 +1729,69 @@
         "lengths": [
           {
             "name": "source_trace_0",
-            "carrierLengthMm": 38.629164177713925,
+            "carrierLengthMm": 39.0053823869162,
             "fixedLengthMm": 36.06693592668127,
-            "totalLengthMm": 74.69610010439519
+            "totalLengthMm": 75.07231831359746
           },
           {
             "name": "source_trace_1",
-            "carrierLengthMm": 19.242768074646065,
+            "carrierLengthMm": 19.718986283848345,
             "fixedLengthMm": 55.45333202974915,
-            "totalLengthMm": 74.69610010439521
+            "totalLengthMm": 75.17231831359749
           },
           {
             "name": "source_trace_2",
-            "carrierLengthMm": 18.86078755930659,
+            "carrierLengthMm": 19.13700576850887,
             "fixedLengthMm": 55.93531254508862,
-            "totalLengthMm": 74.79610010439521
+            "totalLengthMm": 75.07231831359749
           },
           {
             "name": "source_trace_3",
-            "carrierLengthMm": 19.46347875276471,
+            "carrierLengthMm": 19.839696961966997,
             "fixedLengthMm": 55.2326213516305,
-            "totalLengthMm": 74.69610010439521
+            "totalLengthMm": 75.07231831359749
           },
           {
             "name": "source_trace_4",
-            "carrierLengthMm": 34.54632146523935,
+            "carrierLengthMm": 34.92253967444162,
             "fixedLengthMm": 40.14977863915588,
-            "totalLengthMm": 74.69610010439524
+            "totalLengthMm": 75.0723183135975
           },
           {
             "name": "source_trace_5",
-            "carrierLengthMm": 20.494239937222186,
+            "carrierLengthMm": 20.87045814642447,
             "fixedLengthMm": 54.201860167173024,
-            "totalLengthMm": 74.69610010439521
+            "totalLengthMm": 75.07231831359749
           },
           {
             "name": "source_trace_6",
-            "carrierLengthMm": 22.0750011216797,
+            "carrierLengthMm": 22.451219330881973,
             "fixedLengthMm": 52.62109898271552,
-            "totalLengthMm": 74.69610010439523
+            "totalLengthMm": 75.07231831359749
           },
           {
             "name": "source_trace_7",
-            "carrierLengthMm": 25.012006890188577,
+            "carrierLengthMm": 25.388225099390876,
             "fixedLengthMm": 49.68409321420664,
-            "totalLengthMm": 74.69610010439521
+            "totalLengthMm": 75.07231831359752
           },
           {
             "name": "source_trace_22",
-            "carrierLengthMm": 37.89632146523935,
+            "carrierLengthMm": 38.27253967444161,
             "fixedLengthMm": 36.799778639155875,
-            "totalLengthMm": 74.69610010439523
+            "totalLengthMm": 75.07231831359749
           },
           {
             "name": "source_trace_24",
-            "carrierLengthMm": 20.634189430883364,
+            "carrierLengthMm": 21.010407640085646,
             "fixedLengthMm": 54.061910673511846,
-            "totalLengthMm": 74.69610010439521
+            "totalLengthMm": 75.07231831359749
           },
           {
             "name": "source_trace_25",
-            "carrierLengthMm": 20.083148666874788,
+            "carrierLengthMm": 20.45936687607707,
             "fixedLengthMm": 54.61295143752042,
-            "totalLengthMm": 74.69610010439521
+            "totalLengthMm": 75.07231831359749
           }
         ]
       },
@@ -1803,143 +1803,143 @@
         "lengths": [
           {
             "name": "source_trace_8",
-            "carrierLengthMm": 22.03903723885904,
+            "carrierLengthMm": 22.780026374849097,
             "fixedLengthMm": 39.14317692135768,
-            "totalLengthMm": 61.182214160216716
+            "totalLengthMm": 61.92320329620678
           },
           {
             "name": "source_trace_9",
-            "carrierLengthMm": 22.240509101435205,
+            "carrierLengthMm": 22.981498237425253,
             "fixedLengthMm": 38.94170505878152,
-            "totalLengthMm": 61.18221416021673
+            "totalLengthMm": 61.92320329620678
           },
           {
             "name": "source_trace_10",
-            "carrierLengthMm": 19.863553839265148,
+            "carrierLengthMm": 20.60454297525519,
             "fixedLengthMm": 41.31866032095158,
-            "totalLengthMm": 61.18221416021673
+            "totalLengthMm": 61.923203296206765
           },
           {
             "name": "source_trace_11",
-            "carrierLengthMm": 18.84908774519788,
+            "carrierLengthMm": 19.590076881187926,
             "fixedLengthMm": 42.33312641501884,
-            "totalLengthMm": 61.182214160216716
+            "totalLengthMm": 61.923203296206765
           },
           {
             "name": "source_trace_12",
-            "carrierLengthMm": 18.59969741063886,
+            "carrierLengthMm": 19.44068654662892,
             "fixedLengthMm": 42.582516749577856,
-            "totalLengthMm": 61.182214160216716
+            "totalLengthMm": 62.02320329620677
           },
           {
             "name": "source_trace_13",
-            "carrierLengthMm": 19.69198096401133,
+            "carrierLengthMm": 20.432970100001377,
             "fixedLengthMm": 41.490233196205395,
-            "totalLengthMm": 61.18221416021672
+            "totalLengthMm": 61.92320329620677
           },
           {
             "name": "source_trace_14",
-            "carrierLengthMm": 19.91796942699358,
+            "carrierLengthMm": 20.658958562983624,
             "fixedLengthMm": 41.264244733223144,
-            "totalLengthMm": 61.18221416021672
+            "totalLengthMm": 61.923203296206765
           },
           {
             "name": "source_trace_15",
-            "carrierLengthMm": 18.890559159102153,
+            "carrierLengthMm": 19.629416709408105,
             "fixedLengthMm": 42.29378658679867,
-            "totalLengthMm": 61.18434574590082
+            "totalLengthMm": 61.92320329620677
           },
           {
             "name": "source_trace_23",
-            "carrierLengthMm": 19.328377067079234,
+            "carrierLengthMm": 20.06936620306928,
             "fixedLengthMm": 41.85383709313749,
-            "totalLengthMm": 61.18221416021673
+            "totalLengthMm": 61.92320329620677
           },
           {
             "name": "source_trace_26",
-            "carrierLengthMm": 19.11061011411286,
+            "carrierLengthMm": 19.751599250102906,
             "fixedLengthMm": 42.171604046103866,
-            "totalLengthMm": 61.282214160216725
+            "totalLengthMm": 61.92320329620677
           },
           {
             "name": "source_trace_27",
-            "carrierLengthMm": 19.094493590596038,
+            "carrierLengthMm": 19.835482726586086,
             "fixedLengthMm": 42.087720569620686,
-            "totalLengthMm": 61.18221416021672
+            "totalLengthMm": 61.92320329620677
           }
         ]
       },
       {
         "busId": "RAM_CA",
         "toleranceMm": 0.1,
-        "skewMm": 0.10000000000000853,
+        "skewMm": 0.10000000000002274,
         "matched": true,
         "lengths": [
           {
             "name": "source_trace_16",
-            "carrierLengthMm": 38.53259018078046,
+            "carrierLengthMm": 40.52081528017132,
             "fixedLengthMm": 42.5911999953932,
-            "totalLengthMm": 81.12379017617366
+            "totalLengthMm": 83.11201527556452
           },
           {
             "name": "source_trace_17",
-            "carrierLengthMm": 18.559188309203677,
+            "carrierLengthMm": 20.547413408594533,
             "fixedLengthMm": 62.664601866969974,
-            "totalLengthMm": 81.22379017617365
+            "totalLengthMm": 83.21201527556451
           },
           {
             "name": "source_trace_18",
-            "carrierLengthMm": 40.3034947443885,
+            "carrierLengthMm": 42.29171984377933,
             "fixedLengthMm": 40.82029543178518,
-            "totalLengthMm": 81.12379017617369
+            "totalLengthMm": 83.11201527556452
           },
           {
             "name": "source_trace_19",
-            "carrierLengthMm": 35.13022737991942,
+            "carrierLengthMm": 37.11845247931029,
             "fixedLengthMm": 45.993562796254224,
-            "totalLengthMm": 81.12379017617364
+            "totalLengthMm": 83.11201527556452
           },
           {
             "name": "source_trace_20",
-            "carrierLengthMm": 29.86309883354378,
+            "carrierLengthMm": 31.85132393293463,
             "fixedLengthMm": 51.260691342629876,
-            "totalLengthMm": 81.12379017617366
+            "totalLengthMm": 83.1120152755645
           },
           {
             "name": "source_trace_21",
-            "carrierLengthMm": 41.48122292025701,
+            "carrierLengthMm": 43.46944801964782,
             "fixedLengthMm": 39.64256725591669,
-            "totalLengthMm": 81.1237901761737
+            "totalLengthMm": 83.11201527556452
           },
           {
             "name": "source_trace_28",
-            "carrierLengthMm": 30.39802307403552,
+            "carrierLengthMm": 32.386248173426395,
             "fixedLengthMm": 50.72576710213813,
-            "totalLengthMm": 81.12379017617366
+            "totalLengthMm": 83.11201527556452
           },
           {
             "name": "source_trace_29",
-            "carrierLengthMm": 31.619343417595157,
+            "carrierLengthMm": 33.607568516986035,
             "fixedLengthMm": 49.50444675857848,
-            "totalLengthMm": 81.12379017617364
+            "totalLengthMm": 83.11201527556452
           },
           {
             "name": "source_trace_30",
-            "carrierLengthMm": 27.78489549934202,
+            "carrierLengthMm": 29.773120598732888,
             "fixedLengthMm": 53.33889467683164,
-            "totalLengthMm": 81.12379017617366
+            "totalLengthMm": 83.11201527556453
           },
           {
             "name": "source_trace_31",
-            "carrierLengthMm": 37.2254833995939,
+            "carrierLengthMm": 39.213708498984744,
             "fixedLengthMm": 43.898306776579744,
-            "totalLengthMm": 81.12379017617364
+            "totalLengthMm": 83.11201527556449
           },
           {
             "name": "source_trace_32",
-            "carrierLengthMm": 24.41665222413706,
+            "carrierLengthMm": 26.404877323527895,
             "fixedLengthMm": 56.707137952036604,
-            "totalLengthMm": 81.12379017617366
+            "totalLengthMm": 83.1120152755645
           }
         ]
       }
@@ -1952,7 +1952,7 @@
     "iterations": 36,
     "attempts": 1,
     "routedLanes": 33,
-    "solveMilliseconds": 100,
-    "milliseconds": 172
+    "solveMilliseconds": 129,
+    "milliseconds": 187
   }
 ]

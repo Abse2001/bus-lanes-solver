@@ -16,10 +16,8 @@ export function tuneLengths(
       (c) => c.name === t.connection_name,
     )!
     const width = (t.route[0] as Wire).width
-    const delta =
-      targets.get(connection.name)! -
-      length(t.route) -
-      fixedRouteLength(input, connection.name)
+    const fixedLength = fixedRouteLength(input, connection.name)
+    const delta = targets.get(connection.name)! - length(t.route) - fixedLength
     if (delta < 1e-8) {
       yield t
       return
@@ -95,9 +93,7 @@ export function tuneLengths(
               ])
               if (
                 Math.abs(
-                  length(next) +
-                    fixedRouteLength(input, connection.name) -
-                    targets.get(connection.name)!,
+                  length(next) + fixedLength - targets.get(connection.name)!,
                 ) > 1e-6
               )
                 continue
@@ -175,10 +171,21 @@ export function tuningPathIsSelfClear(path: Point[], required: number) {
     cumulative.push(cumulative[i - 1] + distance(path[i - 1], path[i]))
   for (let i = 0; i < path.length - 1; i++)
     for (let j = i + 2; j < path.length - 1; j++) {
-      const separation = segmentDistance(
-        [path[i], path[i + 1]],
-        [path[j], path[j + 1]],
+      const a = path[i],
+        b = path[i + 1],
+        c = path[j],
+        d = path[j + 1]
+      // Far-apart segments cannot cross or violate copper spacing. Use a
+      // conservative bound before either exact distance check, even on arcs.
+      const padding = Math.max(required, 1e-9)
+      if (
+        Math.max(a.x, b.x) + padding < Math.min(c.x, d.x) ||
+        Math.max(c.x, d.x) + padding < Math.min(a.x, b.x) ||
+        Math.max(a.y, b.y) + padding < Math.min(c.y, d.y) ||
+        Math.max(c.y, d.y) + padding < Math.min(a.y, b.y)
       )
+        continue
+      const separation = segmentDistance([a, b], [c, d])
       if (separation < 1e-9 && cumulative[j] - cumulative[i + 1] > 1e-8)
         return false
       // Chords on the same smooth bend can be closer than the clearance while
@@ -191,18 +198,7 @@ export function tuningPathIsSelfClear(path: Point[], required: number) {
             unsafeBends[j] === unsafeBends[i]))
       )
         continue
-      const a = path[i],
-        b = path[i + 1],
-        c = path[j],
-        d = path[j + 1]
-      if (
-        Math.max(a.x, b.x) + required < Math.min(c.x, d.x) ||
-        Math.max(c.x, d.x) + required < Math.min(a.x, b.x) ||
-        Math.max(a.y, b.y) + required < Math.min(c.y, d.y) ||
-        Math.max(c.y, d.y) + required < Math.min(a.y, b.y)
-      )
-        continue
-      if (segmentDistance([a, b], [c, d]) >= required - 1e-8) continue
+      if (separation >= required - 1e-8) continue
       let sx = 0,
         sy = 0
       for (let k = i; k <= j; k++) {

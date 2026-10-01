@@ -3,7 +3,7 @@ import { RouteCandidatePool } from "./select-route-candidates"
 import { routeCoupledPair } from "./coupled-pair-routing"
 import { GridVisibilitySearch } from "./grid-visibility"
 import { VectorScene, routeCopper, type Copper } from "./vector-scene"
-import { segmentDistance, length } from "./geometry"
+import { segmentsTooClose, length } from "./geometry"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import type { SimpleRouteJson, Connection, Trace, Wire } from "./types"
 
@@ -52,7 +52,8 @@ export function* negotiateLanes(
       bus.connectionNames.includes(c.name),
     )
     const limit =
-      1.5 * Math.max(...members.map((c) => length(c.pointsToConnect)))
+      // Reserve one percent of the compact search envelope for length tuning.
+      1.5 * 0.99 * Math.max(...members.map((c) => length(c.pointsToConnect)))
     for (const member of members) {
       limits.set(member.name, limit)
       ceilings.set(member.name, (limit * 4) / 3)
@@ -127,15 +128,15 @@ export function* negotiateLanes(
             for (let i = 1; i < trace.route.length && !hit; i++)
               for (let j = 1; j < other.route.length && !hit; j++)
                 if (
-                  segmentDistance(
+                  segmentsTooClose(
                     [trace.route[i - 1], trace.route[i]],
                     [other.route[j - 1], other.route[j]],
-                  ) <
-                  (widths.get(trace.connection_name!)! +
-                    (other.route[0] as Wire).width) /
-                    2 +
-                    clearance -
-                    1e-8
+                    (widths.get(trace.connection_name!)! +
+                      (other.route[0] as Wire).width) /
+                      2 +
+                      clearance -
+                      1e-8,
+                  )
                 )
                   hit = true
           if (hit) cost++
@@ -311,13 +312,13 @@ export function* negotiateLanes(
             for (let i = 1; i < path.length && !hit; i++)
               for (let j = 1; j < other.route.length && !hit; j++)
                 if (
-                  segmentDistance(
+                  segmentsTooClose(
                     [path[i - 1], path[i]],
                     [other.route[j - 1], other.route[j]],
-                  ) <
-                  (width + (other.route[0] as Wire).width) / 2 +
-                    clearance -
-                    1e-8
+                    (width + (other.route[0] as Wire).width) / 2 +
+                      clearance -
+                      1e-8,
+                  )
                 )
                   hit = true
             if (hit) hits++
@@ -398,11 +399,11 @@ export function* negotiateLanes(
         conflict: for (let i = 1; i < first.route.length; i++)
           for (let j = 1; j < second.route.length; j++) {
             if (
-              segmentDistance(
+              !segmentsTooClose(
                 [first.route[i - 1], first.route[i]],
                 [second.route[j - 1], second.route[j]],
-              ) >=
-              required - 1e-8
+                required - 1e-8,
+              )
             )
               continue
             pending.add(first.connection_name!)
