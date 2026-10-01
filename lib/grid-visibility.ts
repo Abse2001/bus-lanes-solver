@@ -393,6 +393,12 @@ export class GridVisibilitySearch {
                 this.blocked[cur.id + dy * this.nx]))
           )
             continue
+          // With nonnegative occupancy cost, this is a lower bound on g.
+          // An edge that cannot improve the route needs no geometry checks.
+          // Keep the addition order used by g below to preserve tie decisions.
+          const minimumG =
+            cur.g + (dx && dy ? Math.SQRT2 : 1) + 0 + (this.history?.[id] ?? 0)
+          if (this.penalty >= 0 && minimumG >= this.best[id] - 1e-10) continue
           const point = this.point(id),
             bounds = this.scene.input.bounds,
             edge =
@@ -406,7 +412,6 @@ export class GridVisibilitySearch {
           )
             continue
           const from = this.point(cur.id)
-          if (!this.edgeClear(from, point, this.copperBuckets)) continue
           // Penalize continuous edges, not just occupied vertices: diagonal
           // crossings can occur between clear cells. Use physical clearance
           // so tightly packed but legal parallel lanes remain available.
@@ -433,6 +438,7 @@ export class GridVisibilitySearch {
             softCost +
             (this.history?.[id] ?? 0)
           if (g >= this.best[id] - 1e-10) continue
+          if (!this.edgeClear(from, point, this.copperBuckets)) continue
           this.best[id] = g
           if (this.travel) this.travel[id] = travelled
           this.parent[id] = cur.id
