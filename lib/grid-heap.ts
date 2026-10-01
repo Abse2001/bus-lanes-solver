@@ -1,5 +1,5 @@
-/** Stable numeric A* queue. Parallel arrays avoid allocating two objects for
- * every relaxed grid edge; equal priorities retain insertion order. */
+/** Numeric A* queue: lowest f, then largest g (closest to the goal), then
+ * insertion order. Progress breaks equal-cost plateaus without weighting h. */
 export class GridHeap {
   private ids = new Int32Array(1024)
   private costs = new Float64Array(1024)
@@ -19,7 +19,11 @@ export class GridHeap {
   push(id: number, g: number, f: number) {
     const seq = this.sequence++
     const previous = this.positions[id]
-    if (previous && f >= this.priorities[previous - 1]) {
+    if (
+      previous &&
+      (f > this.priorities[previous - 1] ||
+        (f === this.priorities[previous - 1] && g <= this.costs[previous - 1]))
+    ) {
       this.sink(previous - 1, id, g, f, seq)
       return
     }
@@ -41,7 +45,13 @@ export class GridHeap {
     while (i > 0) {
       const p = (i - 1) >> 2
       const pf = this.priorities[p]
-      if (f > pf || (f === pf && seq >= this.sequences[p])) break
+      if (
+        f > pf ||
+        (f === pf &&
+          (g < this.costs[p] ||
+            (g === this.costs[p] && seq >= this.sequences[p])))
+      )
+        break
       this.ids[i] = this.ids[p]
       this.positions[this.ids[i]] = i + 1
       this.costs[i] = this.costs[p]
@@ -77,13 +87,22 @@ export class GridHeap {
       const end = Math.min(child + 4, n)
       for (let other = child + 1; other < end; other++) {
         const of = priorities[other]
-        if (of < cf || (of === cf && sequences[other] < cs)) {
+        if (
+          of < cf ||
+          (of === cf &&
+            (costs[other] > costs[child] ||
+              (costs[other] === costs[child] && sequences[other] < cs)))
+        ) {
           child = other
           cf = of
           cs = sequences[other]
         }
       }
-      if (cf > f || (cf === f && cs >= seq)) break
+      if (
+        cf > f ||
+        (cf === f && (costs[child] < g || (costs[child] === g && cs >= seq)))
+      )
+        break
       ids[i] = ids[child]
       positions[ids[i]] = i + 1
       costs[i] = costs[child]

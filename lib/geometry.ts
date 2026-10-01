@@ -8,7 +8,9 @@ export function distance(a: Point, b: Point) {
   return Math.sqrt(dx * dx + dy * dy)
 }
 export function pointSegmentDistance(p: Point, edge: [Point, Point]) {
-  const [a, b] = edge
+  return pointSegmentDistanceToPoints(p, edge[0], edge[1])
+}
+export function pointSegmentDistanceToPoints(p: Point, a: Point, b: Point) {
   const dx = b.x - a.x,
     dy = b.y - a.y
   if (dx === 0 && dy === 0) return distance(p, a)

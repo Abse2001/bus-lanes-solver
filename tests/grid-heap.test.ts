@@ -1,14 +1,14 @@
 import { expect, test } from "bun:test"
 import { GridHeap } from "../lib/grid-heap"
 
-test("numeric grid queue keeps stable priorities across interleaved pushes and pops", () => {
+test("numeric grid queue orders by cost, progress, and insertion across updates", () => {
   const heap = new GridHeap(5000)
   const reference: { id: number; g: number; f: number; sequence: number }[] = []
   let sequence = 0
   let random = 17
   const next = () => (random = (Math.imul(random, 1664525) + 1013904223) >>> 0)
   const pop = () => {
-    reference.sort((a, b) => a.f - b.f || a.sequence - b.sequence)
+    reference.sort((a, b) => a.f - b.f || b.g - a.g || a.sequence - b.sequence)
     const expected = reference.shift()!
     heap.pop()
     expect([heap.id, heap.g]).toEqual([expected.id, expected.g])
@@ -25,7 +25,7 @@ test("numeric grid queue keeps stable priorities across interleaved pushes and p
     heap.push(entry.id, entry.g, entry.f)
     if (id % 11 === 0 && reference.length) {
       const updated = reference[next() % reference.length]
-      updated.g -= 0.5
+      updated.g += id % 2 ? -0.5 : 0.5
       // Include equal-f replacement to exercise stable tie reordering.
       updated.f -= id % 22 === 0 ? 0 : 0.5
       updated.sequence = sequence++

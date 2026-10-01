@@ -4,6 +4,7 @@ import { distance, length, simplify, segmentDistance } from "./geometry"
 import {
   VectorScene,
   clearanceToCopper,
+  copperTooClose,
   fixedCopper,
   type Copper,
 } from "./vector-scene"
@@ -269,7 +270,6 @@ export class GridVisibilitySearch {
     const n = this.nx * this.ny
     if (n > 8_000_000) throw Error("Dense grid search budget exceeded")
     this.heap = new GridHeap(n)
-    this.heap = new GridHeap(n)
     this.softEdgeKnown = new Uint8Array(n)
     this.softEdgeBlocked = new Uint8Array(n)
     const grids = hardGrids.get(scene.input) ?? new Map<string, HardGrid>()
@@ -530,7 +530,7 @@ export class GridVisibilitySearch {
             entry.maxY < minY
           )
             continue
-          if (clearanceToCopper(from, to, entry.copper) < margin - 1e-8)
+          if (copperTooClose(from, to, entry.copper, margin - 1e-8))
             return false
         }
     return true

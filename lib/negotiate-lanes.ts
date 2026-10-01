@@ -52,7 +52,8 @@ export function* negotiateLanes(
       bus.connectionNames.includes(c.name),
     )
     const limit =
-      1.5 * Math.max(...members.map((c) => length(c.pointsToConnect)))
+      // Reserve one percent of the compact search envelope for length tuning.
+      1.5 * 0.99 * Math.max(...members.map((c) => length(c.pointsToConnect)))
     for (const member of members) {
       limits.set(member.name, limit)
       ceilings.set(member.name, (limit * 4) / 3)
