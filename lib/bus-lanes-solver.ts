@@ -1,4 +1,5 @@
 import { spreadHypergraphCorridors } from "./spread-hypergraph-corridors"
+import { captureRoutingStage } from "./capture-routing-stage"
 import { refinePairApproaches } from "./refine-pair-approaches"
 import { spreadCoupledTuningLanes } from "./spread-coupled-tuning-lanes"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
@@ -58,6 +59,8 @@ export class BusLanesSolver extends BaseSolver {
   private congestionPass = 0
   private conflictingLanes = 0
   private negotiated?: Generator<Trace[], Trace[] | null>
+  private matching?: Generator<void>
+  private hypergraphStats?: Record<string, unknown>
   private pairSearch?: Generator<void, Trace[] | null>
   private reportedRoutes?: Array<{ trace: Trace; route: Trace["route"] }>
   private lengthStats?: {
@@ -286,6 +289,7 @@ export class BusLanesSolver extends BaseSolver {
     this.startLane()
   }
   private route() {
+    if (this.phase === "hypergraph_cover") this.phase = "route_cleanup"
     if (
       this.options.initialRouting === "hypergraph" ||
       (this.options.denseSearch && this.input.connections.length > 12)
@@ -305,6 +309,11 @@ export class BusLanesSolver extends BaseSolver {
         },
         this.terminalLayers,
         this.options.initialRouting === "hypergraph",
+        (snapshot) => {
+          this.phase = "hypergraph_cover"
+          this.hypergraphStats = snapshot.stats
+          captureRoutingStage(this.options, snapshot)
+        },
       )
       const step = this.negotiated.next()
       if (!step.done) {
@@ -320,6 +329,12 @@ export class BusLanesSolver extends BaseSolver {
         return
       }
       this.traces = step.value
+      captureRoutingStage(this.options, {
+        stage: "route_cleanup",
+        input: this.input,
+        traces: this.traces,
+        stats: {},
+      })
       this.phase = "match"
       return
     }
@@ -352,7 +367,7 @@ export class BusLanesSolver extends BaseSolver {
       this.retry()
     }
   }
-  private match() {
+  private *matchSteps(): Generator<void> {
     const input = this.input
     const original = this.traces
     const hypergraph = this.options.initialRouting === "hypergraph"
@@ -399,6 +414,11 @@ export class BusLanesSolver extends BaseSolver {
         ? refinePairApproaches(input, corridor, this.fixed)
         : corridor
       const targets = minimumLengthTargets(input, candidate)
+      this.traces = candidate
+      this.phase = "tuning_corridor"
+      yield
+      this.phase = "length_matching"
+      yield
       try {
         this.traces =
           this.options.smoothTuning && candidate.some((t) => t.coupledSection)
@@ -413,6 +433,18 @@ export class BusLanesSolver extends BaseSolver {
               : tuneLengths(input, candidate, targets)
         if (this.options.smoothTuning)
           this.traces = simplifyMatchedTraces(input, this.traces)
+        captureRoutingStage(this.options, {
+          stage: "tuning_corridor",
+          input,
+          traces: candidate,
+          stats: { corridorExpanded: corridor !== original },
+        })
+        captureRoutingStage(this.options, {
+          stage: "length_matching",
+          input,
+          traces: this.traces,
+          stats: {},
+        })
         this.phase = "validate_output"
         return
       } catch (e) {
@@ -483,14 +515,27 @@ export class BusLanesSolver extends BaseSolver {
       throw Error("Final pair uncoupled length violation")
     this.phase = "solved"
     this.solved = true
+    captureRoutingStage(this.options, {
+      stage: "validated_lanes",
+      input: this.input,
+      traces: this.traces,
+      stats: {},
+    })
   }
   _step() {
     try {
       if (this.phase === "validate") this.initialize()
       else if (this.phase === "coupled_pairs") this.routePair()
-      else if (this.phase === "route") this.route()
-      else if (this.phase === "match") this.match()
-      else if (this.phase === "validate_output") this.validateOutput()
+      else if (
+        ["route", "hypergraph_cover", "route_cleanup"].includes(this.phase)
+      )
+        this.route()
+      else if (
+        ["match", "tuning_corridor", "length_matching"].includes(this.phase)
+      ) {
+        this.matching ??= this.matchSteps()
+        this.matching.next()
+      } else if (this.phase === "validate_output") this.validateOutput()
     } catch (e) {
       this.fail("constraint_error", String(e))
     }
@@ -521,6 +566,7 @@ export class BusLanesSolver extends BaseSolver {
     }
     this.stats = {
       ...this.lengthStats,
+      ...this.hypergraphStats,
       phase: this.phase,
       algorithm:
         this.options.initialRouting === "hypergraph"

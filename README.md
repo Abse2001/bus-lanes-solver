@@ -271,3 +271,12 @@ captures outside the repository.
 - [Left to right](docs/routed-ddr/ddr_left_io_right-solved.png)
 - [Right to left](docs/routed-ddr/ddr_right_io_left-solved.png)
 - [Top to bottom](docs/routed-ddr/ddr_top_io_bottom-solved.png)
+
+### Live hypergraph debugger
+
+Run `bun start` and choose `hypergraph-control`, `hypergraph-right`,
+`hypergraph-left`, or `hypergraph-above`. Each Cosmos page contains only
+`GenericSolverDebugger`. Use **Step** for individual solver iterations and
+**Next Stage** for phase boundaries. After solving, enable **Filter by step**
+to inspect retained stage visualizations, including the untuned hypergraph
+cover. These fixtures compute from input; they do not replay solved traces.

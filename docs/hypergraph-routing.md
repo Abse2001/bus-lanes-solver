@@ -92,3 +92,32 @@ Snapshots show top, inner1, inner2 and bottom separately:
 
 The artifact command also writes ignored `*-solved.json` files containing the
 full routed SRJ for inspection. The solver never reads those generated files.
+
+## Live Cosmos stage debugger
+
+The `hypergraph-control`, `hypergraph-right`, `hypergraph-left` and
+`hypergraph-above` Cosmos pages each render only `GenericSolverDebugger`.
+They load the corrected input fixtures and compute routes live; no solved trace
+recording is loaded by the browser. Run `bun start` and choose a sample.
+
+`Step` advances at most one underlying solver iteration. `Next Stage` advances
+to the next phase solver, including dogbones, hypergraph search, the selected
+cover, cleanup, corridor preparation, length matching and validation. Retries
+and the separate control-signal pass appear as additional stages. Once solved,
+the native visualization step selector exposes the retained stage views.
+
+The geometric cover is exposed before turn reduction and fine route repair.
+Corridor preparation and length matching yield separately so their outputs can
+be inspected before validation. The debugger reports actual search iterations;
+it does not solve the whole board inside one step.
+
+For offline intermediate images from an independently audited Control run:
+
+```sh
+bun scripts/capture-hypergraph-stages.ts work/hypergraph-stages
+bun scripts/render-hypergraph-stage-overview.ts work/hypergraph-stage-overview.png
+```
+
+These are explicitly intermediate diagnostics requested for understanding the
+pipeline, not completed-routing artifacts. Capture is optional via `onStage`;
+its detached snapshots cannot be changed by subsequent tuning or retries.

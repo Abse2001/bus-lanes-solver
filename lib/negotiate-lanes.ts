@@ -1,5 +1,6 @@
 import { repairHypergraphRoutes } from "./repair-hypergraph-routes"
 import { RouteHypergraph } from "./route-hypergraph"
+import type { RoutingStageSnapshot } from "./types"
 import { routeViaWaypoint } from "./route-via-waypoint"
 import { RouteCandidatePool } from "./select-route-candidates"
 import { routeCoupledPair } from "./coupled-pair-routing"
@@ -23,6 +24,7 @@ export function* negotiateLanes(
   reportProgress?: (pass: number, conflictingLanes: number) => void,
   terminalLayers: ReadonlyMap<string, string[]> = new Map(),
   hypergraph = false,
+  onStage?: (snapshot: RoutingStageSnapshot) => void,
 ): Generator<Trace[], Trace[] | null> {
   const routed = new Map<string, Trace>()
   const histories = new Map<string, Float32Array>()
@@ -491,6 +493,22 @@ export function* negotiateLanes(
     yield [...paired, ...routed.values()]
     if (missing) continue
     const result = [...paired, ...routed.values()]
+    if (hypergraph) {
+      onStage?.({
+        stage: "hypergraph_cover",
+        input,
+        traces: result,
+        stats: {
+          candidateHyperedges: (candidates as RouteHypergraph).edges.length,
+          demandVertices: (candidates as RouteHypergraph).vertices.size,
+          selectedRoutes: result.length,
+          selection: selected ? "exact_cover" : "compatible_negotiated_routes",
+          negotiationPasses: iteration + 1,
+        },
+      })
+      // Expose the selected cover before simplification/refinement mutates it.
+      yield result
+    }
     for (const trace of routed.values()) {
       if (trace.coupledSection) continue
       const connection = connections.find(

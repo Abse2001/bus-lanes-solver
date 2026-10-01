@@ -11,7 +11,8 @@
       "!dist/**",
       "!.cache/**",
       "!work/**",
-      "!docs/hypergraph-am3352/**"
+      "!docs/hypergraph-am3352/**",
+      "!pages/data/**"
     ]
   },
   "formatter": {

@@ -1,4 +1,5 @@
 import { routeHypergraphDogbones } from "./hypergraph-dogbones"
+import { captureRoutingStage } from "./capture-routing-stage"
 import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
 import { BaseSolver } from "@tscircuit/solver-utils"
 import {
@@ -31,6 +32,23 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private completedLanes: Trace[] = []
   private remainingInput?: SimpleRouteJson
   private terminalLayers = new Map<string, string[]>()
+  private childOptions(): SolverOptions {
+    return {
+      ...this.options,
+      onStage: this.options.onStage
+        ? (snapshot) =>
+            this.options.onStage!({
+              ...snapshot,
+              attempt: this.attempt,
+              routingStage: this.completedLanes.length
+                ? "remaining_signals"
+                : this.remainingInput
+                  ? "matched_buses"
+                  : "all_signals",
+            })
+        : undefined,
+    }
+  }
   constructor(input: SimpleRouteJson, options: BusLanesPipelineOptions = {}) {
     super()
     this.input = structuredClone(input)
@@ -51,7 +69,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   }
   private prepare() {
     if (this.options.fanout === "none") {
-      this.child = new BusLanesSolver(this.input, this.options)
+      this.child = new BusLanesSolver(this.input, this.childOptions())
       return
     }
     const layers = getCopperLayerNames(this.input.layerCount)
@@ -236,6 +254,14 @@ export class BusLanesPipelineSolver extends BaseSolver {
       connections: result.connections as SimpleRouteJson["connections"],
       traces: [...(this.input.traces ?? []), ...this.escapes],
     }
+    captureRoutingStage(this.options, {
+      stage: "local_dogbones",
+      input: this.input,
+      traces: this.escapes,
+      attempt: this.attempt,
+      routingStage: "all_signals",
+      stats: { localDogbones: this.escapes.length },
+    })
     const constrained = new Set([
       ...(laneInput.buses ?? []).flatMap((b) => b.connectionNames),
       ...(laneInput.differentialPairs ?? []).flatMap((p) => p.connectionNames),
@@ -261,15 +287,25 @@ export class BusLanesPipelineSolver extends BaseSolver {
       }
       this.child = new BusLanesSolver(
         { ...laneInput, connections: matching },
-        this.options,
+        this.childOptions(),
         terminalLayers,
       )
     } else
-      this.child = new BusLanesSolver(laneInput, this.options, terminalLayers)
+      this.child = new BusLanesSolver(
+        laneInput,
+        this.childOptions(),
+        terminalLayers,
+      )
   }
   _step() {
     try {
-      if (!this.child) this.prepare()
+      if (!this.child) {
+        this.prepare()
+        this.activeSubSolver = this.child
+        this.phase = "local_dogbones"
+        return
+      }
+      this.activeSubSolver = this.child
       this.child!.step()
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
@@ -295,10 +331,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
               ...this.completedLanes,
             ],
           },
-          this.options,
+          this.childOptions(),
           this.terminalLayers,
         )
         this.remainingInput = undefined
+        this.phase = "remaining_signals"
+        this.activeSubSolver = this.child
         return
       }
       if (this.child!.solved) {
@@ -359,6 +397,14 @@ export class BusLanesPipelineSolver extends BaseSolver {
         )
         this.solved = true
         this.phase = "solved"
+        captureRoutingStage(this.options, {
+          stage: "assembled_output",
+          input: this.input,
+          traces: this.traces,
+          attempt: this.attempt,
+          routingStage: "all_signals",
+          stats: { connectedSignals: this.traces.length },
+        })
       }
     } catch (error) {
       this.attemptFailures.push({
@@ -386,6 +432,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
   visualize() {
-    return this.child?.visualize() ?? { points: [], lines: [] }
+    if (this.solved)
+      return new BusLanesSolver({
+        ...this.getOutput(),
+        connections: [],
+      }).visualize()
+    return this.child?.visualize() ?? new BusLanesSolver(this.input).visualize()
   }
 }
