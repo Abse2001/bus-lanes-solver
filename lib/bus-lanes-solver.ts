@@ -89,6 +89,11 @@ export class BusLanesSolver extends BaseSolver {
     this.error = message
     this.failed = true
     this.phase = "failed"
+    if (this.search instanceof GridVisibilitySearch) this.search.cancel()
+    this.pairSearch?.return(null)
+    this.negotiated?.return(null)
+    this.pairSearch = undefined
+    this.negotiated = undefined
   }
   tryFinalAcceptance() {
     if (!this.solved)
@@ -279,6 +284,9 @@ export class BusLanesSolver extends BaseSolver {
   }
   private route() {
     if (this.options.denseSearch && this.input.connections.length > 12) {
+      // Dense negotiation owns its searches; the initial lane search is unused.
+      if (this.search instanceof GridVisibilitySearch) this.search.cancel()
+      this.search = undefined
       this.negotiated ??= negotiateLanes(
         this.input,
         this.orders[0],
@@ -332,8 +340,10 @@ export class BusLanesSolver extends BaseSolver {
       s.expanded >=
         (this.options.maxLaneIterations ??
           (s instanceof GridVisibilitySearch ? 1_000_000 : 4000))
-    )
+    ) {
+      if (s instanceof GridVisibilitySearch) s.cancel()
       this.retry()
+    }
   }
   private match() {
     const input = this.input

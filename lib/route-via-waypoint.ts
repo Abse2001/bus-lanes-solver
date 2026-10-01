@@ -25,9 +25,13 @@ export function* routeViaWaypoint(
     history,
     { maxLength: maxLength - distance(waypoint, end) },
   )
-  while (!first.solved && !first.failed) {
-    first.step()
-    yield
+  try {
+    while (!first.solved && !first.failed) {
+      first.step()
+      yield
+    }
+  } finally {
+    first.cancel()
   }
   if (!first.solved) return null
   const prefix: Copper[] = []
@@ -61,9 +65,13 @@ export function* routeViaWaypoint(
     history,
     { maxLength: maxLength - length(first.result) },
   )
-  while (!second.solved && !second.failed) {
-    second.step()
-    yield
+  try {
+    while (!second.solved && !second.failed) {
+      second.step()
+      yield
+    }
+  } finally {
+    second.cancel()
   }
   if (!second.solved) return null
   const path = [...first.result, ...second.result.slice(1)]

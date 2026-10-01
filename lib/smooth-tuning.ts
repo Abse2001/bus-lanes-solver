@@ -1,4 +1,4 @@
-import { distance, length } from "./geometry"
+import { distance } from "./geometry"
 import type { Point } from "./types"
 
 /** Tangent-continuous raised-cosine lobes, sampled in board-world mm (+X right,
@@ -17,27 +17,60 @@ export function smoothTuningLobes(
   const ux = (b.x - a.x) / span,
     uy = (b.y - a.y) / span
   const maxHeight = (period * period) / (2 * Math.PI * Math.PI * minRadius)
+  // Sample positions and trigonometry stay fixed while height changes.
+  const samples = Math.max(
+    48,
+    Math.ceil(period / Math.max(0.005, minRadius / 6)),
+  )
+  const positions: number[] = [],
+    raised: number[] = []
+  for (let l = 0; l < lobes; l++)
+    for (let j = 0; j < samples; j++) {
+      positions.push(period * (l + j / samples))
+      raised.push(1 - Math.cos((2 * Math.PI * j) / samples))
+    }
   const generate = (height: number) => {
-    const samples = Math.max(
-      48,
-      Math.ceil(period / Math.max(0.005, minRadius / 6)),
-    )
     const points: Point[] = []
-    for (let l = 0; l < lobes; l++)
-      for (let j = 0; j < samples; j++) {
-        const x = period * (l + j / samples),
-          y = (side * height * (1 - Math.cos((2 * Math.PI * j) / samples))) / 2
-        points.push({ x: a.x + ux * x - uy * y, y: a.y + uy * x + ux * y })
-      }
+    for (let i = 0; i < positions.length; i++) {
+      const x = positions[i],
+        y = (side * height * raised[i]) / 2
+      points.push({ x: a.x + ux * x - uy * y, y: a.y + uy * x + ux * y })
+    }
     points.push(b)
     return points
   }
+  // Match length(generate(height)) in board coordinates and summation order,
+  // without allocating trial routes during amplitude bisection.
+  const emittedLength = (height: number) => {
+    let total = 0,
+      lastX = 0,
+      lastY = 0
+    for (let i = 0; i < positions.length; i++) {
+      const localX = positions[i],
+        localY = (side * height * raised[i]) / 2
+      const x = a.x + ux * localX - uy * localY,
+        y = a.y + uy * localX + ux * localY
+      if (i > 0) {
+        const dx = lastX - x,
+          dy = lastY - y
+        total += Math.sqrt(dx * dx + dy * dy)
+      }
+      lastX = x
+      lastY = y
+    }
+    if (positions.length) {
+      const dx = lastX - b.x,
+        dy = lastY - b.y
+      total += Math.sqrt(dx * dx + dy * dy)
+    }
+    return total
+  }
   let lo = 0,
     hi = Math.min(maxHeight, deficit + span)
-  if (length(generate(hi)) - span < deficit) return null
+  if (emittedLength(hi) - span < deficit) return null
   for (let i = 0; i < 40; i++) {
     const mid = (lo + hi) / 2
-    if (length(generate(mid)) - span < deficit) lo = mid
+    if (emittedLength(mid) - span < deficit) lo = mid
     else hi = mid
   }
   return generate((lo + hi) / 2)
@@ -61,17 +94,26 @@ export function smoothPairedLobes(
     uy = (b.y - a.y) / span
   const maxHeight =
     (period * period) / (2 * Math.PI * Math.PI * (minRadius + spacing / 2))
+  // Retain the original full phase at every sample, including later lobes.
+  const samples = Math.max(
+    64,
+    Math.ceil(period / Math.max(0.005, minRadius / 6)),
+  )
+  const positions: number[] = [],
+    raised: number[] = [],
+    slopes: number[] = []
+  for (let k = 0; k <= samples * lobes; k++) {
+    const phase = (2 * Math.PI * k) / samples
+    positions.push((k * span) / (samples * lobes))
+    raised.push(1 - Math.cos(phase))
+    slopes.push(Math.sin(phase))
+  }
   const generate = (height: number): [Point[], Point[]] => {
-    const samples = Math.max(
-      64,
-      Math.ceil(period / Math.max(0.005, minRadius / 6)),
-    )
     const rails: [Point[], Point[]] = [[], []]
-    for (let k = 0; k <= samples * lobes; k++) {
-      const x = (k * span) / (samples * lobes),
-        phase = (2 * Math.PI * k) / samples
-      const y = (side * height * (1 - Math.cos(phase))) / 2,
-        slope = ((side * height * Math.PI) / period) * Math.sin(phase)
+    for (let k = 0; k < positions.length; k++) {
+      const x = positions[k],
+        y = (side * height * raised[k]) / 2,
+        slope = ((side * height * Math.PI) / period) * slopes[k]
       const norm = Math.hypot(1, slope)
       for (let i = 0; i < 2; i++) {
         const offset = ((i === 0 ? 1 : -1) * spacing) / 2
@@ -85,8 +127,32 @@ export function smoothPairedLobes(
     }
     return rails
   }
-  const addition = (height: number) =>
-    Math.min(...generate(height).map((r) => length(r) - span))
+  const addition = (height: number) => {
+    const total = [0, 0],
+      lastX = [0, 0],
+      lastY = [0, 0]
+    for (let k = 0; k < positions.length; k++) {
+      const centerX = positions[k],
+        centerY = (side * height * raised[k]) / 2,
+        slope = ((side * height * Math.PI) / period) * slopes[k]
+      const norm = Math.hypot(1, slope)
+      for (let i = 0; i < 2; i++) {
+        const offset = ((i === 0 ? 1 : -1) * spacing) / 2
+        const lx = centerX - (offset * slope) / norm,
+          ly = centerY + offset / norm
+        const x = a.x + ux * lx - uy * ly,
+          y = a.y + uy * lx + ux * ly
+        if (k > 0) {
+          const dx = lastX[i] - x,
+            dy = lastY[i] - y
+          total[i] += Math.sqrt(dx * dx + dy * dy)
+        }
+        lastX[i] = x
+        lastY[i] = y
+      }
+    }
+    return Math.min(total[0] - span, total[1] - span)
+  }
   let lo = 0,
     hi = Math.min(maxHeight, deficit + span)
   if (addition(hi) < deficit) return null

@@ -282,14 +282,19 @@ export function* routeCoupledPair(
                 negotiation?.history,
               )
             : new VectorVisibilitySearch(scene, ends[0], ends[1])
-        while (
-          !centerSearch.solved &&
-          !centerSearch.failed &&
-          centerSearch.expanded <
-            (centerSearch instanceof GridVisibilitySearch ? 500000 : 1000)
-        ) {
-          centerSearch.step()
-          yield
+        try {
+          while (
+            !centerSearch.solved &&
+            !centerSearch.failed &&
+            centerSearch.expanded <
+              (centerSearch instanceof GridVisibilitySearch ? 500000 : 1000)
+          ) {
+            centerSearch.step()
+            yield
+          }
+        } finally {
+          if (centerSearch instanceof GridVisibilitySearch)
+            centerSearch.cancel()
         }
         if (!centerSearch.solved) continue
         const centerPath = reduceOrdinaryTurns(
@@ -442,13 +447,17 @@ export function* routeCoupledPair(
                         ? { step: width / 10, bounds: localBounds }
                         : undefined,
                     )
-                while (
-                  !search.solved &&
-                  !search.failed &&
-                  search.expanded < 500000
-                ) {
-                  search.step()
-                  yield
+                try {
+                  while (
+                    !search.solved &&
+                    !search.failed &&
+                    search.expanded < 500000
+                  ) {
+                    search.step()
+                    yield
+                  }
+                } finally {
+                  if (search instanceof GridVisibilitySearch) search.cancel()
                 }
                 if (!search.solved) {
                   failed = true
@@ -536,13 +545,17 @@ export function* routeCoupledPair(
                 other.pointsToConnect[0],
                 other.pointsToConnect[1],
               )
-              while (
-                !check.solved &&
-                !check.failed &&
-                check.expanded < 500000
-              ) {
-                check.step()
-                yield
+              try {
+                while (
+                  !check.solved &&
+                  !check.failed &&
+                  check.expanded < 500000
+                ) {
+                  check.step()
+                  yield
+                }
+              } finally {
+                check.cancel()
               }
               if (check.solved) candidateScore += length(check.result)
               if (!check.solved) {
