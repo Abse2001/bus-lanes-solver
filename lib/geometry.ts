@@ -8,18 +8,22 @@ export function distance(a: Point, b: Point) {
   return Math.sqrt(dx * dx + dy * dy)
 }
 export function pointSegmentDistance(p: Point, edge: [Point, Point]) {
-  const [a, b] = edge,
-    dx = b.x - a.x,
-    dy = b.y - a.y,
-    t = Math.max(
-      0,
-      Math.min(
-        1,
-        ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1),
-      ),
-    )
-  return Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy)
+  const [a, b] = edge
+  const dx = b.x - a.x,
+    dy = b.y - a.y
+  if (dx === 0 && dy === 0) return distance(p, a)
+  const t = Math.max(
+    0,
+    Math.min(
+      1,
+      ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1),
+    ),
+  )
+  const ex = p.x - a.x - t * dx,
+    ey = p.y - a.y - t * dy
+  return Math.sqrt(ex * ex + ey * ey)
 }
+
 const cross = (a: Point, b: Point, c: Point) =>
   (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
 export function segmentDistance(ab: [Point, Point], cd: [Point, Point]) {
@@ -71,4 +75,23 @@ export function simplify(path: Point[]) {
     result.push(point)
   }
   return result
+}
+
+/** Strict segment clearance test in board-world mm (+X right, +Y up).
+ * The bounding box only rejects definitely separated segments. */
+export function segmentsTooClose(
+  ab: [Point, Point],
+  cd: [Point, Point],
+  required: number,
+) {
+  const [a, b] = ab,
+    [c, d] = cd
+  if (
+    Math.max(a.x, b.x) + required < Math.min(c.x, d.x) ||
+    Math.max(c.x, d.x) + required < Math.min(a.x, b.x) ||
+    Math.max(a.y, b.y) + required < Math.min(c.y, d.y) ||
+    Math.max(c.y, d.y) + required < Math.min(a.y, b.y)
+  )
+    return false
+  return segmentDistance(ab, cd) < required
 }

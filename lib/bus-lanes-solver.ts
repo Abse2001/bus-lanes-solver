@@ -58,6 +58,12 @@ export class BusLanesSolver extends BaseSolver {
   private conflictingLanes = 0
   private negotiated?: Generator<Trace[], Trace[] | null>
   private pairSearch?: Generator<void, Trace[] | null>
+  private reportedRoutes?: Array<{ trace: Trace; route: Trace["route"] }>
+  private lengthStats?: {
+    busLengths: ReturnType<typeof busLengthReports>
+    pairLengths: ReturnType<typeof pairLengthReports>
+    traceLengthsMm: Array<{ name: string | undefined; length: number }>
+  }
   constructor(
     input: SimpleRouteJson,
     options: SolverOptions = {},
@@ -452,9 +458,32 @@ export class BusLanesSolver extends BaseSolver {
       this.fail("constraint_error", String(e))
     }
     this.progress = this.lane / Math.max(1, this.input.connections.length)
+    // Searches yield frequently while the committed copper remains unchanged.
+    // Refresh measurements on route replacement, including in-place Trace
+    // objects whose route array was replaced during final cleanup.
+    if (
+      !this.reportedRoutes ||
+      this.reportedRoutes.length !== this.traces.length ||
+      this.reportedRoutes.some(
+        (old, i) =>
+          old.trace !== this.traces[i] || old.route !== this.traces[i].route,
+      )
+    ) {
+      this.reportedRoutes = this.traces.map((trace) => ({
+        trace,
+        route: trace.route,
+      }))
+      this.lengthStats = {
+        busLengths: busLengthReports(this.input, this.traces),
+        pairLengths: pairLengthReports(this.input, this.traces),
+        traceLengthsMm: this.traces.map((t) => ({
+          name: t.connection_name,
+          length: length(t.route),
+        })),
+      }
+    }
     this.stats = {
-      busLengths: busLengthReports(this.input, this.traces),
-      pairLengths: pairLengthReports(this.input, this.traces),
+      ...this.lengthStats,
       phase: this.phase,
       algorithm: "octilinear_visibility",
       attempt: this.attempt,
@@ -472,10 +501,6 @@ export class BusLanesSolver extends BaseSolver {
           ? this.search.open.length
           : 0) ?? 0,
       failureCode: this.failureCode,
-      traceLengthsMm: this.traces.map((t) => ({
-        name: t.connection_name,
-        length: length(t.route),
-      })),
     }
   }
   visualize(): GraphicsObject {

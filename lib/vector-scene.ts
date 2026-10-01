@@ -1,4 +1,5 @@
-import { distance, segmentDistance } from "./geometry"
+import { CopperIndex } from "./copper-index"
+import { distance, segmentDistance, pointSegmentDistance } from "./geometry"
 import type { Point, SimpleRouteJson, Connection, Trace } from "./types"
 export interface Copper {
   a: Point
@@ -104,7 +105,17 @@ const intersectsRect = (a: Point, b: Point, r: NonNullable<Copper["rect"]>) => {
   return true
 }
 export function clearanceToCopper(a: Point, b: Point, c: Copper) {
-  if (!c.rect) return segmentDistance([a, b], [c.a, c.b]) - c.radius
+  if (!c.rect) {
+    // Raster occupancy asks about points, and circular pads/vias have a
+    // zero-length centerline. Avoid four equivalent segment projections.
+    if (a.x === b.x && a.y === b.y) {
+      if (c.a.x === c.b.x && c.a.y === c.b.y) return distance(a, c.a) - c.radius
+      return pointSegmentDistance(a, [c.a, c.b]) - c.radius
+    }
+    if (c.a.x === c.b.x && c.a.y === c.b.y)
+      return pointSegmentDistance(c.a, [a, b]) - c.radius
+    return segmentDistance([a, b], [c.a, c.b]) - c.radius
+  }
   const r = c.rect
   if (intersectsRect(a, b, r)) return 0
   const corners = [
@@ -122,6 +133,8 @@ export function clearanceToCopper(a: Point, b: Point, c: Copper) {
 /** Continuous board-world geometry in mm. Bounds checks and segment/capsule
  * predicates are exact; no coordinate quantization or raster cells are used. */
 export class VectorScene {
+  private visibleCalls = 0
+  private copperIndex?: CopperIndex
   readonly copper: Copper[]
   readonly owners: Set<string>
   readonly margin: number
@@ -167,6 +180,13 @@ export class VectorScene {
       maxX = Math.max(a.x, b.x) + this.margin,
       minY = Math.min(a.y, b.y) - this.margin,
       maxY = Math.max(a.y, b.y) + this.margin
+    if (++this.visibleCalls === 16)
+      this.copperIndex = new CopperIndex(this.copper)
+    if (this.copperIndex)
+      return !this.copperIndex.some(
+        { minX, maxX, minY, maxY },
+        (c) => clearanceToCopper(a, b, c) < this.margin - 1e-8,
+      )
     for (const c of this.copper) {
       const r = c.rect ?? {
         minX: Math.min(c.a.x, c.b.x) - c.radius,

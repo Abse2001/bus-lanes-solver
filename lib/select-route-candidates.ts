@@ -1,15 +1,56 @@
 import { segmentDistance, length } from "./geometry"
 import type { Trace, Wire } from "./types"
 
-type Candidate = { traces: Trace[]; key: string; length: number; id: number }
+// Dense early candidate ids dominate compatibility checks. Keep that cache
+// bounded (4 KiB per candidate); unusually long searches use the sparse map.
+class CandidateConflicts {
+  private bits = new Uint8Array(0)
+  private sparse = new Map<number, boolean>()
+  get(id: number): boolean | undefined {
+    if (id >= 4096) return this.sparse.get(id)
+    const value = this.bits[id]
+    return value ? value === 2 : undefined
+  }
+  set(id: number, value: boolean) {
+    if (id >= 4096) {
+      this.sparse.set(id, value)
+      return
+    }
+    if (id >= this.bits.length) {
+      const next = new Uint8Array(
+        Math.max(16, 2 ** Math.ceil(Math.log2(id + 1))),
+      )
+      next.set(this.bits)
+      this.bits = next
+    }
+    this.bits[id] = value ? 2 : 1
+  }
+  keys() {
+    return this.sparse.keys()
+  }
+  delete(id: number) {
+    this.sparse.delete(id)
+  }
+}
+
+type Candidate = {
+  traces: Trace[]
+  key: string
+  length: number
+  peak: number
+  id: number
+  layers: string[]
+  singleLayer: string | undefined
+  conflicts: CandidateConflicts
+}
 
 /** Select compatible, freshly computed alternatives. A paired route is one
  * indivisible choice so candidate selection cannot separate its rails. */
 export class RouteCandidatePool {
   private pools = new Map<string, Candidate[]>()
-  private conflicts = new Map<number, Map<number, boolean>>()
   private nextId = 0
   private additions = 0
+  private assignments = new Map<string, Candidate[] | null>()
   constructor(
     private clearance: number,
     private limit = 120,
@@ -23,6 +64,15 @@ export class RouteCandidatePool {
       traces,
       key: signature,
       length: traces.reduce((sum, t) => sum + length(t.route), 0),
+      peak: Math.max(...traces.map((t) => length(t.route))),
+      layers: [...new Set(traces.map((t) => (t.route[0] as Wire).layer))],
+      singleLayer: traces.every(
+        (t) =>
+          (t.route[0] as Wire).layer === (traces[0].route[0] as Wire).layer,
+      )
+        ? (traces[0].route[0] as Wire).layer
+        : undefined,
+      conflicts: new CandidateConflicts(),
       id: this.nextId++,
     }
     pool.push(candidate)
@@ -33,22 +83,20 @@ export class RouteCandidatePool {
 
   private collides(a: Candidate, b: Candidate): boolean {
     if (
-      !a.traces.some((first) =>
-        b.traces.some(
-          (second) =>
-            (first.route[0] as Wire).layer === (second.route[0] as Wire).layer,
-        ),
-      )
+      a.singleLayer !== undefined &&
+      b.singleLayer !== undefined &&
+      a.singleLayer !== b.singleLayer
     )
       return false
-    const aid = a.id
-    const bid = b.id
-    const low = Math.min(aid, bid),
-      high = Math.max(aid, bid)
-    const row = this.conflicts.get(low) ?? new Map<number, boolean>()
-    this.conflicts.set(low, row)
+    const low = a.id < b.id ? a : b
+    const high = Math.max(a.id, b.id)
+    const row = low.conflicts
     const cached = row.get(high)
     if (cached !== undefined) return cached
+    if (!a.layers.some((layer) => b.layers.includes(layer))) {
+      row.set(high, false)
+      return false
+    }
     for (const first of a.traces)
       for (const second of b.traces) {
         if ((first.route[0] as Wire).layer !== (second.route[0] as Wire).layer)
@@ -85,16 +133,26 @@ export class RouteCandidatePool {
     domains: Candidate[][],
     searchBudget = 50000,
   ): Candidate[] | null {
+    const key =
+      `${searchBudget}:` +
+      domains.map((domain) => domain.map((c) => c.id).join(",")).join(";")
+    if (this.assignments.has(key)) return this.assignments.get(key)!
+    const result = this.computeCompatible(domains, searchBudget)
+    if (this.assignments.size >= 128)
+      this.assignments.delete(this.assignments.keys().next().value!)
+    this.assignments.set(key, result)
+    return result
+  }
+
+  private computeCompatible(
+    domains: Candidate[][],
+    searchBudget: number,
+  ): Candidate[] | null {
     if (domains.some((domain) => !domain.length)) return null
     // Separate layer-disjoint domains before backtracking. An unsatisfiable
     // byte bus must not cause enumeration of every solution on another layer.
     const layers = domains.map(
-      (domain) =>
-        new Set(
-          domain.flatMap((candidate) =>
-            candidate.traces.map((trace) => (trace.route[0] as Wire).layer),
-          ),
-        ),
+      (domain) => new Set(domain.flatMap((candidate) => candidate.layers)),
     )
     const pending = new Set(domains.map((_, i) => i))
     const components: number[][] = []
@@ -159,13 +217,10 @@ export class RouteCandidatePool {
     const active = new Set(
       [...this.pools.values()].flat().map((candidate) => candidate.id),
     )
-    for (const [a, row] of this.conflicts) {
-      if (!active.has(a)) {
-        this.conflicts.delete(a)
-        continue
-      }
-      for (const b of row.keys()) if (!active.has(b)) row.delete(b)
-    }
+    for (const pool of this.pools.values())
+      for (const candidate of pool)
+        for (const other of candidate.conflicts.keys())
+          if (!active.has(other)) candidate.conflicts.delete(other)
     this.additions = 0
   }
 
@@ -174,8 +229,7 @@ export class RouteCandidatePool {
     let domains = units.map((unit) => this.pools.get(unit) ?? [])
     let best = this.compatible(domains)
     if (!best) return null
-    const peak = (candidate: Candidate) =>
-      Math.max(...candidate.traces.map((t) => length(t.route)))
+    const peak = (candidate: Candidate) => candidate.peak
     // First bound the overall detour, then minimize each matching group's
     // target independently. A long bus must not hide another bus's outlier.
     for (const group of [units, ...matchingGroups]) {

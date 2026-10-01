@@ -18,10 +18,8 @@ export function tuneSmoothLengths(
       (c) => c.name === t.connection_name,
     )!
     const width = (t.route[0] as Wire).width
-    const delta =
-      targets.get(connection.name)! -
-      length(t.route) -
-      fixedRouteLength(input, connection.name)
+    const fixedLength = fixedRouteLength(input, connection.name)
+    const delta = targets.get(connection.name)! - length(t.route) - fixedLength
     if (delta < 1e-8) {
       yield t
       return
@@ -91,9 +89,7 @@ export function tuneSmoothLengths(
                 )([...t.route.slice(0, i), ...bump, ...t.route.slice(i + 2)])
                 if (
                   Math.abs(
-                    length(next) +
-                      fixedRouteLength(input, connection.name) -
-                      targets.get(connection.name)!,
+                    length(next) + fixedLength - targets.get(connection.name)!,
                   ) > 1e-6
                 )
                   continue

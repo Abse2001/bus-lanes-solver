@@ -56,16 +56,22 @@ export function simplifyMatchedTraces(
       ...fixed,
       ...result.flatMap(routeCopper),
     ])
+    const indexCurves = () => {
+      const prefix = new Uint32Array(trace.route.length)
+      for (const index of new Set(trace.curvedSegments)) prefix[index] = 1
+      for (let i = 1; i < prefix.length; i++) prefix[i] += prefix[i - 1]
+      return prefix
+    }
+    let curvedPrefix = indexCurves()
     for (let pass = 0; pass < 3; pass++) {
       let changed = false
       for (let i = 0; i < trace.route.length - 3; i++) {
-        const curved = new Set(trace.curvedSegments)
         for (
           let j = Math.min(trace.route.length - 1, i + 70);
           j >= i + 3;
           j--
         ) {
-          if ([...curved].some((index) => index > i && index <= j)) continue
+          if (curvedPrefix[j] !== curvedPrefix[i]) continue
           const originalLength = length(trace.route.slice(i, j + 1))
           let accepted = false
           for (const replacement of ordinaryRunCandidates(
@@ -104,6 +110,7 @@ export function simplifyMatchedTraces(
             trace.curvedSegments = trace.curvedSegments?.map((index) =>
               index > j ? index + delta : index,
             )
+            curvedPrefix = indexCurves()
             changed = accepted = true
             break
           }
