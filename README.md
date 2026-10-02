@@ -56,8 +56,9 @@ The AM3352 regression measures these limits independently of the solver:
 | Byte-bus / maximum differential skew | Within declared bounds | 0.635 / 0.127 mm | ≤0.635 / ≤0.127 mm |
 | Pair interior edge gap | 0.11979–0.13813 mm | 0.11213–0.13813 mm | 0.0999–0.155 mm |
 
-The pair audit allows 6.2 mm at each end for package approaches, matching the
-reference audit. This is a board-specific test limit, not a hidden solver default.
+The original reference audit allows 6.2 mm at each end for package approaches.
+The powered placement benchmark below additionally audits all copper outside
+native package/fanout regions, including the approaches.
 The quality limits supplement connectivity, continuous DRC, and visual review.
 
 The main review path is:
@@ -72,7 +73,8 @@ The main review path is:
    Refinement runs after allocating tuning space and preserves other-net copper.
 5. The AM3352 TSX regression in core: 47 routes, native DRC, independent quality
    measurements, and three routed signal-layer snapshots. The fresh run passed
-   in approximately 281 seconds; every snapshot was visually inspected.
+   in approximately 281 seconds in the initial implementation. See the powered
+   four-placement benchmark below for current runtimes.
 
 ## Constraints
 
@@ -171,12 +173,37 @@ or invalid completed copper. Use `./benchmark.sh --require-all-solved` for a
 strict gate that also exits nonzero when any sample remains unrouted. CI runs the
 same four-case measurement and uploads the result JSON.
 
-The current power-aware benchmark completes **0/4 placements**. All 161 fixed
-power dogbones pass DRC and remain unchanged, but signal routing exhausts its
-lane search in every case. The measured routing times on macOS arm64 with
-Bun 1.3.2 are 50.487 s (control), 4.201 s (right), 4.180 s (left), and 0.268 s
-(above). No completed signal routes are exported. The earlier signal-only
-reference passes without these power obstacles; it is a different input.
+The powered benchmark completes **4/4 placements under 30 seconds each** on
+macOS arm64 with Bun 1.3.2. Run the same strict check with
+`./benchmark.sh --timeout-seconds 30 --require-all-solved`.
+
+| Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
+| --- | ---: | ---: | --- | --- | --- | --- |
+| Control | 12.396 s | 14.187 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.073 mm |
+| Right | 16.635 s | 18.149 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.103 mm |
+| Left | 17.949 s | 20.989 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
+| Above | 21.126 s | 23.322 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+
+All four preserve the 161 power dogbones and have zero separated pair length
+outside the native pad/fanout regions. The exterior audit checks both rails along
+their actual copper, including meanders; it does not exempt a fixed approach
+length. Ordinary bends are octilinear, and tuning uses smooth curves. Runtime
+varies by machine; these timings include routing and length matching, with
+native DRC and fixture validation reported separately in the total column.
+
+For backward-facing packages, the pipeline routes shared pair corridors and
+repairs a nearly complete bus together with its newly generated local signal
+sites. Native supplied copper remains hard throughout. Package coupling is
+extended while preserving already matched internal compensation, then the bus
+and pair lengths are revalidated without raising the bus length target.
+
+Generate the four completed review images with
+`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 30`.
+The exporter validates all four before writing any images:
+[control](docs/routed-am3352-placements/control-solved.png),
+[right](docs/routed-am3352-placements/right-solved.png),
+[left](docs/routed-am3352-placements/left-solved.png), and
+[above](docs/routed-am3352-placements/above-solved.png).
 
 The router checks continuous copper clearance while searching octilinear paths.
 Clear channels use analytic connectors. Dense inputs use a grid search with turn
@@ -218,8 +245,9 @@ The strict `BusLanesSolver` export remains available for callers that already
 supply fanout handoffs.
 
 The AM3352/RAM integration regression passes without saved geometry or a custom
-algorithm. Dense original-pad inputs can require minutes of negotiation; bounded
-search still reports failure when no acceptable route set is found.
+algorithm. The four powered AM3352 placements complete in 12–22 seconds on the
+measured machine; bounded search still reports failure when no acceptable route
+set is found.
 
 ### Routed PR artifacts
 
