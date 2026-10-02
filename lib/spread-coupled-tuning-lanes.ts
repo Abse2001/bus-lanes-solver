@@ -1,3 +1,7 @@
+import { remapCurvedSegments } from "./remap-curved-segments"
+import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
+import { sharedStraightSection } from "./shared-straight-section"
+import { interPackageTuningWindow } from "./inter-package-tuning-window"
 import { offsetPath } from "./coupled-pair-routing"
 import { distance, simplify } from "./geometry"
 import { tuningPathIsSelfClear } from "./length-tuning"
@@ -64,14 +68,17 @@ export function spreadCoupledTuningLanes(
   input: SimpleRouteJson,
   traces: Trace[],
   pitch: number,
+  style: "dogleg" | "diagonal" = "dogleg",
 ): Trace[] | null {
-  let result = structuredClone(traces)
+  let result = alignCoupledSectionBoundaries(input, structuredClone(traces))
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
   for (const bus of input.buses ?? []) {
-    const members = result.filter((t) =>
+    const busMembers = result.filter((t) =>
       bus.connectionNames.includes(t.connection_name!),
     )
+    const layer = (busMembers[0]?.route[0] as Wire)?.layer
+    const members = result.filter((t) => (t.route[0] as Wire).layer === layer)
     if (members.length < 3) continue
     const first = members[0].route[0],
       last = members[0].route.at(-1)!
@@ -94,10 +101,36 @@ export function spreadCoupledTuningLanes(
           p.connectionNames.includes(trace.connection_name!) &&
           p.connectionNames.every((n) => bus.connectionNames.includes(n)),
       )
-      const rails = pair?.connectionNames.map(
+      let rails = pair?.connectionNames.map(
         (n) => members.find((t) => t.connection_name === n)!,
       )
       if (rails?.every((t) => t.coupledSection)) {
+        const existing = rails.map((t) =>
+          t.route.slice(t.coupledSection![0], t.coupledSection![1] + 1),
+        )
+        const wholeCorridor =
+          existing[0].length === existing[1].length &&
+          existing[0].slice(1).every((point, i) => {
+            const a = existing[0][i],
+              c = existing[1][i],
+              d = existing[1][i + 1]
+            const first = distance(a, point),
+              second = distance(c, d)
+            return (
+              first > 1e-8 &&
+              second > 1e-8 &&
+              Math.abs((point.x - a.x) / first - (d.x - c.x) / second) < 1e-7 &&
+              Math.abs((point.y - a.y) / first - (d.y - c.y) / second) < 1e-7
+            )
+          })
+        if (!wholeCorridor) {
+          const selected = sharedStraightSection(
+            rails,
+            (trace.route[0] as Wire).width + (pair!.traceGap ?? clearance),
+          )
+          if (!selected) return null
+          rails = selected
+        }
         const sections = rails.map((t) =>
           t.route.slice(t.coupledSection![0], t.coupledSection![1] + 1),
         )
@@ -125,8 +158,19 @@ export function spreadCoupledTuningLanes(
       }
     }
     const width = Math.max(...members.map((t) => (t.route[0] as Wire).width))
-    const start = Math.max(...channels.map((c) => c.path[0].x)) + width * 2
-    const end = Math.min(...channels.map((c) => c.path.at(-1)!.x)) - width * 2
+    let start = Math.max(...channels.map((c) => c.path[0].x)) + width * 2
+    let end = Math.min(...channels.map((c) => c.path.at(-1)!.x)) - width * 2
+    // Deep package terminals do not bound the open space between components.
+    // Keep the tuning bank outside both pad fields and their local through
+    // vias; retain the already routed package approaches on either side.
+    const window = interPackageTuningWindow(
+      input,
+      members,
+      (point) => uv(point).x,
+      Math.max(...channels.map((channel) => channel.width)) / 2 + clearance,
+    )
+    start = Math.max(start, window.start)
+    end = Math.min(end, window.end)
     if (end - start < pitch * 2) return null
     let accepted: Trace[] | undefined
     attempts: for (const trim of [0, 0.05, 0.1, 0.2]) {
@@ -182,17 +226,42 @@ export function spreadCoupledTuningLanes(
             const top = lo + depths[i],
               bottom = hi - depths[i]
             if (bottom - top < pitch) continue
+            const ordinal = cuts.indexOf(c)
             const v =
-              center + side * (sideExtent - (group.length - 1 - i) * pitch)
+              style === "diagonal"
+                ? center + (ordinal - (cuts.length - 1) / 2) * pitch
+                : center + side * (sideExtent - (group.length - 1 - i) * pitch)
+            const lead = Math.abs(v - c.a!.point.y),
+              tail = Math.abs(v - c.b!.point.y)
+            const entry =
+              lo +
+              (v > c.a!.point.y ? cuts.length - 1 - ordinal : ordinal) *
+                (width + clearance)
+            const exit =
+              hi -
+              (v > c.b!.point.y ? cuts.length - 1 - ordinal : ordinal) *
+                (width + clearance)
+            if (style === "diagonal" && lead + tail >= exit - entry - 4 * width)
+              continue
+            const diagonal = [
+              ...c.a!.before,
+              { x: entry, y: c.a!.point.y },
+              { x: entry + lead, y: v },
+              { x: exit - tail, y: v },
+              { x: exit, y: c.b!.point.y },
+              ...c.b!.after,
+            ]
             const path = bevel(
-              [
-                ...c.a!.before,
-                { x: top, y: c.a!.point.y },
-                { x: top, y: v },
-                { x: bottom, y: v },
-                { x: bottom, y: c.b!.point.y },
-                ...c.b!.after,
-              ],
+              style === "diagonal"
+                ? diagonal
+                : [
+                    ...c.a!.before,
+                    { x: top, y: c.a!.point.y },
+                    { x: top, y: v },
+                    { x: bottom, y: v },
+                    { x: bottom, y: c.b!.point.y },
+                    ...c.b!.after,
+                  ],
               width * 1.5,
               lo,
               hi,
@@ -203,6 +272,7 @@ export function spreadCoupledTuningLanes(
               const trace = channel.traces[0]
               replacements.push({
                 ...trace,
+                curvedSegments: remapCurvedSegments(trace, path.map(xy)),
                 route: path.map((p) => ({
                   ...xy(p),
                   route_type: "wire",
@@ -237,6 +307,11 @@ export function spreadCoupledTuningLanes(
                 replacements.push({
                   ...trace,
                   coupledSection: [s, s + points.length - 1],
+                  curvedSegments: remapCurvedSegments(trace, [
+                    ...trace.route.slice(0, s),
+                    ...points,
+                    ...trace.route.slice(e + 1),
+                  ]),
                   route: [
                     ...trace.route.slice(0, s),
                     ...points.map((p) => ({

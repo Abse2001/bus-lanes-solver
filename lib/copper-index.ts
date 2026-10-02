@@ -1,3 +1,4 @@
+import type { Point } from "./types"
 import type { Copper } from "./vector-scene"
 
 type Box = { minX: number; maxX: number; minY: number; maxY: number }
@@ -48,6 +49,41 @@ export class CopperIndex {
           }),
         })),
       )
+  }
+  /** Exact nearest-copper distance using bounding boxes only to prune. A
+   * point inside a box has no useful signed-distance lower bound. queryRadius
+   * expands the queried point when the predicate subtracts its radius too. */
+  distanceToPoint(
+    point: Point,
+    distanceOf: (copper: Copper) => number,
+    queryRadius = 0,
+  ): number {
+    let nearest = Infinity
+    const lowerBound = (box: Box) => {
+      const dx = Math.max(box.minX - point.x, 0, point.x - box.maxX)
+      const dy = Math.max(box.minY - point.y, 0, point.y - box.maxY)
+      return dx || dy ? Math.hypot(dx, dy) - queryRadius : -Infinity
+    }
+    const visit = (node: Node, bound: number) => {
+      if (bound >= nearest) return
+      if (node.entries) {
+        for (const entry of node.entries)
+          if (lowerBound(entry) < nearest)
+            nearest = Math.min(nearest, distanceOf(entry.copper))
+        return
+      }
+      const left = lowerBound(node.left!),
+        right = lowerBound(node.right!)
+      if (left <= right) {
+        visit(node.left!, left)
+        visit(node.right!, right)
+      } else {
+        visit(node.right!, right)
+        visit(node.left!, left)
+      }
+    }
+    if (this.root) visit(this.root, lowerBound(this.root))
+    return nearest
   }
   some(box: Box, predicate: (c: Copper) => boolean): boolean {
     const visit = (node: Node): boolean => {

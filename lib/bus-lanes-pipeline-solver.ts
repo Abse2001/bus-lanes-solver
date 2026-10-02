@@ -1,9 +1,18 @@
+import { routeBackwardPackageBuses } from "./route-backward-package-buses"
+import type { RepairedBusDogbones } from "./repair-bus-dogbones"
+import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
+import { shortenPairApproaches } from "./shorten-pair-approaches"
+import { busLengthReports } from "./route-lengths"
+import { extendPackageCoupling } from "./extend-package-coupling"
+import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
+import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
-import { BaseSolver } from "@tscircuit/solver-utils"
 import {
-  routeLocalSignalDogbones,
-  getCopperLayerNames,
-} from "@tscircuit/fanout-solver"
+  rematchTrappedSignalDogbones,
+  type RematchedSignalDogbones,
+} from "./rematch-trapped-signal-dogbones"
+import { BaseSolver } from "@tscircuit/solver-utils"
+import { getCopperLayerNames } from "@tscircuit/fanout-solver"
 import { BusLanesSolver } from "./bus-lanes-solver"
 import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
 
@@ -19,11 +28,14 @@ export class BusLanesPipelineSolver extends BaseSolver {
   phase = "resolve_layers"
   traces: Trace[] = []
   failureCode: string | null = null
+  private backwardPackages?: Generator<void, RepairedBusDogbones | null>
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
   private completedLanes: Trace[] = []
   private remainingInput?: SimpleRouteJson
+  private siteRematch?: Generator<void, RematchedSignalDogbones>
+  private packageCoupling?: Generator<void, Trace[]>
   private terminalLayers = new Map<string, string[]>()
   constructor(input: SimpleRouteJson, options: BusLanesPipelineOptions = {}) {
     super()
@@ -41,6 +53,88 @@ export class BusLanesPipelineSolver extends BaseSolver {
     return {
       ...this.input,
       traces: [...(this.input.traces ?? []), ...this.traces],
+    }
+  }
+  tryFinalAcceptance() {
+    this.backwardPackages?.return(null)
+    this.backwardPackages = undefined
+    this.packageCoupling?.return([])
+    this.packageCoupling = undefined
+    this.siteRematch?.return({ connections: [], escapes: [] })
+    this.siteRematch = undefined
+    this.child?.tryFinalAcceptance()
+    this.failureCode = "search_budget_exhausted"
+    this.traces = []
+  }
+  private childOptions(reserveForControls = false): BusLanesPipelineOptions {
+    const remaining = Math.max(1, this.MAX_ITERATIONS - this.iterations)
+    const reserve = reserveForControls
+      ? Math.min(200000, Math.floor(remaining / 4))
+      : 0
+    return {
+      ...this.options,
+      // Keep the aggregate pipeline budget. Restarting a dense bus at the
+      // old per-layer cutoff discards compatible computed alternatives just
+      // before they converge. Unconstrained controls retain a work reserve.
+      maxSearchIterations:
+        this.options.maxSearchIterations ?? Math.max(1, remaining - reserve),
+    }
+  }
+  private *finishPackageCoupling(
+    input: SimpleRouteJson,
+    lanes: Trace[],
+  ): Generator<void, Trace[]> {
+    let refined = yield* extendPackageCoupling(input, lanes)
+    if (exteriorPairSpacingReports(input, refined).every((r) => r.matched))
+      return refined
+    refined = yield* extendPackageCoupling(
+      input,
+      shortenPairApproaches(input, refined),
+      { preserveMatching: false },
+    )
+    if (exteriorPairSpacingReports(input, refined).some((r) => !r.matched))
+      throw Error(
+        "Pair approaches still separate outside native package fanouts",
+      )
+    const matcher = BusLanesSolver.forRefinement(input, refined, this.options)
+    try {
+      while (!matcher.solved && !matcher.failed) {
+        matcher.step()
+        yield
+      }
+      if (!matcher.solved)
+        throw Error(matcher.error ?? "Package approach length matching failed")
+      const ceilings = new Map(
+        busLengthReports(input, lanes).map((b) => [
+          b.busId,
+          Math.max(
+            ...b.lengths.map(
+              (l) => l.totalLengthMm ?? Number.POSITIVE_INFINITY,
+            ),
+          ),
+        ]),
+      )
+      if (
+        busLengthReports(input, matcher.traces).some(
+          (b) =>
+            Math.max(
+              ...b.lengths.map(
+                (l) => l.totalLengthMm ?? Number.POSITIVE_INFINITY,
+              ),
+            ) >
+            ceilings.get(b.busId)! + 1e-6,
+        )
+      )
+        throw Error("Package refinement increased the bus length target")
+      if (
+        exteriorPairSpacingReports(input, matcher.traces).some(
+          (r) => !r.matched,
+        )
+      )
+        throw Error("Package approach matching separated the pair")
+      return matcher.traces
+    } finally {
+      if (!matcher.solved && !matcher.failed) matcher.tryFinalAcceptance()
     }
   }
   private prepare() {
@@ -93,16 +187,38 @@ export class BusLanesPipelineSolver extends BaseSolver {
         members
           .flatMap((c) => c.pointsToConnect)
           .filter((p) => !(p.layers ?? [p.layer]).includes(l)).length
+      const rank = (l: string) =>
+        preferred.includes(l) ? preferred.indexOf(l) : preferred.length
+      const layerCost = new Map(
+        allowed.map((layer) => [
+          layer,
+          countVias(layer) +
+            this.input.obstacles.filter(
+              (o) => o.componentId && o.layers.includes(layer),
+            ).length /
+              8,
+        ]),
+      )
+      const retryOrder = new Map(
+        allowed.map((layer) => {
+          const peers = allowed.filter(
+            (other) =>
+              rank(other) === rank(layer) &&
+              layerCost.get(other) === layerCost.get(layer),
+          )
+          return [
+            layer,
+            (peers.indexOf(layer) -
+              (this.attempt % peers.length) +
+              peers.length) %
+              peers.length,
+          ]
+        }),
+      )
       allowed.sort((a, b) => {
         // Prefer explicit signal-layer intent, then balance via count against
         // pad-field congestion. Empty compatible layers retain zero-via routes.
-        const exposure = (layer: string) =>
-          this.input.obstacles.filter(
-            (o) => o.componentId && o.layers.includes(layer),
-          ).length / 8
-        const via = countVias(a) + exposure(a) - countVias(b) - exposure(b)
-        const rank = (l: string) =>
-          preferred.includes(l) ? preferred.indexOf(l) : preferred.length
+        const via = layerCost.get(a)! - layerCost.get(b)!
         const crossingCost = (layer: string) => {
           const cross = (
             p: { x: number; y: number },
@@ -127,10 +243,13 @@ export class BusLanesPipelineSolver extends BaseSolver {
           rank(a) - rank(b) ||
           via ||
           crossingCost(a) - crossingCost(b) ||
-          layers.indexOf(a) - layers.indexOf(b)
+          retryOrder.get(a)! - retryOrder.get(b)!
         )
       })
-      const target = allowed[Math.max(0, this.attempt - 1) % allowed.length]
+      // Reconsider equally good layers without discarding load balancing.
+      // Selecting the second-ranked layer for every group puts independent
+      // buses onto the same crowded layer instead of exploring an alternative.
+      const target = allowed[0]
       for (const name of group) targets.set(name, target)
       load.set(target, load.get(target)! + group.size)
     }
@@ -143,8 +262,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.input.minTraceWidth,
     )
     // The shared site matcher uses a conservative width while reserving sites.
-    const result = routeLocalSignalDogbones(
-      this.input as Parameters<typeof routeLocalSignalDogbones>[0],
+    const result = routeAlternateSignalDogbones(
+      this.input,
       {
         targetLayers: targets,
         viaDiameter: this.input.minViaPadDiameter ?? 0.6,
@@ -158,6 +277,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
         holeToHoleClearance: this.input.minViaHoleEdgeToViaHoleEdgeClearance,
         allowBlindAndBuriedVias: this.input.allowBlindAndBuriedVias ?? false,
       },
+      this.attempt,
     )
     this.escapes = result.traces.map((t) => ({
       ...t,
@@ -218,24 +338,115 @@ export class BusLanesPipelineSolver extends BaseSolver {
     )
     // The reference routes and tunes bus corridors before placing unrelated
     // controls, so those controls cannot consume space required for matching.
-    if (matching.length && remaining.length) {
+    const busNames = new Set(
+      (this.input.buses ?? []).flatMap((b) => b.connectionNames),
+    )
+    const direction = laneInput.connections
+      .filter((c) => busNames.has(c.name))
+      .reduce(
+        (sum, c) => ({
+          x: sum.x + c.pointsToConnect[1].x - c.pointsToConnect[0].x,
+          y: sum.y + c.pointsToConnect[1].y - c.pointsToConnect[0].y,
+        }),
+        { x: 0, y: 0 },
+      )
+    if (
+      this.attempt === 0 &&
+      this.options.smoothTuning &&
+      this.options.denseSearch &&
+      Math.abs(direction.y) >= Math.abs(direction.x) &&
+      backwardFacingPackageTerminals({
+        ...this.input,
+        connections: this.input.connections.filter((c) => busNames.has(c.name)),
+      }) &&
+      this.input.connections.every(
+        (c) =>
+          c.pointsToConnect.length === 2 &&
+          c.pointsToConnect.every((p) =>
+            isUnroutedComponentPad(this.input, c, p),
+          ),
+      )
+    ) {
+      this.backwardPackages = routeBackwardPackageBuses(
+        this.input,
+        laneInput,
+        terminalLayers,
+        this.childOptions(),
+      )
+      return
+    }
+    const joint =
+      (this.attempt > 0 || Math.abs(direction.x) > Math.abs(direction.y)) &&
+      backwardFacingPackageTerminals({
+        ...this.input,
+        connections: this.input.connections.filter((c) => busNames.has(c.name)),
+      })
+    if (matching.length && remaining.length && !joint) {
       this.remainingInput = {
         ...laneInput,
         connections: remaining,
         buses: [],
-        differentialPairs: [],
+        differentialPairs: (laneInput.differentialPairs ?? []).filter((p) =>
+          p.connectionNames.every((n) => !constrained.has(n)),
+        ),
       }
       this.child = new BusLanesSolver(
-        { ...laneInput, connections: matching },
-        this.options,
+        {
+          ...laneInput,
+          connections: matching,
+          differentialPairs: (laneInput.differentialPairs ?? []).filter((p) =>
+            p.connectionNames.every((n) => constrained.has(n)),
+          ),
+        },
+        this.childOptions(true),
         terminalLayers,
       )
     } else
-      this.child = new BusLanesSolver(laneInput, this.options, terminalLayers)
+      this.child = new BusLanesSolver(
+        laneInput,
+        this.childOptions(),
+        terminalLayers,
+      )
   }
   _step() {
     try {
-      if (!this.child) this.prepare()
+      if (this.siteRematch) {
+        const step = this.siteRematch.next()
+        this.phase = "resolve_control_sites"
+        this.stats = { ...this.stats, routingStage: "control_sites" }
+        if (!step.done) return
+        this.escapes = step.value.escapes
+        this.child = new BusLanesSolver(
+          {
+            ...this.remainingInput!,
+            connections: step.value.connections,
+            traces: [
+              ...(this.input.traces ?? []),
+              ...this.escapes,
+              ...this.completedLanes,
+            ],
+          },
+          this.childOptions(),
+          this.terminalLayers,
+        )
+        this.remainingInput = undefined
+        this.siteRematch = undefined
+        return
+      }
+      if (!this.child && !this.backwardPackages) this.prepare()
+      if (this.backwardPackages) {
+        this.phase = "route_backward_packages"
+        const step = this.backwardPackages.next()
+        if (!step.done) return
+        this.backwardPackages = undefined
+        if (!step.value) throw Error("Backward package bus routing failed")
+        this.escapes = step.value.escapes
+        this.child = BusLanesSolver.forRefinement(
+          step.value.input,
+          step.value.traces,
+          this.childOptions(),
+        )
+      }
       this.child!.step()
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
@@ -253,80 +464,107 @@ export class BusLanesPipelineSolver extends BaseSolver {
         throw Error(this.child!.error ?? "Bus lanes failed")
       if (this.child!.solved && this.remainingInput) {
         this.completedLanes = this.child!.traces
-        this.child = new BusLanesSolver(
-          {
-            ...this.remainingInput,
-            traces: [
-              ...(this.remainingInput.traces ?? []),
-              ...this.completedLanes,
-            ],
-          },
-          this.options,
+        this.siteRematch = rematchTrappedSignalDogbones(
+          this.input,
+          this.remainingInput,
+          this.completedLanes,
+          this.escapes,
           this.terminalLayers,
         )
-        this.remainingInput = undefined
         return
       }
       if (this.child!.solved) {
-        this.traces = [...this.completedLanes, ...this.child!.traces].map(
-          (lane) => {
-            const signalLayer = lane.route.find(
-              (p) => p.route_type === "wire",
-            )!.layer
-            const escapes = this.escapes
-              .filter((t) => t.connection_name === lane.connection_name)
-              .map((t) => {
-                const via = t.route.find((p) => p.route_type === "via")!
+        const lanes = [...this.completedLanes, ...this.child!.traces]
+        let refined = lanes
+        if (this.options.smoothTuning && this.input.differentialPairs?.length) {
+          this.packageCoupling ??= this.finishPackageCoupling(
+            {
+              ...this.input,
+              traces: [...(this.input.traces ?? []), ...this.escapes],
+              connections: this.input.connections.map((c) => {
+                const lane = lanes.find((t) => t.connection_name === c.name)!
                 return {
-                  ...t,
-                  route: t.route.map((p) =>
-                    p.route_type === "via"
-                      ? { ...p, to_layer: signalLayer }
-                      : p.layer === via.to_layer
-                        ? { ...p, layer: signalLayer }
-                        : p,
-                  ),
+                  ...c,
+                  pointsToConnect: [
+                    lane.route[0],
+                    lane.route.at(-1)!,
+                  ] as typeof c.pointsToConnect,
                 }
-              })
-            const near = (
-              a: { x: number; y: number },
-              b: { x: number; y: number },
-            ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
-            const prefix = escapes.find((t) =>
-              near(t.route.at(-1)!, lane.route[0]),
-            )
-            const suffix = escapes.find(
-              (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
-            )
-            const prefixRoute = prefix?.route,
-              suffixRoute = suffix?.route
-            const reversed =
-              suffixRoute
-                ?.toReversed()
-                .map((p) =>
+              }),
+            },
+            lanes,
+          )
+          const step = this.packageCoupling.next()
+          if (!step.done) {
+            this.phase = "extend_package_coupling"
+            return
+          }
+          refined = step.value
+          this.packageCoupling = undefined
+        }
+        this.traces = refined.map((lane) => {
+          const signalLayer = lane.route.find(
+            (p) => p.route_type === "wire",
+          )!.layer
+          const escapes = this.escapes
+            .filter((t) => t.connection_name === lane.connection_name)
+            .map((t) => {
+              const via = t.route.find((p) => p.route_type === "via")!
+              return {
+                ...t,
+                route: t.route.map((p) =>
                   p.route_type === "via"
-                    ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
-                    : p,
-                ) ?? []
-            const offset = (prefix?.route.length ?? 1) - 1
-            return {
-              ...lane,
-              coupledSection: lane.coupledSection?.map((i) => i + offset) as
-                | [number, number]
-                | undefined,
-              curvedSegments: lane.curvedSegments?.map((i) => i + offset),
-              route: [
-                ...(prefixRoute?.slice(0, -1) ?? []),
-                ...lane.route,
-                ...reversed.slice(1),
-              ],
-            }
-          },
-        )
+                    ? { ...p, to_layer: signalLayer }
+                    : p.layer === via.to_layer
+                      ? { ...p, layer: signalLayer }
+                      : p,
+                ),
+              }
+            })
+          const near = (
+            a: { x: number; y: number },
+            b: { x: number; y: number },
+          ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
+          const prefix = escapes.find((t) =>
+            near(t.route.at(-1)!, lane.route[0]),
+          )
+          const suffix = escapes.find(
+            (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
+          )
+          const prefixRoute = prefix?.route,
+            suffixRoute = suffix?.route
+          const reversed =
+            suffixRoute
+              ?.toReversed()
+              .map((p) =>
+                p.route_type === "via"
+                  ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
+                  : p,
+              ) ?? []
+          const offset = (prefix?.route.length ?? 1) - 1
+          return {
+            ...lane,
+            coupledSection: lane.coupledSection?.map((i) => i + offset) as
+              | [number, number]
+              | undefined,
+            curvedSegments: lane.curvedSegments?.map((i) => i + offset),
+            route: [
+              ...(prefixRoute?.slice(0, -1) ?? []),
+              ...lane.route,
+              ...reversed.slice(1),
+            ],
+          }
+        })
         this.solved = true
         this.phase = "solved"
       }
     } catch (error) {
+      this.backwardPackages?.return(null)
+      this.backwardPackages = undefined
+      this.packageCoupling?.return([])
+      this.packageCoupling = undefined
+      this.siteRematch?.return({ connections: [], escapes: [] })
+      this.siteRematch = undefined
       this.attempt++
       if (
         this.options.fanout !== "none" &&

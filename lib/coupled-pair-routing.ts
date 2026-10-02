@@ -1,4 +1,12 @@
+import { chamferOrdinaryCorners } from "./chamfer-ordinary-corners"
+import { routeAnglesAreConventional } from "./route-angle-validation"
+import { sharedPairSpacingReports } from "./shared-pair-spacing"
+import { tuneSmoothLengths } from "./smooth-length-tuning"
+import { minimumLengthTargets } from "./route-lengths"
+import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { extendCoupledSectionEnds } from "./extend-coupled-section"
+import { fixedRouteLength } from "./route-lengths"
+import { coupledPairCache } from "./coupled-pair-cache"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { distance, length, simplify } from "./geometry"
@@ -61,6 +69,9 @@ export function* routeCoupledPair(
       input.minTraceToPadEdgeClearance ??
       input.defaultObstacleMargin ??
       0.075
+  const fixedLengths = members.map((member) =>
+    fixedRouteLength(input, member.name),
+  )
   const inside = (point: Point, polygon: Point[]) => {
     let inside = false
     for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
@@ -178,7 +189,11 @@ export function* routeCoupledPair(
   const busMembers = input.connections.filter((c) => busNames.has(c.name))
   if (busMembers.length > 2 && originalPads.some((p) => p.length)) {
     const reserve = busMembers.length * (width + clearance)
-    const side = Math.sign(centers[1][crossAxis] - centers[0][crossAxis]) || 1
+    // Aligned pad columns can differ by a rounding residue after translation.
+    // Use the travel direction for alignment instead of moving the corridor to
+    // the opposite package edge because of a sub-nanometer difference.
+    const crossDelta = centers[1][crossAxis] - centers[0][crossAxis]
+    const side = Math.abs(crossDelta) < 1e-8 ? sign : Math.sign(crossDelta)
     const positions = busMembers.flatMap((c) =>
       c.pointsToConnect.map((p) => p[crossAxis]),
     )
@@ -207,9 +222,23 @@ export function* routeCoupledPair(
       (point, index, choices) =>
         choices.findIndex((other) => distance(point, other) < 1e-8) === index,
     )
+    // Pads on the back of a package should first try its nearby edges rather
+    // than crossing the entire via field to reach the edge facing the target.
+    // Keep the remaining corridor distance in the score so a short local
+    // escape does not win by sending the pair away from its destination.
+    const cost = (point: Point) =>
+      2 * distance(point, centers[end]) + distance(point, centers[1 - end])
+    handoffChoices[end].sort((a, b) => cost(a) - cost(b))
   }
   const variant = negotiation?.variant ?? 0
-  const offsets = [Math.floor(variant / handoffChoices[1].length), variant]
+  // Change both package approaches on each retry. A slow sweep of target
+  // handoffs can otherwise leave a blocked source escape unchanged for many
+  // stagnant bus passes. This diagonal traversal still visits every pairing.
+  const sourceOffset = variant % handoffChoices[0].length
+  const offsets = [
+    sourceOffset,
+    sourceOffset + Math.floor(variant / handoffChoices[0].length),
+  ]
   for (let end = 0; end < 2; end++) {
     const offset = offsets[end] % handoffChoices[end].length
     handoffChoices[end] = [
@@ -243,13 +272,50 @@ export function* routeCoupledPair(
   let best: Trace[] | null = null,
     bestScore = Infinity,
     viable = 0
-  for (const first of handoffChoices[0])
+  const reachability = new Map<string, { reachable: boolean; length: number }>()
+  // Most package approaches fit the same half-width grid used by the main
+  // search. Explore those handoffs first, then retain the fine grid for narrow
+  // gaps. Every grid edge is still checked against continuous copper geometry.
+  const fine = originalPads.some((pads) => pads.length > 0)
+  const approachChoices = (
+    fine ? [width / 2, width / 10] : [undefined]
+  ).flatMap((approachStep) =>
+    handoffChoices[0].map((point) => ({ point, approachStep })),
+  )
+  const cached =
+    negotiation &&
+    !negotiation.copper.length &&
+    !negotiation.penalty &&
+    !negotiation.history
+      ? coupledPairCache(input, fixed)
+      : undefined
+  for (const { point: first, approachStep } of approachChoices)
     for (const second of handoffChoices[1])
       candidates: for (const shift of [0, -1, 1, -2, 2]) {
         const ends = [first, second].map((p) => ({
           ...p,
           [crossAxis]: p[crossAxis] + shift * envelope,
         }))
+        const key = JSON.stringify([
+          pair,
+          layer,
+          width,
+          gap,
+          approachStep,
+          ends,
+        ])
+        const remembered = cached?.get(key)
+        if (remembered) {
+          if (remembered.traces && remembered.score < bestScore) {
+            bestScore = remembered.score
+            best = remembered.traces
+          }
+          if (remembered.hasMatchedAlternative) return best
+          if (remembered.countsAttempt && best && ++viable >= 4) return best
+          continue
+        }
+        let handoffBest: Trace[] | null = null,
+          handoffScore = Infinity
         const virtual = {
           name: "pair_corridor",
           pointsToConnect: ends.map((p) => ({ ...p, layer })),
@@ -272,7 +338,7 @@ export function* routeCoupledPair(
               result: direct,
               step() {},
             }
-          : input.connections.length > 12
+          : fine || input.connections.length > 12
             ? new GridVisibilitySearch(
                 scene,
                 ends[0],
@@ -296,7 +362,15 @@ export function* routeCoupledPair(
           if (centerSearch instanceof GridVisibilitySearch)
             centerSearch.cancel()
         }
-        if (!centerSearch.solved) continue
+        if (!centerSearch.solved) {
+          cached?.set(key, {
+            traces: null,
+            score: Infinity,
+            hasMatchedAlternative: false,
+            countsAttempt: false,
+          })
+          continue
+        }
         const centerPath = reduceOrdinaryTurns(
           centerSearch.result,
           visibleScene,
@@ -320,8 +394,15 @@ export function* routeCoupledPair(
               (oldSpan * span)
             return 1 + dot < 1e-5
           })
-        )
+        ) {
+          cached?.set(key, {
+            traces: null,
+            score: Infinity,
+            hasMatchedAlternative: false,
+            countsAttempt: false,
+          })
           continue
+        }
         const rails = [
           offsetPath(centerPath, (width + gap) / 2),
           offsetPath(centerPath, -(width + gap) / 2),
@@ -408,7 +489,6 @@ export function* routeCoupledPair(
                 const directEscape = connectors(source, target).find((p) =>
                   visibleEscapeScene.pathVisible(p),
                 )
-                const fine = originalPads.some((pads) => pads.length > 0)
                 const padding = 30 * width
                 const localBounds = {
                   minX: Math.max(
@@ -444,7 +524,7 @@ export function* routeCoupledPair(
                       negotiation?.penalty,
                       fine ? undefined : negotiation?.history,
                       fine
-                        ? { step: width / 10, bounds: localBounds }
+                        ? { step: approachStep, bounds: localBounds }
                         : undefined,
                     )
                 try {
@@ -469,7 +549,7 @@ export function* routeCoupledPair(
                 )
               }
             if (failed) continue
-            const traces = extendCoupledSectionEnds(
+            let traces = extendCoupledSectionEnds(
               members.map((c, i) => ({
                 ...makeTrace(
                   c,
@@ -495,73 +575,161 @@ export function* routeCoupledPair(
               )
             )
               continue
-            // The reference pair-variants.py scores foreign terminals enclosed
-            // between rails. Reject that topology: it forces other bus lanes to
-            // cross a pair or take an avoidable trip around a package.
+            // Finish the pair before ordinary lanes occupy its approach space.
+            // A raw connection with a hairpin at its handoff is not a usable
+            // corridor: later matching cannot fix it without moving neighbors.
+            const pairInput: SimpleRouteJson = {
+              ...input,
+              connections: members,
+              buses: [],
+              differentialPairs: [pair],
+            }
+            let finished: Trace[] | undefined
+            for (const trim of [1.5, 0.75, 0.375, 0.1875]) {
+              const shaped = chamferOrdinaryCorners(
+                pairInput,
+                traces,
+                fixed,
+                trim,
+              )
+              if (
+                !routeAnglesAreConventional(shaped) ||
+                sharedPairSpacingReports(pairInput, shaped).some(
+                  (p) => !p.matched,
+                )
+              )
+                continue
+              try {
+                const tuned = tuneSmoothLengths(
+                  pairInput,
+                  shaped,
+                  minimumLengthTargets(pairInput, shaped),
+                  { maxCandidates: 512 },
+                )
+                if (
+                  routeAnglesAreConventional(tuned) &&
+                  sharedPairSpacingReports(pairInput, tuned).every(
+                    (p) => p.matched,
+                  )
+                ) {
+                  finished = tuned
+                  break
+                }
+              } catch {}
+            }
+            if (!finished) continue
+            traces = finished
+            // The polygon includes imaginary closures between separate pair
+            // terminals. A lane may legally leave through those openings, so
+            // check actual reachability before treating this as a sealed pocket.
+            // Completed plane vias and terminals on other layers do not need a
+            // planar escape; their physical clearance is already checked above.
             const polygon = [
               ...traces[0].route,
               ...traces[1].route.toReversed(),
             ]
-            if (
-              input.connections.some(
-                (c) =>
-                  !pair.connectionNames.includes(c.name) &&
-                  c.pointsToConnect.some((p) => inside(p, polygon)),
-              ) ||
-              fixed.some(
-                (copper) =>
-                  copper.layer === layer &&
-                  !copper.owners.some((owner) => names.has(owner)) &&
-                  distance(copper.a, copper.b) < 1e-8 &&
-                  inside(copper.a, polygon),
-              )
+            const enclosed = input.connections.filter(
+              (c) =>
+                !pair.connectionNames.includes(c.name) &&
+                c.pointsToConnect.some(
+                  (p) => p.layer === layer && inside(p, polygon),
+                ),
             )
-              continue
-            // A pair approach must not seal another terminal into a pocket. Check
-            // remaining same-layer connections before locking this corridor.
+            // A pair approach must not seal another terminal into a pocket.
+            // Only geometrically enclosed terminals need a reachability search.
             let trapsTerminal = false
+            const skew = Math.abs(
+              length(traces[0].route) +
+                fixedLengths[0] -
+                length(traces[1].route) -
+                fixedLengths[1],
+            )
             let candidateScore = negotiation
-              ? Math.abs(length(traces[0].route) - length(traces[1].route)) +
-                0.01 * traces.reduce((sum, t) => sum + length(t.route), 0)
+              ? skew +
+                0.05 * traces.reduce((sum, t) => sum + length(t.route), 0)
               : traces.reduce((sum, t) => sum + length(t.route), 0)
-            for (const other of (negotiation ? [] : input.connections).filter(
+            const pending = (negotiation ? enclosed : input.connections).filter(
               (c) =>
                 !pair.connectionNames.includes(c.name) &&
                 c.pointsToConnect[0].layer === layer,
-            )) {
-              const otherWidth =
-                (input.buses ?? []).find((b) =>
-                  b.connectionNames.includes(other.name),
-                )?.traceWidth ??
-                other.nominalTraceWidth ??
-                other.width ??
-                input.minTraceWidth
-              const otherScene = new VectorScene(input, other, otherWidth, [
-                ...fixed,
-                ...traces.flatMap(routeCopper),
-              ])
-              const check = new GridVisibilitySearch(
-                otherScene,
-                other.pointsToConnect[0],
-                other.pointsToConnect[1],
-              )
-              try {
-                while (
-                  !check.solved &&
-                  !check.failed &&
-                  check.expanded < 500000
-                ) {
-                  check.step()
-                  yield
+            )
+            const corridorKey = pending.length
+              ? JSON.stringify(traces.map((trace) => trace.route))
+              : ""
+            for (const other of pending) {
+              const key = `${other.name}:${corridorKey}`
+              let result = reachability.get(key)
+              if (!result) {
+                const otherWidth =
+                  (input.buses ?? []).find((b) =>
+                    b.connectionNames.includes(other.name),
+                  )?.traceWidth ??
+                  other.nominalTraceWidth ??
+                  other.width ??
+                  input.minTraceWidth
+                const otherScene = new VectorScene(input, other, otherWidth, [
+                  ...fixed,
+                  ...traces.flatMap(routeCopper),
+                ])
+                const attachments = connectors(
+                  other.pointsToConnect[0],
+                  other.pointsToConnect[1],
+                )
+                const shortest = length(attachments[0])
+                const direct = attachments.find(
+                  (path) =>
+                    length(path) <= shortest + 1e-8 &&
+                    otherScene.pathVisible(path),
+                )
+                const check = direct
+                  ? {
+                      solved: true,
+                      failed: false,
+                      expanded: 0,
+                      result: direct,
+                      step() {},
+                      cancel() {},
+                    }
+                  : new GridVisibilitySearch(
+                      otherScene,
+                      other.pointsToConnect[0],
+                      other.pointsToConnect[1],
+                    )
+                try {
+                  while (
+                    !check.solved &&
+                    !check.failed &&
+                    check.expanded < 500000
+                  ) {
+                    check.step()
+                    yield
+                  }
+                } finally {
+                  check.cancel()
                 }
-              } finally {
-                check.cancel()
+                result = {
+                  reachable: check.solved,
+                  length: check.solved ? length(check.result) : Infinity,
+                }
+                reachability.set(key, result)
               }
-              if (check.solved) candidateScore += length(check.result)
-              if (!check.solved) {
+              if (!result.reachable) {
                 trapsTerminal = true
                 break
               }
+              candidateScore += negotiation
+                ? 0.05 *
+                  Math.max(
+                    0,
+                    result.length -
+                      length(
+                        connectors(
+                          other.pointsToConnect[0],
+                          other.pointsToConnect[1],
+                        )[0],
+                      ),
+                  )
+                : result.length
             }
             if (
               !trapsTerminal &&
@@ -569,22 +737,41 @@ export function* routeCoupledPair(
                 tuningPathIsSelfClear(t.route, width + clearance),
               )
             ) {
+              if (candidateScore < handoffScore) {
+                handoffScore = candidateScore
+                handoffBest = traces
+              }
               if (candidateScore < bestScore) {
                 bestScore = candidateScore
                 best = traces
               }
-              if (
-                negotiation &&
-                Math.abs(length(traces[0].route) - length(traces[1].route)) <=
-                  pair.lengthTolerance
-              )
+              if (negotiation && skew <= pair.lengthTolerance) {
+                // A matched option bounds further exploration, but the compact
+                // best-scoring corridor may still need final approach tuning.
+                // Forcing the longer option here can seal ordinary bus lanes.
+                cached?.set(key, {
+                  traces: handoffBest,
+                  score: handoffScore,
+                  hasMatchedAlternative: true,
+                  countsAttempt: true,
+                })
                 return best
+              }
               if (!negotiation && ++viable >= 2) return best
               if (!negotiation) continue candidates
             }
           }
         }
-        if (negotiation && best) return best
+        // A first connected corridor can leave one rail with a large package
+        // detour that matching cannot repair. Explore a bounded set of other
+        // handoffs before falling back to the shortest, least skewed candidate.
+        cached?.set(key, {
+          traces: handoffBest,
+          score: handoffScore,
+          hasMatchedAlternative: false,
+          countsAttempt: true,
+        })
+        if (negotiation && best && ++viable >= 4) return best
       }
   return best
 }

@@ -13,11 +13,21 @@ export function chamferPairApproaches(
   fixed: Copper[],
   width: number,
   clearance: number,
+  maxTrimInTraceWidths = 6,
 ): Trace[] {
+  if (!Number.isFinite(maxTrimInTraceWidths) || maxTrimInTraceWidths <= 0)
+    throw Error(
+      "Pair corner trim must be a positive finite number of trace widths",
+    )
   const result = traces.map((t) => ({ ...t, route: [...t.route] }))
   for (let rail = 0; rail < 2; rail++) {
     const trace = result[rail]
     for (let i = 1; i < trace.route.length - 1; i++) {
+      if (
+        trace.curvedSegments?.includes(i) ||
+        trace.curvedSegments?.includes(i + 1)
+      )
+        continue
       if (
         trace.coupledSection &&
         i > trace.coupledSection[0] &&
@@ -32,7 +42,11 @@ export function chamferPairApproaches(
         v = { x: (c.x - b.x) / after, y: (c.y - b.y) / after }
       if (Math.abs(u.x * v.x + u.y * v.y + Math.SQRT1_2) > 1e-6) continue
       const turn = Math.sign(u.x * v.y - u.y * v.x)
-      const trim = Math.min(width * 6, before / 2, after * 0.8)
+      const trim = Math.min(
+        width * maxTrimInTraceWidths,
+        before / 2,
+        after * 0.8,
+      )
       const start = { ...b, x: b.x - u.x * trim, y: b.y - u.y * trim }
       const bevel = (Math.SQRT2 - 1) * trim
       const middle = {
@@ -57,6 +71,10 @@ export function chamferPairApproaches(
       )
         continue
       trace.route = route
+      if (trace.curvedSegments)
+        trace.curvedSegments = trace.curvedSegments.map((index) =>
+          index > i ? index + 2 : index,
+        )
       if (trace.coupledSection)
         trace.coupledSection = trace.coupledSection.map((index, boundary) =>
           index > i

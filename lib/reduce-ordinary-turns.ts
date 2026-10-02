@@ -8,7 +8,7 @@ import type { VectorScene } from "./vector-scene"
  * +Y up. Never run on sampled meanders or one rail of an already coupled pair. */
 export function reduceOrdinaryTurns(path: Point[], scene: VectorScene) {
   let result = simplify(path)
-  for (let pass = 0; pass < 3; pass++) {
+  for (let pass = 0; pass < 12; pass++) {
     let changed = false
     for (let i = 0; i < result.length - 2; i++) {
       for (let j = result.length - 1; j > i + 1; j--) {
@@ -20,7 +20,8 @@ export function reduceOrdinaryTurns(path: Point[], scene: VectorScene) {
         for (const replacement of candidates) {
           if (
             length(replacement) > old + 1e-8 ||
-            replacement.length >= j - i + 1 ||
+            (replacement.length >= j - i + 1 &&
+              length(replacement) >= old - 1e-8) ||
             !scene.pathVisible(replacement)
           )
             continue

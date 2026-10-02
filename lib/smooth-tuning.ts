@@ -267,15 +267,21 @@ export function roundedPairedLobes(
     }
     return shortest
   }
-  let lo = 2 * radius,
-    hi = lo + deficit / 2 + radius
-  if (added(lo) > deficit + 1e-8) return null
-  for (let iteration = 0; iteration < 36; iteration++) {
-    const mid = (lo + hi) / 2
-    if (added(mid) < deficit) lo = mid
-    else hi = mid
-  }
-  return generate((lo + hi) / 2)
+  // Increasing height extends exactly two straight legs per lobe. The
+  // circular chords and horizontal runs retain their lengths, so emitted
+  // copper length is affine in height; no amplitude bisection is necessary.
+  const minimumHeight = 2 * radius
+  const minimumAddition = added(minimumHeight)
+  if (minimumAddition > deficit + 1e-8) return null
+  let height =
+    minimumHeight + Math.max(0, deficit - minimumAddition) / (2 * lobes)
+  // Correct the tiny board-coordinate summation error against the actual
+  // emitted chords, preserving the length tolerance for rotated geometry.
+  height = Math.max(
+    minimumHeight,
+    height + (deficit - added(height)) / (2 * lobes),
+  )
+  return generate(height)
 }
 
 export function roundedTuningLobes(
