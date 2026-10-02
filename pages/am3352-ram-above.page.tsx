@@ -1,7 +1,7 @@
 import { GenericSolverDebugger } from "@tscircuit/solver-utils/react"
 import { HypergraphDebugPipelineSolver } from "../lib/hypergraph-debug-pipeline-solver"
 import type { SimpleRouteJson } from "../lib"
-import input from "./data/hypergraph-left.json"
+import input from "./data/am3352-ram-above.json"
 
 export default (
   <GenericSolverDebugger

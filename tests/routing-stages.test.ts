@@ -143,8 +143,30 @@ test("the four Cosmos inputs equal the corrected benchmark inputs", async () => 
     const { input } = await loadAm3352Sample(name)
     expect(
       await Bun.file(
-        new URL(`../pages/data/hypergraph-${name}.json`, import.meta.url),
+        new URL(
+          `../pages/data/am3352-ram-${name === "control" ? "below" : name}.json`,
+          import.meta.url,
+        ),
       ).json(),
     ).toEqual(input)
+  }
+})
+
+test("all AM3352 Cosmos pages use the same hypergraph pipeline with only the debugger", async () => {
+  const { GenericSolverDebugger } = await import(
+    "@tscircuit/solver-utils/react"
+  )
+  const { HypergraphDebugPipelineSolver } = await import(
+    "../lib/hypergraph-debug-pipeline-solver"
+  )
+  for (const placement of ["below", "right", "left", "above"]) {
+    const { default: page } = await import(
+      `../pages/am3352-ram-${placement}.page.tsx`
+    )
+    expect(page.type).toBe(GenericSolverDebugger)
+    const solver = page.props.createSolver()
+    expect(solver).toBeInstanceOf(HypergraphDebugPipelineSolver)
+    expect(solver.engine.options.initialRouting).toBe("hypergraph")
+    expect(solver.engine.options.visualizeHypergraphTopology).toBe(true)
   }
 })

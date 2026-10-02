@@ -274,8 +274,8 @@ captures outside the repository.
 
 ### Live hypergraph debugger
 
-Run `bun start` and choose `hypergraph-control`, `hypergraph-right`,
-`hypergraph-left`, or `hypergraph-above`. Each Cosmos page contains only
+Run `bun start` and choose `am3352-ram-below`, `am3352-ram-right`,
+`am3352-ram-left`, or `am3352-ram-above`. Each Cosmos page contains only
 `GenericSolverDebugger`. Use **Step** for individual solver iterations and
 **Next Stage** for phase boundaries. After solving, enable **Filter by step**
 to inspect retained stage visualizations, including the untuned hypergraph

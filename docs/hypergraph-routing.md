@@ -2,7 +2,20 @@
 
 `HypergraphBusLanesSolver` is an opt-in `BusLanesPipelineSolver` variant. It
 computes routes from the current geometry, rather than loading saved solutions.
-The original visibility variant is unchanged by default.
+The original visibility variant is unchanged by default. The four AM3352 Cosmos
+pages all instantiate the same hypergraph pipeline, on every routing attempt and
+for both matched-bus and control-signal passes. They never switch to visibility
+routing; only diagnostic topology capture is enabled specifically for the debugger.
+
+This is not yet a strict improvement over the visibility solver for every input.
+For example, `tests/negotiated-pair-lanes.test.ts` requires a shared coupled section
+when a pair declares `traceGap`. The visibility solver supplies it; the hypergraph
+variant currently permits independent pair tracks unless `maxUncoupledLength` is
+also supplied. On that fixture, the independent coupling audit measures about
+94.5% and 94.8% coupled copper for the visibility solver versus approximately 0%
+for both hypergraph-routed conductors. The four DDR completion results therefore
+do not justify replacing
+the general-purpose default while preserving its existing behavior.
 
 ## Representation and search
 
@@ -95,8 +108,9 @@ full routed SRJ for inspection. The solver never reads those generated files.
 
 ## Live Cosmos stage debugger
 
-The `hypergraph-control`, `hypergraph-right`, `hypergraph-left` and
-`hypergraph-above` Cosmos pages each render only `GenericSolverDebugger`.
+The `am3352-ram-below`, `am3352-ram-right`, `am3352-ram-left` and
+`am3352-ram-above` Cosmos pages each render only `GenericSolverDebugger`.
+`below` is the benchmark's original `control` placement.
 They load the corrected input fixtures and compute routes live; no solved trace
 recording is loaded by the browser. Run `bun start` and choose a sample.
 
