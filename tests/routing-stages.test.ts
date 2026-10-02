@@ -112,6 +112,7 @@ test("native debugger pipeline advances the real engine incrementally and retain
   }
   expect(debug.error).toBeNull()
   expect(debug.solved).toBe(true)
+  expect(phases.has("lanes_hypergraph_topology")).toBe(true)
   expect(phases.has("lanes_hypergraph_cover")).toBe(true)
   expect(phases.has("lanes_tuning_corridor")).toBe(true)
   expect(phases.has("lanes_length_matching")).toBe(true)
@@ -122,6 +123,16 @@ test("native debugger pipeline advances the real engine incrementally and retain
   const stage = debug.getSolver(debug.pipelineDef[2].solverName)!
   expect(stage.solved).toBe(true)
   expect(stage.visualize().lines?.length).toBeGreaterThan(0)
+  expect(
+    stage.visualize().texts?.some((t) => t.text === "HYPERGRAPH INCIDENCE"),
+  ).toBe(true)
+  const geometry = debug.getSolver(debug.pipelineDef[3].solverName)!
+  expect(geometry.visualize().lines?.length).toBeGreaterThan(0)
+  expect(
+    geometry
+      .visualize()
+      .texts?.some((t) => t.text === "HYPERGRAPH INCIDENCE") ?? false,
+  ).toBe(false)
 })
 
 test("the four Cosmos inputs equal the corrected benchmark inputs", async () => {

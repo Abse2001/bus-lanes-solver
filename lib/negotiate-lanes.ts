@@ -25,6 +25,7 @@ export function* negotiateLanes(
   terminalLayers: ReadonlyMap<string, string[]> = new Map(),
   hypergraph = false,
   onStage?: (snapshot: RoutingStageSnapshot) => void,
+  captureTopology = false,
 ): Generator<Trace[], Trace[] | null> {
   const routed = new Map<string, Trace>()
   const histories = new Map<string, Float32Array>()
@@ -496,6 +497,9 @@ export function* negotiateLanes(
     if (hypergraph) {
       onStage?.({
         stage: "hypergraph_cover",
+        ...(captureTopology
+          ? { topology: (candidates as RouteHypergraph).getTopology(result) }
+          : {}),
         input,
         traces: result,
         stats: {

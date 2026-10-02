@@ -77,7 +77,9 @@ export class HypergraphDebugPipelineSolver extends BasePipelineSolver<SimpleRout
   pipelineDef: PipelineStep<HypergraphPhaseSolver>[] = []
   constructor(input: SimpleRouteJson) {
     super(input)
-    this.engine = new HypergraphBusLanesSolver(input)
+    this.engine = new HypergraphBusLanesSolver(input, {
+      visualizeHypergraphTopology: true,
+    })
     this.MAX_ITERATIONS = this.engine.MAX_ITERATIONS * 2
     this.appendStage()
   }
@@ -85,7 +87,8 @@ export class HypergraphDebugPipelineSolver extends BasePipelineSolver<SimpleRout
     const phaseNames: Record<string, string> = {
       resolve_layers: "LocalDogbones",
       local_dogbones: "InitializeLanes",
-      lanes_route: "HypergraphRouting",
+      lanes_route: "HypergraphTopology",
+      lanes_hypergraph_topology: "HypergraphRouteGeometry",
       lanes_hypergraph_cover: "RouteCleanup",
       lanes_route_cleanup: "RouteCleanup",
       lanes_match: "SelectTuningCorridor",

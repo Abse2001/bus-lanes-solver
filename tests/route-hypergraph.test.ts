@@ -40,6 +40,20 @@ test("exact cover replaces a shorter crossing with compatible hyperedges", () =>
   const result = g.select(["a", "b"])!
   expect(result).toHaveLength(2)
   expect(result.find((t) => t.connection_name === "a")!.route).toHaveLength(4)
+  const topology = g.getTopology(result)
+  expect(topology.vertices).toEqual(["a", "b"])
+  expect(topology.edges.map((e) => [e.id, e.selected])).toEqual([
+    [0, false],
+    [1, true],
+    [2, true],
+  ])
+  expect(topology.testedExclusions).toEqual([[0, 2]])
+  // The visualization is detached and does not alter search state or routing.
+  topology.edges[1].vertices[0] = "mutated"
+  topology.testedExclusions[0][0] = 999
+  expect(g.getTopology(result).edges[1].vertices).toEqual(["a"])
+  expect(g.getTopology(result).testedExclusions).toEqual([[0, 2]])
+  expect(g.select(["a", "b"])).toEqual(result)
   expect(g.select(["a", "b", "missing"])).toBeNull()
 })
 test("a differential pair is an atomic multi-demand hyperedge", () => {
@@ -59,7 +73,11 @@ test("a differential pair is an atomic multi-demand hyperedge", () => {
   ])
   expect(g.edges).toHaveLength(1)
   expect(g.edges[0].vertices).toEqual(["p", "n"])
-  expect(g.select(["p", "n"])).toHaveLength(2)
+  const selectedPair = g.select(["p", "n"])!
+  expect(selectedPair).toHaveLength(2)
+  expect(g.getTopology(selectedPair).edges).toEqual([
+    { id: 0, vertices: ["p", "n"], cost: 2, layer: "top", selected: true },
+  ])
   g.add("block", [
     trace("block", [
       [1, -1],

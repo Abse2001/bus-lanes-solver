@@ -101,10 +101,28 @@ They load the corrected input fixtures and compute routes live; no solved trace
 recording is loaded by the browser. Run `bun start` and choose a sample.
 
 `Step` advances at most one underlying solver iteration. `Next Stage` advances
-to the next phase solver, including dogbones, hypergraph search, the selected
-cover, cleanup, corridor preparation, length matching and validation. Retries
+to the next phase solver, including dogbones, hypergraph search, abstract topology, selected
+route geometry, cleanup, corridor preparation, length matching and validation. Retries
 and the separate control-signal pass appear as additional stages. Once solved,
 the native visualization step selector exposes the retained stage views.
+
+`HypergraphTopology` now retains an abstract incidence diagram, separate from
+`HypergraphRouteGeometry`. A blue circle is a signal demand, a square is a
+candidate hyperedge, and a link means that candidate covers that demand. An
+atomic differential-pair candidate links to both demands. Green squares are the
+selected exact cover; every demand must be covered exactly once. Candidate costs
+are the longest member-route length in millimeters. These are route alternatives,
+not junctions in a spatial routing mesh.
+
+The right-hand diagram uses the same candidate IDs. Red links are copper
+collisions already tested by the search and forbid selecting both candidates.
+An absent red link does not prove compatibility: that pair may be untested.
+To keep large searches readable, each demand group shows at most eight candidates,
+always retaining the selected candidates; the legend reports shown and total
+counts. Abstract objects have no copper layer, so an existing PCB layer filter
+does not hide them. Enable the debugger's object interaction to inspect candidate
+IDs, membership, copper layer, and cost. Only this debug wrapper enables topology
+capture; ordinary solves do no additional topology or collision work.
 
 The geometric cover is exposed before turn reduction and fine route repair.
 Corridor preparation and length matching yield separately so their outputs can

@@ -12,6 +12,20 @@ export interface RouteHyperedge {
   traces: Trace[]
   cost: number
 }
+export interface RouteHypergraphTopology {
+  vertices: string[]
+  edges: Array<{
+    id: number
+    vertices: string[]
+    cost: number
+    layer: string
+    selected: boolean
+  }>
+  /** Only geometric exclusions already tested by the search, not an exhaustive
+   * collision matrix. Shared-demand exclusivity follows from incidence. */
+  testedExclusions: Array<[number, number]>
+  generatedEdges: number
+}
 export class RouteHypergraph {
   readonly vertices = new Set<string>()
   readonly edges: RouteHyperedge[] = []
@@ -103,6 +117,33 @@ export class RouteHypergraph {
     )
     this.exclusions.set(key, hit)
     return hit
+  }
+  /** Read-only topology of the current candidate domains. No extra collision
+   * tests or changes to the search cache are performed for visualization. */
+  getTopology(selected: Trace[] = []): RouteHypergraphTopology {
+    const selectedTraces = new Set(selected)
+    const active = new Set([...this.domains.values()].flat().map((e) => e.id))
+    const edges = this.edges
+      .filter((e) => active.has(e.id))
+      .map((e) => ({
+        id: e.id,
+        vertices: [...e.vertices],
+        cost: e.cost,
+        layer: (e.traces[0].route[0] as Wire).layer,
+        selected: e.traces.every((t) => selectedTraces.has(t)),
+      }))
+    const testedExclusions: Array<[number, number]> = []
+    for (const [key, hit] of this.exclusions) {
+      if (!hit) continue
+      const [a, b] = key.split(":").map(Number)
+      if (active.has(a) && active.has(b)) testedExclusions.push([a, b])
+    }
+    return {
+      vertices: [...this.vertices],
+      edges,
+      testedExclusions,
+      generatedEdges: this.edges.length,
+    }
   }
   select(units: string[], _matchingGroups?: string[][]): Trace[] | null {
     if (units.some((v) => !this.domains.has(v))) return null

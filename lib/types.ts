@@ -86,6 +86,8 @@ export interface SimpleRouteJson {
   }>
 }
 export interface SolverOptions {
+  /** Debugger-only abstract graph stage; ordinary routing does not capture it. */
+  visualizeHypergraphTopology?: boolean
   /** Optional diagnostic observer. Receives detached snapshots only at stage
    * boundaries; intermediate geometry is not a validated routing solution. */
   onStage?: (snapshot: RoutingStageSnapshot) => void
@@ -97,6 +99,7 @@ export interface SolverOptions {
 }
 
 export interface RoutingStageSnapshot {
+  topology?: import("./route-hypergraph").RouteHypergraphTopology
   stage:
     | "local_dogbones"
     | "hypergraph_cover"

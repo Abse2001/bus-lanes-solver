@@ -1,5 +1,7 @@
 import { spreadHypergraphCorridors } from "./spread-hypergraph-corridors"
 import { captureRoutingStage } from "./capture-routing-stage"
+import { visualizeRouteHypergraph } from "./visualize-route-hypergraph"
+import type { RouteHypergraphTopology } from "./route-hypergraph"
 import { refinePairApproaches } from "./refine-pair-approaches"
 import { spreadCoupledTuningLanes } from "./spread-coupled-tuning-lanes"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
@@ -61,6 +63,7 @@ export class BusLanesSolver extends BaseSolver {
   private negotiated?: Generator<Trace[], Trace[] | null>
   private matching?: Generator<void>
   private hypergraphStats?: Record<string, unknown>
+  private hypergraphTopology?: RouteHypergraphTopology
   private pairSearch?: Generator<void, Trace[] | null>
   private reportedRoutes?: Array<{ trace: Trace; route: Trace["route"] }>
   private lengthStats?: {
@@ -289,6 +292,10 @@ export class BusLanesSolver extends BaseSolver {
     this.startLane()
   }
   private route() {
+    if (this.phase === "hypergraph_topology") {
+      this.phase = "hypergraph_cover"
+      return
+    }
     if (this.phase === "hypergraph_cover") this.phase = "route_cleanup"
     if (
       this.options.initialRouting === "hypergraph" ||
@@ -310,10 +317,14 @@ export class BusLanesSolver extends BaseSolver {
         this.terminalLayers,
         this.options.initialRouting === "hypergraph",
         (snapshot) => {
-          this.phase = "hypergraph_cover"
+          this.hypergraphTopology = snapshot.topology
+          this.phase = snapshot.topology
+            ? "hypergraph_topology"
+            : "hypergraph_cover"
           this.hypergraphStats = snapshot.stats
           captureRoutingStage(this.options, snapshot)
         },
+        this.options.visualizeHypergraphTopology,
       )
       const step = this.negotiated.next()
       if (!step.done) {
@@ -527,7 +538,12 @@ export class BusLanesSolver extends BaseSolver {
       if (this.phase === "validate") this.initialize()
       else if (this.phase === "coupled_pairs") this.routePair()
       else if (
-        ["route", "hypergraph_cover", "route_cleanup"].includes(this.phase)
+        [
+          "route",
+          "hypergraph_topology",
+          "hypergraph_cover",
+          "route_cleanup",
+        ].includes(this.phase)
       )
         this.route()
       else if (
@@ -590,6 +606,8 @@ export class BusLanesSolver extends BaseSolver {
     }
   }
   visualize(): GraphicsObject {
+    if (this.phase === "hypergraph_topology" && this.hypergraphTopology)
+      return visualizeRouteHypergraph(this.hypergraphTopology)
     const lines: any[] = [],
       points: any[] = [],
       rects: any[] = [],
