@@ -51,7 +51,7 @@ export function validateAm3352OutputShape(
     fail("output changed fixed power copper or native routing input")
 }
 
-/** Independently audit the four native AM3352/RAM benchmark placements. Fixed
+/** Independently audit the native AM3352/RAM benchmark placements. Fixed
  * power is known electrical copper, never another unresolved routing request.
  * Omit signalTraces for the input audit; pass only newly generated signals for
  * the completed audit. Malformed fixtures throw; routing validity is reported. */
@@ -98,8 +98,10 @@ export async function validateAm3352Sample(
       am3352Hash(metadata.placement.cpu) ||
     am3352Hash(metadata.componentTranslations.ram) !== am3352Hash(placement.ram)
   )
-    fail("sample is not one of the four declared component placements")
+    fail("sample is not one of the declared component placements")
   const native = await loadAm3352NativeInput()
+  if ("allowedLayers" in placement)
+    native.allowedLayers = [...placement.allowedLayers]
   const rules = ({
     connections: _connections,
     obstacles: _obstacles,
@@ -362,6 +364,7 @@ export async function validateAm3352Sample(
       const layer = (carrier[0] as Wire | undefined)?.layer
       if (
         carrier.length < 2 ||
+        (input.allowedLayers && !input.allowedLayers.includes(layer ?? "")) ||
         !carrier.every((p) => p.route_type === "wire" && p.layer === layer) ||
         input.buses?.some(
           (b) =>

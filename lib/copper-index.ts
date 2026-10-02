@@ -10,45 +10,73 @@ type Node = Box & { entries?: Entry[]; left?: Node; right?: Node }
 export class CopperIndex {
   private root: Node | undefined
   constructor(copper: Copper[]) {
-    const build = (entries: Entry[]): Node => {
+    const entries: Entry[] = copper.map((c) => ({
+      copper: c,
+      ...(c.rect ?? {
+        minX: Math.min(c.a.x, c.b.x) - c.radius,
+        maxX: Math.max(c.a.x, c.b.x) + c.radius,
+        minY: Math.min(c.a.y, c.b.y) - c.radius,
+        maxY: Math.max(c.a.y, c.b.y) + c.radius,
+      }),
+    }))
+    const swap = (a: number, b: number) => {
+      const value = entries[a]
+      entries[a] = entries[b]
+      entries[b] = value
+    }
+    // Only a median partition is needed. Sorting every subtree costs
+    // O(n log² n) and copies the dense sampled meanders repeatedly.
+    const partition = (
+      start: number,
+      end: number,
+      middle: number,
+      x: boolean,
+    ) => {
+      const key = (entry: Entry) =>
+        x ? entry.minX + entry.maxX : entry.minY + entry.maxY
+      while (end - start > 1) {
+        const a = key(entries[start]),
+          b = key(entries[(start + end) >> 1]),
+          c = key(entries[end - 1])
+        const pivot =
+          a < b ? (b < c ? b : Math.max(a, c)) : a < c ? a : Math.max(b, c)
+        let lower = start,
+          upper = end,
+          i = start
+        // Three-way partition avoids repeated work for coincident BGA columns.
+        while (i < upper) {
+          const value = key(entries[i])
+          if (value < pivot) swap(lower++, i++)
+          else if (value > pivot) swap(i, --upper)
+          else i++
+        }
+        if (middle < lower) end = lower
+        else if (middle >= upper) start = upper
+        else return
+      }
+    }
+    const build = (start: number, end: number): Node => {
       const box = {
         minX: Infinity,
         maxX: -Infinity,
         minY: Infinity,
         maxY: -Infinity,
       }
-      for (const e of entries) {
+      for (let i = start; i < end; i++) {
+        const e = entries[i]
         box.minX = Math.min(box.minX, e.minX)
         box.maxX = Math.max(box.maxX, e.maxX)
         box.minY = Math.min(box.minY, e.minY)
         box.maxY = Math.max(box.maxY, e.maxY)
       }
-      if (entries.length <= 8) return { ...box, entries }
+      if (end - start <= 8)
+        return { ...box, entries: entries.slice(start, end) }
       const x = box.maxX - box.minX >= box.maxY - box.minY
-      entries.sort((a, b) =>
-        x
-          ? a.minX + a.maxX - (b.minX + b.maxX)
-          : a.minY + a.maxY - (b.minY + b.maxY),
-      )
-      const mid = entries.length >> 1
-      return {
-        ...box,
-        left: build(entries.slice(0, mid)),
-        right: build(entries.slice(mid)),
-      }
+      const middle = (start + end) >> 1
+      partition(start, end, middle, x)
+      return { ...box, left: build(start, middle), right: build(middle, end) }
     }
-    if (copper.length)
-      this.root = build(
-        copper.map((c) => ({
-          copper: c,
-          ...(c.rect ?? {
-            minX: Math.min(c.a.x, c.b.x) - c.radius,
-            maxX: Math.max(c.a.x, c.b.x) + c.radius,
-            minY: Math.min(c.a.y, c.b.y) - c.radius,
-            maxY: Math.max(c.a.y, c.b.y) + c.radius,
-          }),
-        })),
-      )
+    if (entries.length) this.root = build(0, entries.length)
   }
   /** Exact nearest-copper distance using bounding boxes only to prune. A
    * point inside a box has no useful signed-distance lower bound. queryRadius

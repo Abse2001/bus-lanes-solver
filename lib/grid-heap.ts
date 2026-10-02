@@ -97,7 +97,10 @@ export class GridHeap {
   }
   private sink(i: number, id: number, g: number, f: number, seq: number) {
     const n = this.size
+    const start = i
     const { ids, costs, priorities, sequences, positions } = this
+    // Descend the hole to a leaf, then place the replacement upwards. Popping
+    // a near-largest leaf avoids a replacement comparison at every level.
     while (i * 4 + 1 < n) {
       let child = i * 4 + 1
       let cf = priorities[child],
@@ -118,13 +121,27 @@ export class GridHeap {
           cs = sequences[other]
         }
       }
-      if (cf > f || (cf === f && (cg < g || (cg === g && cs >= seq)))) break
       ids[i] = ids[child]
       positions[ids[i]] = i + 1
       costs[i] = cg
       priorities[i] = cf
       sequences[i] = cs
       i = child
+    }
+    while (i > start) {
+      const p = (i - 1) >> 2
+      const pf = priorities[p]
+      if (
+        f > pf ||
+        (f === pf && (g < costs[p] || (g === costs[p] && seq >= sequences[p])))
+      )
+        break
+      ids[i] = ids[p]
+      positions[ids[i]] = i + 1
+      costs[i] = costs[p]
+      priorities[i] = pf
+      sequences[i] = sequences[p]
+      i = p
     }
     ids[i] = id
     positions[id] = i + 1

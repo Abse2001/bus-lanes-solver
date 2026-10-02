@@ -64,14 +64,14 @@ function pretendCompleted(candidate: Am3352SnapshotCandidate) {
   })
 }
 
-test("AM3352 snapshot export requires exactly the four named placement samples", async () => {
+test("AM3352 snapshot export requires exactly the declared benchmark samples", async () => {
   const all = await candidates()
   await expect(
     validateAm3352SnapshotCandidates(all.slice(0, 3)),
-  ).rejects.toThrow("exactly the four benchmark placements")
+  ).rejects.toThrow("exactly the declared benchmark samples")
   await expect(
     validateAm3352SnapshotCandidates([all[0], all[0], all[2], all[3]]),
-  ).rejects.toThrow("exactly the four benchmark placements")
+  ).rejects.toThrow("exactly the declared benchmark samples")
 })
 
 test("unsolved and incomplete AM3352 states never write snapshot artifacts", async () => {

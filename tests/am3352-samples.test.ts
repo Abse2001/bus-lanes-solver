@@ -6,12 +6,13 @@ import {
 } from "../scripts/am3352-samples"
 import { validateAm3352Sample } from "../scripts/validate-am3352-sample"
 
-test("the four AM3352 samples translate only RAM and retain every real power dogbone", async () => {
+test("the AM3352 samples translate only RAM and retain every real power dogbone", async () => {
   expect(am3352SamplePlacements.map((p) => p.name)).toEqual([
     "control",
     "right",
     "left",
     "above",
+    "inner-layers",
   ])
   const control = await loadAm3352Sample("control")
   const ramComponentId = control.metadata.powerPadManifest.find(
@@ -268,4 +269,21 @@ test("completed-copper audit refuses thinner wires/vias and geometry outside nat
   expect(layerReport.issues).toContain(
     `${signal.connection_name}: copper is outside native board/layers`,
   )
+})
+
+test("inner-layer sample changes only carrier availability and the audit rejects opening bottom", async () => {
+  const control = await loadAm3352Sample("control")
+  const restricted = await loadAm3352Sample("inner-layers")
+  expect(restricted.input.allowedLayers).toEqual(["inner1", "inner2"])
+  expect({ ...restricted.input, allowedLayers: undefined }).toEqual({
+    ...control.input,
+    allowedLayers: undefined,
+  })
+  expect(restricted.metadata.fixedFanoutTraces).toEqual(
+    control.metadata.fixedFanoutTraces,
+  )
+  restricted.input.allowedLayers!.push("bottom")
+  await expect(
+    validateAm3352Sample(restricted.input, restricted.metadata),
+  ).rejects.toThrow("native board rules or signal constraints changed")
 })

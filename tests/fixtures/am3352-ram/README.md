@@ -7,7 +7,7 @@ the imported RAM coordinate rounding, signal identities, and constraints are
 preserved. `power-ownership.json` records every ball label, the original signal
 names, and the capture provenance.
 
-`scripts/am3352-samples.ts` derives four samples without duplicating the pad
+`scripts/am3352-samples.ts` derives five samples without duplicating the pad
 capture. The CPU stays at `(0, 0)` mm; RAM is translated, without rotation, to
 `(0, -27)`, `(27, 0)`, `(-27, 0)`, or `(0, 27)`. Coordinates are board-world mm,
 with +X right and +Y up.
@@ -55,6 +55,11 @@ bun scripts/generate-am3352-samples.ts
 ```
 
 This command runs FanoutSolver and validates the emitted power copper; it does
-not route the DDR signals. Run `./benchmark.sh` for the four signal-routing
+not route the DDR signals. Run `./benchmark.sh` for the five signal-routing
 attempts, connectivity, combined-copper DRC, and bus length matching. A local
 power escape is not evidence of a fully powered or manufacturable board.
+
+The `inner-layers` sample repeats RAM below AM3352 with global signal-carrier
+`allowedLayers: ["inner1", "inner2"]`. Native pads, byte/pair skew bounds, and
+saved power fanouts are unchanged. Top pad joins and through-via barrels remain
+physical copper; there are no bottom-layer signal carriers.
