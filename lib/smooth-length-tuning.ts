@@ -1,3 +1,4 @@
+import { foldedTuningLobes } from "./folded-tuning"
 import { packageApproachRegions, pointInBox } from "./package-approach-regions"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { smoothTuningLobes, roundedTuningLobes } from "./smooth-tuning"
@@ -19,6 +20,8 @@ export function tuneSmoothLengths(
   } = {},
 ) {
   let attempted = 0
+  let attemptedFolded = 0
+  let allowFolded = false
   const fixed = fixedCopper(input)
   function* candidates(
     t: Trace,
@@ -75,7 +78,8 @@ export function tuneSmoothLengths(
     // Keep the established wide-bank search first. Package approaches can have
     // a small free pocket at an endpoint, so retry with compact, endpoint-aligned
     // banks only after every ordinary run has exhausted the original choices.
-    for (const compact of [false, true])
+    const folded = allowFolded
+    for (const compact of folded ? [false] : [false, true])
       for (const { i } of segments) {
         // A second bank must use an ordinary run; never place new teeth inside
         // the sampled arcs of a previously accepted smooth correction.
@@ -112,11 +116,22 @@ export function tuneSmoothLengths(
             b - a,
         )
         function* placements() {
+          if (folded) {
+            for (const teeth of [1, 2, 3])
+              for (const fraction of [0.9, 0.65, 0.4])
+                for (const position of [0.5, 0, 1])
+                  yield { teeth, fraction, position }
+            return
+          }
           for (const teeth of counts) {
             if (!compact) {
               for (const fraction of [0.9, 0.65, 0.4])
                 for (const phase of [0.5, 0, 1])
-                  yield { teeth, fraction, position: 0.05 + 0.9 * phase }
+                  yield {
+                    teeth,
+                    fraction,
+                    position: 0.05 + 0.9 * phase,
+                  }
             } else {
               for (const fraction of [0.9, 0.65, 0.4])
                 for (const position of [0, 1])
@@ -129,17 +144,29 @@ export function tuneSmoothLengths(
         }
         for (const { teeth, fraction, position } of placements()) {
           const w = (span * fraction) / teeth
-          if (w < pitch) continue
+          if (!folded && w < pitch) continue
           for (const side of [1, -1])
-            for (const createLobes of [roundedTuningLobes, smoothTuningLobes]) {
+            for (const createLobes of folded
+              ? [foldedTuningLobes]
+              : [roundedTuningLobes, smoothTuningLobes]) {
               const offset = span * (1 - fraction) * position
               const start = { x: a.x + ux * offset, y: a.y + uy * offset }
               const end = {
                 x: start.x + ux * span * fraction,
                 y: start.y + uy * span * fraction,
               }
-              if (++attempted > (options.maxCandidates ?? Infinity))
+              if (
+                folded &&
+                ++attemptedFolded > Math.min(128, options.maxCandidates ?? 128)
+              )
+                return
+              if (
+                !folded &&
+                ++attempted > (options.maxCandidates ?? Infinity)
+              ) {
+                if (options.packMeanders) return
                 throw Error("Smooth tuning candidate budget exhausted")
+              }
               const lobes = createLobes(
                 start,
                 end,
@@ -234,6 +261,18 @@ export function tuneSmoothLengths(
     }
     if (!changed && !allowPartial) {
       allowPartial = true
+      changed = true
+    } else if (!changed && !allowFolded && options.packMeanders) {
+      // Preserve all ordinary and partial-bank solutions before trying folded
+      // pockets. Their separate bounded budget cannot starve package tuning.
+      allowFolded = true
+      allowPartial = false
+      // A partial ordinary bank can occupy the pocket the folded replacement
+      // needs. Restart this bounded fallback from the untouched input geometry.
+      result.splice(0, result.length, ...traces)
+      pending.clear()
+      traces.forEach((_, i) => pending.add(i))
+      partialBanks.clear()
       changed = true
     }
   }
