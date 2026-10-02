@@ -12,9 +12,9 @@
     "status": "solved",
     "solved": true,
     "timeoutSeconds": 30,
-    "solveMilliseconds": 13363.114042,
-    "milliseconds": 14916.524958000002,
-    "iterations": 51477,
+    "solveMilliseconds": 13763.564833999999,
+    "milliseconds": 15820.164208,
+    "iterations": 49985,
     "requestedSignals": 47,
     "routedSignals": 47,
     "fixedPowerDogbones": 161,
@@ -39,7 +39,7 @@
       "combinedDrc": {
         "valid": true,
         "checkedTraceCount": 208,
-        "checkedSegmentCount": 12830,
+        "checkedSegmentCount": 15640,
         "checkedViaCount": 255,
         "issues": []
       },
@@ -47,7 +47,7 @@
         {
           "busId": "DDR_BYTE0",
           "toleranceMm": 0.635,
-          "skewMm": 0.6350000000004243,
+          "skewMm": 0.6350000000010709,
           "matched": true,
           "lengths": [
             {
@@ -64,39 +64,39 @@
             },
             {
               "name": "source_trace_3",
-              "carrierLengthMm": 34.81594488556401,
+              "carrierLengthMm": 34.815944885564335,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.81594488556401
+              "totalLengthMm": 34.815944885564335
             },
             {
               "name": "source_trace_40",
-              "carrierLengthMm": 34.81594488556425,
+              "carrierLengthMm": 34.815944885564235,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.81594488556425
+              "totalLengthMm": 34.815944885564235
             },
             {
               "name": "source_trace_17",
-              "carrierLengthMm": 34.81594488556357,
+              "carrierLengthMm": 34.81594488556293,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.81594488556357
+              "totalLengthMm": 34.81594488556293
             },
             {
               "name": "source_trace_41",
-              "carrierLengthMm": 35.45094488556399,
+              "carrierLengthMm": 35.450944885564,
               "fixedLengthMm": 0,
-              "totalLengthMm": 35.45094488556399
+              "totalLengthMm": 35.450944885564
             },
             {
               "name": "source_trace_4",
-              "carrierLengthMm": 34.81594488556425,
+              "carrierLengthMm": 34.815944885564235,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.81594488556425
+              "totalLengthMm": 34.815944885564235
             },
             {
               "name": "source_trace_31",
-              "carrierLengthMm": 34.815944885564164,
+              "carrierLengthMm": 34.81594488556418,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.815944885564164
+              "totalLengthMm": 34.81594488556418
             },
             {
               "name": "source_trace_29",
@@ -106,89 +106,89 @@
             },
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 34.963224106177535,
+              "carrierLengthMm": 34.815944885564,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.963224106177535
+              "totalLengthMm": 34.815944885564
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 35.09022410617751,
+              "carrierLengthMm": 34.89381321014547,
               "fixedLengthMm": 0,
-              "totalLengthMm": 35.09022410617751
+              "totalLengthMm": 34.89381321014547
             }
           ]
         },
         {
           "busId": "DDR_BYTE1",
           "toleranceMm": 0.635,
-          "skewMm": 0.6349999999999767,
+          "skewMm": 0.634999999999927,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_28",
-              "carrierLengthMm": 36.51353201129958,
+              "carrierLengthMm": 32.593773461292464,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129958
+              "totalLengthMm": 32.593773461292464
             },
             {
               "name": "source_trace_12",
-              "carrierLengthMm": 36.51353201129958,
+              "carrierLengthMm": 32.593773461292436,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129958
+              "totalLengthMm": 32.593773461292436
             },
             {
               "name": "source_trace_39",
-              "carrierLengthMm": 36.5135320112994,
+              "carrierLengthMm": 32.59377346129255,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.5135320112994
+              "totalLengthMm": 32.59377346129255
             },
             {
               "name": "source_trace_2",
-              "carrierLengthMm": 37.148532011299366,
+              "carrierLengthMm": 33.22877346129236,
               "fixedLengthMm": 0,
-              "totalLengthMm": 37.148532011299366
+              "totalLengthMm": 33.22877346129236
             },
             {
               "name": "source_trace_25",
-              "carrierLengthMm": 36.51353201129939,
+              "carrierLengthMm": 32.593773461292564,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129939
+              "totalLengthMm": 32.593773461292564
             },
             {
               "name": "source_trace_1",
-              "carrierLengthMm": 36.51353201129959,
+              "carrierLengthMm": 32.59377346129255,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129959
+              "totalLengthMm": 32.59377346129255
             },
             {
               "name": "source_trace_38",
-              "carrierLengthMm": 36.51353201129952,
+              "carrierLengthMm": 32.593773461292535,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129952
+              "totalLengthMm": 32.593773461292535
             },
             {
               "name": "source_trace_11",
-              "carrierLengthMm": 36.51353201129943,
+              "carrierLengthMm": 32.59377346129245,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129943
+              "totalLengthMm": 32.59377346129245
             },
             {
               "name": "source_trace_13",
-              "carrierLengthMm": 36.51353201129956,
+              "carrierLengthMm": 32.59377346129249,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.51353201129956
+              "totalLengthMm": 32.59377346129249
             },
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 36.5596568449362,
+              "carrierLengthMm": 32.593889729505015,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.5596568449362
+              "totalLengthMm": 32.593889729505015
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 36.686656844936095,
+              "carrierLengthMm": 32.720773461294904,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.686656844936095
+              "totalLengthMm": 32.720773461294904
             }
           ]
         }
@@ -197,40 +197,40 @@
         {
           "busId": "pair_0",
           "toleranceMm": 0.127,
-          "skewMm": 0.12699999999997402,
+          "skewMm": 0.0778683245814662,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 34.963224106177535,
+              "carrierLengthMm": 34.815944885564,
               "fixedLengthMm": 0,
-              "totalLengthMm": 34.963224106177535
+              "totalLengthMm": 34.815944885564
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 35.09022410617751,
+              "carrierLengthMm": 34.89381321014547,
               "fixedLengthMm": 0,
-              "totalLengthMm": 35.09022410617751
+              "totalLengthMm": 34.89381321014547
             }
           ]
         },
         {
           "busId": "pair_1",
           "toleranceMm": 0.127,
-          "skewMm": 0.12699999999989586,
+          "skewMm": 0.12688373178988854,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 36.5596568449362,
+              "carrierLengthMm": 32.593889729505015,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.5596568449362
+              "totalLengthMm": 32.593889729505015
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 36.686656844936095,
+              "carrierLengthMm": 32.720773461294904,
               "fixedLengthMm": 0,
-              "totalLengthMm": 36.686656844936095
+              "totalLengthMm": 32.720773461294904
             }
           ]
         },
@@ -259,22 +259,22 @@
         "signalCount": 47,
         "footprint": {
           "bounds": {
-            "minX": -9.2,
-            "maxX": 6.100000000000004,
-            "minY": -33.75,
-            "maxY": -3.5500000000000003,
-            "widthMm": 15.300000000000004,
-            "heightMm": 30.2,
-            "areaMm2": 462.0600000000001
+            "minX": -7.399999999999998,
+            "maxX": 6.300000000000003,
+            "minY": -33.55,
+            "maxY": -3.45,
+            "widthMm": 13.700000000000001,
+            "heightMm": 30.099999999999998,
+            "areaMm2": 412.37
           },
           "allCopperBounds": {
-            "minX": -9.2,
+            "minX": -7.401000000000001,
             "maxX": 7.401000000000001,
-            "minY": -33.75,
+            "minY": -33.576121,
             "maxY": 7.401000000000001,
-            "widthMm": 16.601,
-            "heightMm": 41.151,
-            "areaMm2": 683.147751
+            "widthMm": 14.802000000000001,
+            "heightMm": 40.977121000000004,
+            "areaMm2": 606.5433450420002
           },
           "layers": [
             {
@@ -289,72 +289,72 @@
             },
             {
               "layer": "inner1",
-              "minX": -7.149999999999998,
-              "maxX": 6.100000000000004,
+              "minX": -6.749999999999997,
+              "maxX": 6.300000000000003,
               "minY": -33.55,
-              "maxY": -3.6499999999999995,
-              "widthMm": 13.250000000000002,
-              "heightMm": 29.9,
-              "areaMm2": 396.175
+              "maxY": -3.45,
+              "widthMm": 13.05,
+              "heightMm": 30.099999999999998,
+              "areaMm2": 392.805
             },
             {
               "layer": "inner2",
-              "minX": -9.2,
-              "maxX": 5.400000000000005,
+              "minX": -7.399999999999998,
+              "maxX": 4.900000000000005,
               "minY": -33.55,
               "maxY": -3.8499999999999996,
-              "widthMm": 14.600000000000005,
+              "widthMm": 12.300000000000002,
               "heightMm": 29.699999999999996,
-              "areaMm2": 433.62000000000006
+              "areaMm2": 365.31
             },
             {
               "layer": "bottom",
-              "minX": -5.949999999999997,
-              "maxX": 4.600000000000004,
-              "minY": -33.75,
+              "minX": -6.149999999999998,
+              "maxX": 4.400000000000005,
+              "minY": -33.55,
               "maxY": -3.8499999999999996,
-              "widthMm": 10.55,
-              "heightMm": 29.9,
-              "areaMm2": 315.445
+              "widthMm": 10.550000000000002,
+              "heightMm": 29.699999999999996,
+              "areaMm2": 313.33500000000004
             }
           ],
-          "middleRegionMaxCenterOffsetMm": 9.2,
+          "middleRegionMaxCenterOffsetMm": 7.399999999999998,
           "middleRegionVacancy": {
             "layers": [
               {
                 "layer": "inner2",
-                "envelopeAreaMm2": 190.13774180000007,
-                "unoccupiedAreaMm2": 59.49888518911566,
-                "unoccupiedFraction": 0.3129251700680272,
-                "largestFreeRectangleMm2": 25.632111840515147,
+                "envelopeAreaMm2": 160.18453590000004,
+                "unoccupiedAreaMm2": 39.95738361652303,
+                "unoccupiedFraction": 0.24944594927357794,
+                "largestFreeRectangleMm2": 4.023349584289585,
                 "gridResolutionMm": 0.1
               },
               {
                 "layer": "inner1",
-                "envelopeAreaMm2": 172.55651225000005,
-                "unoccupiedAreaMm2": 45.88499806314929,
-                "unoccupiedFraction": 0.26591287378752226,
-                "largestFreeRectangleMm2": 10.161452193565976,
+                "envelopeAreaMm2": 169.95188565000004,
+                "unoccupiedAreaMm2": 44.0997463317668,
+                "unoccupiedFraction": 0.2594837130703339,
+                "largestFreeRectangleMm2": 12.359416892442168,
                 "gridResolutionMm": 0.1
               },
               {
                 "layer": "bottom",
-                "envelopeAreaMm2": 137.39405315000002,
-                "unoccupiedAreaMm2": 84.53800879400836,
-                "unoccupiedFraction": 0.6152959815641653,
-                "largestFreeRectangleMm2": 22.3218337826876,
+                "envelopeAreaMm2": 137.39405315000005,
+                "unoccupiedAreaMm2": 81.59936312314925,
+                "unoccupiedFraction": 0.5939075327668155,
+                "largestFreeRectangleMm2": 22.321833782687605,
                 "gridResolutionMm": 0.1
               }
             ],
-            "envelopeAreaMm2": 500.08830720000014,
-            "unoccupiedAreaMm2": 189.9218920462733
+            "envelopeAreaMm2": 467.5304747000001,
+            "unoccupiedAreaMm2": 165.65649307143906
           }
         },
-        "totalPlanarLengthMm": 1583.5629299028587,
-        "maxDetourRatio": 2.492501251923815,
-        "meanDetourRatio": 1.6038011861337431,
-        "ordinaryTurns": 620,
-        "shortJogs": 159,
+        "totalPlanarLengthMm": 1525.8383373914648,
+        "maxDetourRatio": 2.2249291340002992,
+        "meanDetourRatio": 1.53424857901808,
+        "ordinaryTurns": 633,
+        "shortJogs": 169,
         "acuteCorners": 0,
         "sharpCurveCorners": 0,
         "illegalOrdinaryCorners": 0,
@@ -364,10 +364,10 @@
             "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
-            "minEdgeGapMm": 0.11981206684520244,
-            "maxEdgeGapMm": 0.13774631975933582,
+            "minEdgeGapMm": 0.1198120668452025,
+            "maxEdgeGapMm": 0.137749499483309,
             "maxSamplingErrorMm": 0.0009999999999999998,
-            "sharedCopperMm": [29.16777145314457, 29.350025420588725],
+            "sharedCopperMm": [28.991963408025523, 29.356471342913842],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -375,10 +375,10 @@
             "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
-            "minEdgeGapMm": 0.11981206684520306,
-            "maxEdgeGapMm": 0.13776345174284593,
-            "maxSamplingErrorMm": 0.0009999999999999996,
-            "sharedCopperMm": [31.70568235486123, 31.523428387417074],
+            "minEdgeGapMm": 0.11981206684520244,
+            "maxEdgeGapMm": 0.13774759192858205,
+            "maxSamplingErrorMm": 0.000999999999999999,
+            "sharedCopperMm": [27.737455221221133, 27.55754500377697],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -399,7 +399,7 @@
             "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
-            "maxExteriorEdgeGapMm": 0.13774631975933582,
+            "maxExteriorEdgeGapMm": 0.137749499483309,
             "maxSamplingErrorMm": 0.0009999999999999998,
             "separatedExteriorLengthMm": 0
           },
@@ -407,8 +407,8 @@
             "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
-            "maxExteriorEdgeGapMm": 0.13776345174284593,
-            "maxSamplingErrorMm": 0.0009999999999999996,
+            "maxExteriorEdgeGapMm": 0.13774759192858205,
+            "maxSamplingErrorMm": 0.000999999999999999,
             "separatedExteriorLengthMm": 0
           },
           {
@@ -438,9 +438,9 @@
     "status": "solved",
     "solved": true,
     "timeoutSeconds": 30,
-    "solveMilliseconds": 15141.5725,
-    "milliseconds": 18929.871208,
-    "iterations": 50712,
+    "solveMilliseconds": 12888.140000000001,
+    "milliseconds": 15291.257333000001,
+    "iterations": 51512,
     "requestedSignals": 47,
     "routedSignals": 47,
     "fixedPowerDogbones": 161,
@@ -465,7 +465,7 @@
       "combinedDrc": {
         "valid": true,
         "checkedTraceCount": 208,
-        "checkedSegmentCount": 21600,
+        "checkedSegmentCount": 17547,
         "checkedViaCount": 255,
         "issues": []
       },
@@ -473,148 +473,148 @@
         {
           "busId": "DDR_BYTE0",
           "toleranceMm": 0.635,
-          "skewMm": 0.6350000000008151,
+          "skewMm": 0.635000000000467,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_14",
-              "carrierLengthMm": 39.51496565321094,
+              "carrierLengthMm": 38.73792438716942,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321094
+              "totalLengthMm": 38.73792438716942
             },
             {
               "name": "source_trace_30",
-              "carrierLengthMm": 39.51496565321043,
+              "carrierLengthMm": 38.737924387168725,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321043
+              "totalLengthMm": 38.737924387168725
             },
             {
               "name": "source_trace_3",
-              "carrierLengthMm": 39.51496565321103,
+              "carrierLengthMm": 38.73792438716948,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321103
+              "totalLengthMm": 38.73792438716948
             },
             {
               "name": "source_trace_40",
-              "carrierLengthMm": 40.149965653210685,
+              "carrierLengthMm": 39.293018673606284,
               "fixedLengthMm": 0,
-              "totalLengthMm": 40.149965653210685
+              "totalLengthMm": 39.293018673606284
             },
             {
               "name": "source_trace_17",
-              "carrierLengthMm": 39.514965653211014,
+              "carrierLengthMm": 38.73792438716959,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.514965653211014
+              "totalLengthMm": 38.73792438716959
             },
             {
               "name": "source_trace_41",
-              "carrierLengthMm": 39.51496565321093,
+              "carrierLengthMm": 39.37292438716919,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321093
+              "totalLengthMm": 39.37292438716919
             },
             {
               "name": "source_trace_4",
-              "carrierLengthMm": 39.51496565321107,
+              "carrierLengthMm": 38.73792438716959,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321107
+              "totalLengthMm": 38.73792438716959
             },
             {
               "name": "source_trace_31",
-              "carrierLengthMm": 39.51496565321054,
+              "carrierLengthMm": 38.737924387169926,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321054
+              "totalLengthMm": 38.737924387169926
             },
             {
               "name": "source_trace_29",
-              "carrierLengthMm": 39.51496565320987,
+              "carrierLengthMm": 39.03605974987319,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565320987
+              "totalLengthMm": 39.03605974987319
             },
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 39.51496565321068,
+              "carrierLengthMm": 38.768877733559655,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321068
+              "totalLengthMm": 38.768877733559655
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 39.64196565321063,
+              "carrierLengthMm": 38.86492438716917,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.64196565321063
+              "totalLengthMm": 38.86492438716917
             }
           ]
         },
         {
           "busId": "DDR_BYTE1",
           "toleranceMm": 0.635,
-          "skewMm": 0.6350000000011562,
+          "skewMm": 0.635000000001483,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_28",
-              "carrierLengthMm": 46.048649611629145,
+              "carrierLengthMm": 46.16580689915426,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.048649611629145
+              "totalLengthMm": 46.16580689915426
             },
             {
               "name": "source_trace_12",
-              "carrierLengthMm": 46.048649611629095,
+              "carrierLengthMm": 46.16580689915461,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.048649611629095
+              "totalLengthMm": 46.16580689915461
             },
             {
               "name": "source_trace_39",
-              "carrierLengthMm": 46.04864961162753,
+              "carrierLengthMm": 46.16580689915258,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.04864961162753
+              "totalLengthMm": 46.16580689915258
             },
             {
               "name": "source_trace_2",
-              "carrierLengthMm": 46.68364961162869,
+              "carrierLengthMm": 46.80080689915406,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.68364961162869
+              "totalLengthMm": 46.80080689915406
             },
             {
               "name": "source_trace_25",
-              "carrierLengthMm": 46.04864961162914,
+              "carrierLengthMm": 46.165806899154106,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.04864961162914
+              "totalLengthMm": 46.165806899154106
             },
             {
               "name": "source_trace_1",
-              "carrierLengthMm": 46.04864961162909,
+              "carrierLengthMm": 46.16580689915408,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.04864961162909
+              "totalLengthMm": 46.16580689915408
             },
             {
               "name": "source_trace_38",
-              "carrierLengthMm": 46.04864961162911,
+              "carrierLengthMm": 46.165806899154454,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.04864961162911
+              "totalLengthMm": 46.165806899154454
             },
             {
               "name": "source_trace_11",
-              "carrierLengthMm": 46.048649611629116,
+              "carrierLengthMm": 46.16580689915449,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.048649611629116
+              "totalLengthMm": 46.16580689915449
             },
             {
               "name": "source_trace_13",
-              "carrierLengthMm": 46.04864961162914,
+              "carrierLengthMm": 46.16580689915468,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.04864961162914
+              "totalLengthMm": 46.16580689915468
             },
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 46.1756496116286,
+              "carrierLengthMm": 46.29280689915403,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.1756496116286
+              "totalLengthMm": 46.29280689915403
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 46.0486496116287,
+              "carrierLengthMm": 46.17100459175054,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.0486496116287
+              "totalLengthMm": 46.17100459175054
             }
           ]
         }
@@ -623,40 +623,40 @@
         {
           "busId": "pair_0",
           "toleranceMm": 0.127,
-          "skewMm": 0.1269999999999527,
+          "skewMm": 0.09604665360951259,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 39.51496565321068,
+              "carrierLengthMm": 38.768877733559655,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.51496565321068
+              "totalLengthMm": 38.768877733559655
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 39.64196565321063,
+              "carrierLengthMm": 38.86492438716917,
               "fixedLengthMm": 0,
-              "totalLengthMm": 39.64196565321063
+              "totalLengthMm": 38.86492438716917
             }
           ]
         },
         {
           "busId": "pair_1",
           "toleranceMm": 0.127,
-          "skewMm": 0.12699999999990297,
+          "skewMm": 0.12180230740349174,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 46.1756496116286,
+              "carrierLengthMm": 46.29280689915403,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.1756496116286
+              "totalLengthMm": 46.29280689915403
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 46.0486496116287,
+              "carrierLengthMm": 46.17100459175054,
               "fixedLengthMm": 0,
-              "totalLengthMm": 46.0486496116287
+              "totalLengthMm": 46.17100459175054
             }
           ]
         },
@@ -750,17 +750,17 @@
               {
                 "layer": "inner2",
                 "envelopeAreaMm2": 282.443414039009,
-                "unoccupiedAreaMm2": 110.88938225894685,
-                "unoccupiedFraction": 0.39260742770809176,
-                "largestFreeRectangleMm2": 29.414366298149137,
+                "unoccupiedAreaMm2": 139.91671742159403,
+                "unoccupiedFraction": 0.4953796423175574,
+                "largestFreeRectangleMm2": 74.10157663572187,
                 "gridResolutionMm": 0.1
               },
               {
                 "layer": "inner1",
                 "envelopeAreaMm2": 262.6645459457855,
-                "unoccupiedAreaMm2": 105.3507104403501,
-                "unoccupiedFraction": 0.40108462320641736,
-                "largestFreeRectangleMm2": 37.73830613426625,
+                "unoccupiedAreaMm2": 110.65286826157335,
+                "unoccupiedFraction": 0.42127066621474035,
+                "largestFreeRectangleMm2": 41.54675904689863,
                 "gridResolutionMm": 0.1
               },
               {
@@ -773,14 +773,14 @@
               }
             ],
             "envelopeAreaMm2": 700.1754635034443,
-            "unoccupiedAreaMm2": 314.01310409772145
+            "unoccupiedAreaMm2": 348.34259708159186
           }
         },
-        "totalPlanarLengthMm": 1874.905910332039,
-        "maxDetourRatio": 1.7999411819584987,
-        "meanDetourRatio": 1.3998976610022593,
-        "ordinaryTurns": 675,
-        "shortJogs": 163,
+        "totalPlanarLengthMm": 1864.8754020213219,
+        "maxDetourRatio": 1.797644435428942,
+        "meanDetourRatio": 1.3913667601603503,
+        "ordinaryTurns": 673,
+        "shortJogs": 161,
         "acuteCorners": 0,
         "sharpCurveCorners": 0,
         "illegalOrdinaryCorners": 0,
@@ -790,10 +790,10 @@
             "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
-            "minEdgeGapMm": 0.11981206684520461,
-            "maxEdgeGapMm": 0.13774696981476736,
-            "maxSamplingErrorMm": 0.0009999999999999996,
-            "sharedCopperMm": [29.58738066558233, 29.95188860047065],
+            "minEdgeGapMm": 0.11981206684520239,
+            "maxEdgeGapMm": 0.1377467448372296,
+            "maxSamplingErrorMm": 0.000999922958397535,
+            "sharedCopperMm": [28.57212435139382, 28.936632286282148],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -801,10 +801,10 @@
             "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
-            "minEdgeGapMm": 0.11981206684520283,
-            "maxEdgeGapMm": 0.13774642407437426,
-            "maxSamplingErrorMm": 0.0009999999999999996,
-            "sharedCopperMm": [37.07657205259912, 36.712064117710774],
+            "minEdgeGapMm": 0.119790608748007,
+            "maxEdgeGapMm": 0.13774648587532762,
+            "maxSamplingErrorMm": 0.001,
+            "sharedCopperMm": [37.193729340124534, 36.8292214052362],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -825,16 +825,16 @@
             "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
-            "maxExteriorEdgeGapMm": 0.1377464199186842,
-            "maxSamplingErrorMm": 0.0009999999999999996,
+            "maxExteriorEdgeGapMm": 0.1377467448372296,
+            "maxSamplingErrorMm": 0.000999922958397535,
             "separatedExteriorLengthMm": 0
           },
           {
             "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
-            "maxExteriorEdgeGapMm": 0.13774640520193043,
-            "maxSamplingErrorMm": 0.0009999999999999996,
+            "maxExteriorEdgeGapMm": 0.13774648587532762,
+            "maxSamplingErrorMm": 0.0009999999999999994,
             "separatedExteriorLengthMm": 0
           },
           {
@@ -864,8 +864,8 @@
     "status": "solved",
     "solved": true,
     "timeoutSeconds": 30,
-    "solveMilliseconds": 18012.751875,
-    "milliseconds": 23510.200334,
+    "solveMilliseconds": 18395.581375,
+    "milliseconds": 23967.230875,
     "iterations": 88025,
     "requestedSignals": 47,
     "routedSignals": 47,
@@ -891,7 +891,7 @@
       "combinedDrc": {
         "valid": true,
         "checkedTraceCount": 208,
-        "checkedSegmentCount": 25448,
+        "checkedSegmentCount": 28513,
         "checkedViaCount": 255,
         "issues": []
       },
@@ -899,148 +899,148 @@
         {
           "busId": "DDR_BYTE0",
           "toleranceMm": 0.635,
-          "skewMm": 0.6349999999996996,
+          "skewMm": 0.6349999999998346,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_14",
-              "carrierLengthMm": 53.932114597144675,
+              "carrierLengthMm": 47.82752216117552,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.932114597144675
+              "totalLengthMm": 47.82752216117552
             },
             {
               "name": "source_trace_30",
-              "carrierLengthMm": 53.93211459714465,
+              "carrierLengthMm": 47.827522161175736,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.93211459714465
+              "totalLengthMm": 47.827522161175736
             },
             {
               "name": "source_trace_3",
-              "carrierLengthMm": 53.93211459714461,
+              "carrierLengthMm": 47.82752216117531,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.93211459714461
+              "totalLengthMm": 47.82752216117531
             },
             {
               "name": "source_trace_40",
-              "carrierLengthMm": 53.932114597144704,
+              "carrierLengthMm": 47.82752216117575,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.932114597144704
+              "totalLengthMm": 47.82752216117575
             },
             {
               "name": "source_trace_17",
-              "carrierLengthMm": 53.93211459714467,
+              "carrierLengthMm": 47.827522161175345,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.93211459714467
+              "totalLengthMm": 47.827522161175345
             },
             {
               "name": "source_trace_41",
-              "carrierLengthMm": 53.93211459714481,
+              "carrierLengthMm": 47.827522161175615,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.93211459714481
+              "totalLengthMm": 47.827522161175615
             },
             {
               "name": "source_trace_4",
-              "carrierLengthMm": 54.56711459714431,
+              "carrierLengthMm": 48.462522161175144,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.56711459714431
+              "totalLengthMm": 48.462522161175144
             },
             {
               "name": "source_trace_31",
-              "carrierLengthMm": 53.93211459714493,
+              "carrierLengthMm": 47.82752216117564,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.93211459714493
+              "totalLengthMm": 47.82752216117564
             },
             {
               "name": "source_trace_29",
-              "carrierLengthMm": 53.93211459714464,
+              "carrierLengthMm": 47.82752216117565,
               "fixedLengthMm": 0,
-              "totalLengthMm": 53.93211459714464
+              "totalLengthMm": 47.82752216117565
             },
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 54.05911459714372,
+              "carrierLengthMm": 47.95452216117499,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.05911459714372
+              "totalLengthMm": 47.95452216117499
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 54.087999456955814,
+              "carrierLengthMm": 47.96503653002604,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.087999456955814
+              "totalLengthMm": 47.96503653002604
             }
           ]
         },
         {
           "busId": "DDR_BYTE1",
           "toleranceMm": 0.635,
-          "skewMm": 0.634999999999664,
+          "skewMm": 0.6349999999996712,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_28",
-              "carrierLengthMm": 59.121337655262316,
+              "carrierLengthMm": 54.121337655262586,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.121337655262316
+              "totalLengthMm": 54.121337655262586
             },
             {
               "name": "source_trace_12",
-              "carrierLengthMm": 59.121337655262366,
+              "carrierLengthMm": 54.121337655262565,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.121337655262366
+              "totalLengthMm": 54.121337655262565
             },
             {
               "name": "source_trace_39",
-              "carrierLengthMm": 59.12133765526223,
+              "carrierLengthMm": 54.121337655262415,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.12133765526223
+              "totalLengthMm": 54.121337655262415
             },
             {
               "name": "source_trace_2",
-              "carrierLengthMm": 59.12133765526233,
+              "carrierLengthMm": 54.12133765526248,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.12133765526233
+              "totalLengthMm": 54.12133765526248
             },
             {
               "name": "source_trace_25",
-              "carrierLengthMm": 59.12133765526261,
+              "carrierLengthMm": 54.12133765526259,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.12133765526261
+              "totalLengthMm": 54.12133765526259
             },
             {
               "name": "source_trace_1",
-              "carrierLengthMm": 59.12133765526272,
+              "carrierLengthMm": 54.12133765526271,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.12133765526272
+              "totalLengthMm": 54.12133765526271
             },
             {
               "name": "source_trace_38",
-              "carrierLengthMm": 59.121337655262344,
+              "carrierLengthMm": 54.121337655262515,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.121337655262344
+              "totalLengthMm": 54.121337655262515
             },
             {
               "name": "source_trace_11",
-              "carrierLengthMm": 59.12133765526262,
+              "carrierLengthMm": 54.12133765526266,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.12133765526262
+              "totalLengthMm": 54.12133765526266
             },
             {
               "name": "source_trace_13",
-              "carrierLengthMm": 59.121337655262295,
+              "carrierLengthMm": 54.121337655262224,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.121337655262295
+              "totalLengthMm": 54.121337655262224
             },
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 59.62933765526196,
+              "carrierLengthMm": 54.62933765526196,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.62933765526196
+              "totalLengthMm": 54.62933765526196
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 59.756337655261895,
+              "carrierLengthMm": 54.756337655261895,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.756337655261895
+              "totalLengthMm": 54.756337655261895
             }
           ]
         }
@@ -1049,20 +1049,20 @@
         {
           "busId": "pair_0",
           "toleranceMm": 0.127,
-          "skewMm": 0.028884859812094987,
+          "skewMm": 0.010514368851048062,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 54.05911459714372,
+              "carrierLengthMm": 47.95452216117499,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.05911459714372
+              "totalLengthMm": 47.95452216117499
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 54.087999456955814,
+              "carrierLengthMm": 47.96503653002604,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.087999456955814
+              "totalLengthMm": 47.96503653002604
             }
           ]
         },
@@ -1074,15 +1074,15 @@
           "lengths": [
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 59.62933765526196,
+              "carrierLengthMm": 54.62933765526196,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.62933765526196
+              "totalLengthMm": 54.62933765526196
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 59.756337655261895,
+              "carrierLengthMm": 54.756337655261895,
               "fixedLengthMm": 0,
-              "totalLengthMm": 59.756337655261895
+              "totalLengthMm": 54.756337655261895
             }
           ]
         },
@@ -1113,20 +1113,20 @@
           "bounds": {
             "minX": -31.6,
             "maxX": 4.610000000000003,
-            "minY": -11.855425233947098,
-            "maxY": 10.050000000000002,
+            "minY": -8.709999999999999,
+            "maxY": 7.000000000000001,
             "widthMm": 36.21000000000001,
-            "heightMm": 21.9054252339471,
-            "areaMm2": 793.1954477212246
+            "heightMm": 15.71,
+            "areaMm2": 568.8591000000001
           },
           "allCopperBounds": {
             "minX": -31.6,
             "maxX": 7.401000000000001,
-            "minY": -11.855425233947098,
-            "maxY": 10.050000000000002,
+            "minY": -8.709999999999999,
+            "maxY": 7.401000000000001,
             "widthMm": 39.001000000000005,
-            "heightMm": 21.9054252339471,
-            "areaMm2": 854.333489549171
+            "heightMm": 16.111,
+            "areaMm2": 628.3451110000001
           },
           "layers": [
             {
@@ -1143,21 +1143,21 @@
               "layer": "inner1",
               "minX": -31.6,
               "maxX": 4.610000000000003,
-              "minY": -11.855425233947098,
-              "maxY": 7.554574766052905,
+              "minY": -8.65,
+              "maxY": 6.550000000000001,
               "widthMm": 36.21000000000001,
-              "heightMm": 19.410000000000004,
-              "areaMm2": 702.8361000000003
+              "heightMm": 15.200000000000001,
+              "areaMm2": 550.3920000000002
             },
             {
               "layer": "inner2",
               "minX": -31.41,
               "maxX": 3.350000000000001,
-              "minY": -11.76,
-              "maxY": 10.050000000000002,
+              "minY": -8.709999999999999,
+              "maxY": 7.000000000000001,
               "widthMm": 34.76,
-              "heightMm": 21.810000000000002,
-              "areaMm2": 758.1156000000001
+              "heightMm": 15.71,
+              "areaMm2": 546.0796
             },
             {
               "layer": "bottom",
@@ -1170,43 +1170,43 @@
               "areaMm2": 520.0249999999999
             }
           ],
-          "middleRegionMaxCenterOffsetMm": 11.855382335535904,
+          "middleRegionMaxCenterOffsetMm": 8.709965187860789,
           "middleRegionVacancy": {
             "layers": [
               {
                 "layer": "inner2",
-                "envelopeAreaMm2": 345.1020718778027,
-                "unoccupiedAreaMm2": 105.11336763263479,
-                "unoccupiedFraction": 0.3045863128571839,
-                "largestFreeRectangleMm2": 10.148603474996985,
+                "envelopeAreaMm2": 248.58145981303582,
+                "unoccupiedAreaMm2": 49.59359432302108,
+                "unoccupiedFraction": 0.19950640872541994,
+                "largestFreeRectangleMm2": 4.2152576180381045,
                 "gridResolutionMm": 0.1
               },
               {
                 "layer": "inner1",
-                "envelopeAreaMm2": 307.126366918929,
-                "unoccupiedAreaMm2": 112.79625673619883,
-                "unoccupiedFraction": 0.3672633446218352,
-                "largestFreeRectangleMm2": 11.114200409064292,
+                "envelopeAreaMm2": 218.35941405192375,
+                "unoccupiedAreaMm2": 49.48926767956591,
+                "unoccupiedFraction": 0.22664132844667662,
+                "largestFreeRectangleMm2": 3.853227070279638,
                 "gridResolutionMm": 0.1
               },
               {
                 "layer": "bottom",
                 "envelopeAreaMm2": 181.17522162333037,
-                "unoccupiedAreaMm2": 116.38414838324522,
-                "unoccupiedFraction": 0.6423844681432869,
-                "largestFreeRectangleMm2": 34.18400407987366,
+                "unoccupiedAreaMm2": 116.57240811585902,
+                "unoccupiedFraction": 0.6434235712332513,
+                "largestFreeRectangleMm2": 34.48125628926387,
                 "gridResolutionMm": 0.1
               }
             ],
-            "envelopeAreaMm2": 833.4036604200621,
-            "unoccupiedAreaMm2": 334.29377275207884
+            "envelopeAreaMm2": 648.11609548829,
+            "unoccupiedAreaMm2": 215.65527011844603
           }
         },
-        "totalPlanarLengthMm": 2019.5586913444597,
-        "maxDetourRatio": 2.1834641980685072,
-        "meanDetourRatio": 1.578423969240471,
-        "ordinaryTurns": 1017,
-        "shortJogs": 320,
+        "totalPlanarLengthMm": 1916.7428223785946,
+        "maxDetourRatio": 1.9988046246670854,
+        "meanDetourRatio": 1.5102232374261468,
+        "ordinaryTurns": 963,
+        "shortJogs": 306,
         "acuteCorners": 0,
         "sharpCurveCorners": 0,
         "illegalOrdinaryCorners": 0,
@@ -1216,10 +1216,10 @@
             "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
-            "minEdgeGapMm": 0.11990969019593987,
-            "maxEdgeGapMm": 0.13774669207207207,
-            "maxSamplingErrorMm": 0.0009999982635279512,
-            "sharedCopperMm": [44.41159967938036, 43.098144758736495],
+            "minEdgeGapMm": 0.11994401434068057,
+            "maxEdgeGapMm": 0.13775255617978255,
+            "maxSamplingErrorMm": 0.0009999954904890305,
+            "sharedCopperMm": [38.30700724341162, 36.993552322767755],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -1228,9 +1228,9 @@
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999654,
-            "maxEdgeGapMm": 0.13774631975933516,
+            "maxEdgeGapMm": 0.13774631975933582,
             "maxSamplingErrorMm": 0.001,
-            "sharedCopperMm": [50.94867350668035, 52.1871284273242],
+            "sharedCopperMm": [45.94867350668035, 47.1871284273242],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -1251,8 +1251,8 @@
             "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
-            "maxExteriorEdgeGapMm": 0.13774631975933582,
-            "maxSamplingErrorMm": 0.0009999982635279512,
+            "maxExteriorEdgeGapMm": 0.13775255617978255,
+            "maxSamplingErrorMm": 0.0009999954904890305,
             "separatedExteriorLengthMm": 0
           },
           {
@@ -1290,8 +1290,8 @@
     "status": "solved",
     "solved": true,
     "timeoutSeconds": 30,
-    "solveMilliseconds": 25095.080708,
-    "milliseconds": 29839.033458,
+    "solveMilliseconds": 27706.592667,
+    "milliseconds": 33254.752958000005,
     "iterations": 101402,
     "requestedSignals": 47,
     "routedSignals": 47,
@@ -1317,7 +1317,7 @@
       "combinedDrc": {
         "valid": true,
         "checkedTraceCount": 208,
-        "checkedSegmentCount": 22123,
+        "checkedSegmentCount": 27025,
         "checkedViaCount": 255,
         "issues": []
       },
@@ -1325,56 +1325,56 @@
         {
           "busId": "DDR_BYTE0",
           "toleranceMm": 0.635,
-          "skewMm": 0.6350000000019733,
+          "skewMm": 0.6350000000019804,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_14",
-              "carrierLengthMm": 57.05646586806187,
+              "carrierLengthMm": 57.056465868059874,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.05646586806187
+              "totalLengthMm": 57.056465868059874
             },
             {
               "name": "source_trace_30",
-              "carrierLengthMm": 57.05646586806098,
+              "carrierLengthMm": 57.05646586806112,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.05646586806098
+              "totalLengthMm": 57.05646586806112
             },
             {
               "name": "source_trace_3",
-              "carrierLengthMm": 57.69146586806062,
+              "carrierLengthMm": 57.691465868060625,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.69146586806062
+              "totalLengthMm": 57.691465868060625
             },
             {
               "name": "source_trace_40",
-              "carrierLengthMm": 57.05646586806126,
+              "carrierLengthMm": 57.05646586806122,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.05646586806126
+              "totalLengthMm": 57.05646586806122
             },
             {
               "name": "source_trace_17",
-              "carrierLengthMm": 57.05646586806094,
+              "carrierLengthMm": 57.056465868060975,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.05646586806094
+              "totalLengthMm": 57.056465868060975
             },
             {
               "name": "source_trace_41",
-              "carrierLengthMm": 57.056465868061096,
+              "carrierLengthMm": 57.05646586806108,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.056465868061096
+              "totalLengthMm": 57.05646586806108
             },
             {
               "name": "source_trace_4",
-              "carrierLengthMm": 57.056465868060954,
+              "carrierLengthMm": 57.05646586806117,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.056465868060954
+              "totalLengthMm": 57.05646586806117
             },
             {
               "name": "source_trace_31",
-              "carrierLengthMm": 57.056465868061046,
+              "carrierLengthMm": 57.05646586806115,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.056465868061046
+              "totalLengthMm": 57.05646586806115
             },
             {
               "name": "source_trace_29",
@@ -1384,22 +1384,22 @@
             },
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 57.21132791651934,
+              "carrierLengthMm": 57.21132791651938,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.21132791651934
+              "totalLengthMm": 57.21132791651938
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 57.084327916519335,
+              "carrierLengthMm": 57.084327916519364,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.084327916519335
+              "totalLengthMm": 57.084327916519364
             }
           ]
         },
         {
           "busId": "DDR_BYTE1",
           "toleranceMm": 0.635,
-          "skewMm": 0.6350000000001899,
+          "skewMm": 0.6349999999996001,
           "matched": true,
           "lengths": [
             {
@@ -1410,27 +1410,27 @@
             },
             {
               "name": "source_trace_12",
-              "carrierLengthMm": 54.86372539570521,
+              "carrierLengthMm": 54.86372539570544,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.86372539570521
+              "totalLengthMm": 54.86372539570544
             },
             {
               "name": "source_trace_39",
-              "carrierLengthMm": 54.863725395705316,
+              "carrierLengthMm": 54.86372539570527,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.863725395705316
+              "totalLengthMm": 54.86372539570527
             },
             {
               "name": "source_trace_2",
-              "carrierLengthMm": 54.863725395705245,
+              "carrierLengthMm": 54.863725395705416,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.863725395705245
+              "totalLengthMm": 54.863725395705416
             },
             {
               "name": "source_trace_25",
-              "carrierLengthMm": 54.863725395705266,
+              "carrierLengthMm": 54.863725395705295,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.863725395705266
+              "totalLengthMm": 54.863725395705295
             },
             {
               "name": "source_trace_1",
@@ -1440,15 +1440,15 @@
             },
             {
               "name": "source_trace_38",
-              "carrierLengthMm": 54.86372539570544,
+              "carrierLengthMm": 54.863725395705536,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.86372539570544
+              "totalLengthMm": 54.863725395705536
             },
             {
               "name": "source_trace_11",
-              "carrierLengthMm": 54.86372539570536,
+              "carrierLengthMm": 54.86372539570539,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.86372539570536
+              "totalLengthMm": 54.86372539570539
             },
             {
               "name": "source_trace_13",
@@ -1458,15 +1458,15 @@
             },
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 54.863725395704684,
+              "carrierLengthMm": 54.86372539570532,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.863725395704684
+              "totalLengthMm": 54.86372539570532
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 54.99072539570464,
+              "carrierLengthMm": 54.99072539570533,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.99072539570464
+              "totalLengthMm": 54.99072539570533
             }
           ]
         }
@@ -1475,40 +1475,40 @@
         {
           "busId": "pair_0",
           "toleranceMm": 0.127,
-          "skewMm": 0.12700000000000244,
+          "skewMm": 0.12700000000001666,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_15",
-              "carrierLengthMm": 57.21132791651934,
+              "carrierLengthMm": 57.21132791651938,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.21132791651934
+              "totalLengthMm": 57.21132791651938
             },
             {
               "name": "source_trace_16",
-              "carrierLengthMm": 57.084327916519335,
+              "carrierLengthMm": 57.084327916519364,
               "fixedLengthMm": 0,
-              "totalLengthMm": 57.084327916519335
+              "totalLengthMm": 57.084327916519364
             }
           ]
         },
         {
           "busId": "pair_1",
           "toleranceMm": 0.127,
-          "skewMm": 0.1269999999999527,
+          "skewMm": 0.12700000000000955,
           "matched": true,
           "lengths": [
             {
               "name": "source_trace_27",
-              "carrierLengthMm": 54.863725395704684,
+              "carrierLengthMm": 54.86372539570532,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.863725395704684
+              "totalLengthMm": 54.86372539570532
             },
             {
               "name": "source_trace_26",
-              "carrierLengthMm": 54.99072539570464,
+              "carrierLengthMm": 54.99072539570533,
               "fixedLengthMm": 0,
-              "totalLengthMm": 54.99072539570464
+              "totalLengthMm": 54.99072539570533
             }
           ]
         },
@@ -1610,29 +1610,29 @@
               {
                 "layer": "inner2",
                 "envelopeAreaMm2": 204.45920030000002,
-                "unoccupiedAreaMm2": 77.62297787020003,
-                "unoccupiedFraction": 0.379650207749541,
+                "unoccupiedAreaMm2": 80.41851143309984,
+                "unoccupiedFraction": 0.39332302637936034,
                 "largestFreeRectangleMm2": 9.058319000632913,
                 "gridResolutionMm": 0.1
               },
               {
                 "layer": "inner1",
                 "envelopeAreaMm2": 251.34156470000005,
-                "unoccupiedAreaMm2": 78.2388887361966,
-                "unoccupiedFraction": 0.31128511843865586,
-                "largestFreeRectangleMm2": 7.684441479967736,
+                "unoccupiedAreaMm2": 79.65314244486505,
+                "unoccupiedFraction": 0.3169119383017235,
+                "largestFreeRectangleMm2": 8.16904589762336,
                 "gridResolutionMm": 0.1
               }
             ],
             "envelopeAreaMm2": 606.34524624,
-            "unoccupiedAreaMm2": 236.45408527495417
+            "unoccupiedAreaMm2": 240.66387254652244
           }
         },
-        "totalPlanarLengthMm": 2141.321480595926,
-        "maxDetourRatio": 1.7940909365498452,
+        "totalPlanarLengthMm": 2141.3214805959265,
+        "maxDetourRatio": 1.7940909365498448,
         "meanDetourRatio": 1.3806376143039008,
-        "ordinaryTurns": 756,
-        "shortJogs": 223,
+        "ordinaryTurns": 750,
+        "shortJogs": 221,
         "acuteCorners": 0,
         "sharpCurveCorners": 0,
         "illegalOrdinaryCorners": 0,
@@ -1644,8 +1644,8 @@
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520122,
             "maxEdgeGapMm": 0.13774884330447518,
-            "maxSamplingErrorMm": 0.000999848757399522,
-            "sharedCopperMm": [35.486034315171416, 35.35134383958931],
+            "maxSamplingErrorMm": 0.0009998427930044277,
+            "sharedCopperMm": [35.486034315171445, 35.35134383958933],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -1653,10 +1653,10 @@
             "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
-            "minEdgeGapMm": 0.119812066845203,
+            "minEdgeGapMm": 0.11991062944755147,
             "maxEdgeGapMm": 0.1377475330937794,
             "maxSamplingErrorMm": 0.0009999999999999957,
-            "sharedCopperMm": [36.54585875166923, 36.18135081678092],
+            "sharedCopperMm": [36.545858751669826, 36.18135081678149],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
@@ -1678,7 +1678,7 @@
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377464052019305,
-            "maxSamplingErrorMm": 0.000999848757399522,
+            "maxSamplingErrorMm": 0.0009998427930044268,
             "separatedExteriorLengthMm": 0
           },
           {

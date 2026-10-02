@@ -1,101 +1,8 @@
 [
   {
     "sample": "control",
-    "baselineCommit": "2d337344263ac357a6995e9a0ac72c730d656839",
+    "baselineCommit": "e50b499",
     "before": {
-      "bounds": {
-        "minX": -9.2,
-        "maxX": 8.400000000000004,
-        "minY": -33.8,
-        "maxY": -3.5500000000000003,
-        "widthMm": 17.6,
-        "heightMm": 30.249999999999996,
-        "areaMm2": 532.4
-      },
-      "allCopperBounds": {
-        "minX": -9.2,
-        "maxX": 8.400000000000004,
-        "minY": -33.8,
-        "maxY": 7.401000000000001,
-        "widthMm": 17.6,
-        "heightMm": 41.201,
-        "areaMm2": 725.1376
-      },
-      "layers": [
-        {
-          "layer": "top",
-          "minX": -6.05,
-          "maxX": 4.150000000000001,
-          "minY": -33.55,
-          "maxY": -3.5500000000000003,
-          "widthMm": 10.200000000000001,
-          "heightMm": 29.999999999999996,
-          "areaMm2": 306
-        },
-        {
-          "layer": "inner1",
-          "minX": -7.4499999999999975,
-          "maxX": 8.400000000000004,
-          "minY": -33.8,
-          "maxY": -3.6499999999999995,
-          "widthMm": 15.850000000000001,
-          "heightMm": 30.15,
-          "areaMm2": 477.8775
-        },
-        {
-          "layer": "inner2",
-          "minX": -9.2,
-          "maxX": 5.600000000000004,
-          "minY": -33.55,
-          "maxY": -3.6499999999999995,
-          "widthMm": 14.800000000000004,
-          "heightMm": 29.9,
-          "areaMm2": 442.5200000000001
-        },
-        {
-          "layer": "bottom",
-          "minX": -6.749999999999997,
-          "maxX": 4.400000000000005,
-          "minY": -33.75,
-          "maxY": -3.8499999999999996,
-          "widthMm": 11.150000000000002,
-          "heightMm": 29.9,
-          "areaMm2": 333.38500000000005
-        }
-      ],
-      "middleRegionMaxCenterOffsetMm": 9.2,
-      "middleRegionVacancy": {
-        "layers": [
-          {
-            "layer": "inner2",
-            "envelopeAreaMm2": 192.7423684000001,
-            "unoccupiedAreaMm2": 57.99354114520214,
-            "unoccupiedFraction": 0.3008863158973308,
-            "largestFreeRectangleMm2": 25.634468382929466,
-            "gridResolutionMm": 0.1
-          },
-          {
-            "layer": "inner1",
-            "envelopeAreaMm2": 206.41665805000005,
-            "unoccupiedAreaMm2": 90.54822625199722,
-            "unoccupiedFraction": 0.4386672427864996,
-            "largestFreeRectangleMm2": 56.28914579307697,
-            "gridResolutionMm": 0.1
-          },
-          {
-            "layer": "bottom",
-            "envelopeAreaMm2": 145.20793295000004,
-            "unoccupiedAreaMm2": 76.16686559318431,
-            "unoccupiedFraction": 0.52453653217012,
-            "largestFreeRectangleMm2": 27.553086513958565,
-            "gridResolutionMm": 0.1
-          }
-        ],
-        "envelopeAreaMm2": 544.3669594000003,
-        "unoccupiedAreaMm2": 224.70863299038365
-      }
-    },
-    "after": {
       "bounds": {
         "minX": -9.2,
         "maxX": 6.100000000000004,
@@ -162,16 +69,16 @@
           {
             "layer": "inner2",
             "envelopeAreaMm2": 190.13774180000007,
-            "unoccupiedAreaMm2": 59.49888518911566,
-            "unoccupiedFraction": 0.3129251700680272,
+            "unoccupiedAreaMm2": 58.97557936186324,
+            "unoccupiedFraction": 0.3101729241314847,
             "largestFreeRectangleMm2": 25.632111840515147,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "inner1",
             "envelopeAreaMm2": 172.55651225000005,
-            "unoccupiedAreaMm2": 45.88499806314929,
-            "unoccupiedFraction": 0.26591287378752226,
+            "unoccupiedAreaMm2": 45.7463427700597,
+            "unoccupiedFraction": 0.26510933823107385,
             "largestFreeRectangleMm2": 10.161452193565976,
             "gridResolutionMm": 0.1
           },
@@ -185,110 +92,109 @@
           }
         ],
         "envelopeAreaMm2": 500.08830720000014,
-        "unoccupiedAreaMm2": 189.9218920462733
+        "unoccupiedAreaMm2": 189.25993092593131
       }
     },
-    "allCopperAreaReductionPercent": 5.790604293585111,
-    "signalAreaReductionPercent": 13.211870773854217,
-    "unoccupiedMiddleAreaReductionPercent": 15.480820866192103
-  },
-  {
-    "sample": "right",
-    "baselineCommit": "2d337344263ac357a6995e9a0ac72c730d656839",
-    "before": {
+    "after": {
       "bounds": {
-        "minX": -6.749999999999997,
-        "maxX": 30.950000000000006,
-        "minY": -12.5,
-        "maxY": 8.47,
-        "widthMm": 37.7,
-        "heightMm": 20.97,
-        "areaMm2": 790.569
+        "minX": -7.399999999999998,
+        "maxX": 6.300000000000003,
+        "minY": -33.55,
+        "maxY": -3.45,
+        "widthMm": 13.700000000000001,
+        "heightMm": 30.099999999999998,
+        "areaMm2": 412.37
       },
       "allCopperBounds": {
         "minX": -7.401000000000001,
-        "maxX": 30.950000000000006,
-        "minY": -12.5,
-        "maxY": 8.47,
-        "widthMm": 38.351000000000006,
-        "heightMm": 20.97,
-        "areaMm2": 804.2204700000001
+        "maxX": 7.401000000000001,
+        "minY": -33.576121,
+        "maxY": 7.401000000000001,
+        "widthMm": 14.802000000000001,
+        "heightMm": 40.977121000000004,
+        "areaMm2": 606.5433450420002
       },
       "layers": [
         {
           "layer": "top",
           "minX": -6.05,
-          "maxX": 30.75,
-          "minY": -7.3500000000000005,
-          "maxY": 6.550000000000001,
-          "widthMm": 36.8,
-          "heightMm": 13.900000000000002,
-          "areaMm2": 511.52000000000004
+          "maxX": 4.150000000000001,
+          "minY": -33.55,
+          "maxY": -3.5500000000000003,
+          "widthMm": 10.200000000000001,
+          "heightMm": 29.999999999999996,
+          "areaMm2": 306
         },
         {
           "layer": "inner1",
-          "minX": -5.75,
-          "maxX": 30.75,
-          "minY": -12.5,
-          "maxY": 8.47,
-          "widthMm": 36.5,
-          "heightMm": 20.97,
-          "areaMm2": 765.405
+          "minX": -6.749999999999997,
+          "maxX": 6.300000000000003,
+          "minY": -33.55,
+          "maxY": -3.45,
+          "widthMm": 13.05,
+          "heightMm": 30.099999999999998,
+          "areaMm2": 392.805
         },
         {
           "layer": "inner2",
-          "minX": -5.949999999999998,
-          "maxX": 30.75,
-          "minY": -12.4,
-          "maxY": 8.264101999999994,
-          "widthMm": 36.699999999999996,
-          "heightMm": 20.664101999999993,
-          "areaMm2": 758.3725433999996
+          "minX": -7.399999999999998,
+          "maxX": 4.900000000000005,
+          "minY": -33.55,
+          "maxY": -3.8499999999999996,
+          "widthMm": 12.300000000000002,
+          "heightMm": 29.699999999999996,
+          "areaMm2": 365.31
         },
         {
           "layer": "bottom",
-          "minX": -6.749999999999997,
-          "maxX": 30.950000000000006,
-          "minY": -8.85,
-          "maxY": 6.550000000000001,
-          "widthMm": 37.7,
-          "heightMm": 15.4,
-          "areaMm2": 580.58
+          "minX": -6.149999999999998,
+          "maxX": 4.400000000000005,
+          "minY": -33.55,
+          "maxY": -3.8499999999999996,
+          "widthMm": 10.550000000000002,
+          "heightMm": 29.699999999999996,
+          "areaMm2": 313.33500000000004
         }
       ],
-      "middleRegionMaxCenterOffsetMm": 12.499965188062017,
+      "middleRegionMaxCenterOffsetMm": 7.399999999999998,
       "middleRegionVacancy": {
         "layers": [
           {
             "layer": "inner2",
-            "envelopeAreaMm2": 326.9711853292238,
-            "unoccupiedAreaMm2": 165.42776951667224,
-            "unoccupiedFraction": 0.5059399021663172,
-            "largestFreeRectangleMm2": 143.04554727783832,
+            "envelopeAreaMm2": 160.18453590000004,
+            "unoccupiedAreaMm2": 39.95738361652303,
+            "unoccupiedFraction": 0.24944594927357794,
+            "largestFreeRectangleMm2": 4.023349584289585,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "inner1",
-            "envelopeAreaMm2": 331.8113881112471,
-            "unoccupiedAreaMm2": 159.41654052352877,
-            "unoccupiedFraction": 0.48044324648098236,
-            "largestFreeRectangleMm2": 124.49634831559459,
+            "envelopeAreaMm2": 169.95188565000004,
+            "unoccupiedAreaMm2": 44.0997463317668,
+            "unoccupiedFraction": 0.2594837130703339,
+            "largestFreeRectangleMm2": 12.359416892442168,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "bottom",
-            "envelopeAreaMm2": 149.91059324456694,
-            "unoccupiedAreaMm2": 93.836786436768,
-            "unoccupiedFraction": 0.62595167163191,
-            "largestFreeRectangleMm2": 43.955909796768424,
+            "envelopeAreaMm2": 137.39405315000005,
+            "unoccupiedAreaMm2": 81.59936312314925,
+            "unoccupiedFraction": 0.5939075327668155,
+            "largestFreeRectangleMm2": 22.321833782687605,
             "gridResolutionMm": 0.1
           }
         ],
-        "envelopeAreaMm2": 808.6931666850378,
-        "unoccupiedAreaMm2": 418.68109647696895
+        "envelopeAreaMm2": 467.5304747000001,
+        "unoccupiedAreaMm2": 165.65649307143906
       }
     },
-    "after": {
+    "allCopperAreaReductionPercent": 11.213446263398419,
+    "signalAreaReductionPercent": 10.754014630134634
+  },
+  {
+    "sample": "right",
+    "baselineCommit": "e50b499",
+    "before": {
       "bounds": {
         "minX": -6.05,
         "maxX": 30.950000000000003,
@@ -363,8 +269,8 @@
           {
             "layer": "inner1",
             "envelopeAreaMm2": 262.6645459457855,
-            "unoccupiedAreaMm2": 105.3507104403501,
-            "unoccupiedFraction": 0.40108462320641736,
+            "unoccupiedAreaMm2": 105.29135792742596,
+            "unoccupiedFraction": 0.40085866003841375,
             "largestFreeRectangleMm2": 37.73830613426625,
             "gridResolutionMm": 0.1
           },
@@ -378,110 +284,109 @@
           }
         ],
         "envelopeAreaMm2": 700.1754635034443,
-        "unoccupiedAreaMm2": 314.01310409772145
+        "unoccupiedAreaMm2": 313.9537515847973
       }
     },
-    "allCopperAreaReductionPercent": 14.635193133047208,
-    "signalAreaReductionPercent": 16.45890491532046,
-    "unoccupiedMiddleAreaReductionPercent": 24.99945501719234
-  },
-  {
-    "sample": "left",
-    "baselineCommit": "2d337344263ac357a6995e9a0ac72c730d656839",
-    "before": {
+    "after": {
       "bounds": {
-        "minX": -31.6,
-        "maxX": 5.438814882765669,
-        "minY": -14.859999999999998,
-        "maxY": 11.350000000000003,
-        "widthMm": 37.03881488276567,
-        "heightMm": 26.21,
-        "areaMm2": 970.7873380772883
+        "minX": -6.05,
+        "maxX": 30.950000000000003,
+        "minY": -10.5,
+        "maxY": 7.350000000000004,
+        "widthMm": 37,
+        "heightMm": 17.850000000000005,
+        "areaMm2": 660.4500000000002
       },
       "allCopperBounds": {
-        "minX": -31.6,
-        "maxX": 7.401000000000001,
-        "minY": -14.859999999999998,
-        "maxY": 11.350000000000003,
-        "widthMm": 39.001000000000005,
-        "heightMm": 26.21,
-        "areaMm2": 1022.2162100000002
+        "minX": -7.401000000000001,
+        "maxX": 30.950000000000003,
+        "minY": -10.5,
+        "maxY": 7.401000000000001,
+        "widthMm": 38.351000000000006,
+        "heightMm": 17.901,
+        "areaMm2": 686.5212510000001
       },
       "layers": [
         {
           "layer": "top",
-          "minX": -30.749999999999996,
-          "maxX": 3.65,
-          "minY": -7.350000000000002,
+          "minX": -6.05,
+          "maxX": 30.75,
+          "minY": -7.3500000000000005,
           "maxY": 6.550000000000001,
-          "widthMm": 34.4,
+          "widthMm": 36.8,
           "heightMm": 13.900000000000002,
-          "areaMm2": 478.1600000000001
+          "areaMm2": 511.52000000000004
         },
         {
           "layer": "inner1",
-          "minX": -31.6,
-          "maxX": 5.438814882765669,
-          "minY": -14.549999999999999,
-          "maxY": 8.854574766052904,
-          "widthMm": 37.03881488276567,
-          "heightMm": 23.404574766052903,
-          "areaMm2": 866.8777121696821
+          "minX": -5.75,
+          "maxX": 30.950000000000003,
+          "minY": -10.45,
+          "maxY": 6.550000000000001,
+          "widthMm": 36.7,
+          "heightMm": 17,
+          "areaMm2": 623.9000000000001
         },
         {
           "layer": "inner2",
-          "minX": -31.41,
-          "maxX": 3.350000000000001,
-          "minY": -14.859999999999998,
-          "maxY": 11.350000000000003,
-          "widthMm": 34.76,
-          "heightMm": 26.21,
-          "areaMm2": 911.0595999999999
+          "minX": -5.949999999999998,
+          "maxX": 30.75,
+          "minY": -10.5,
+          "maxY": 7.350000000000004,
+          "widthMm": 36.699999999999996,
+          "heightMm": 17.850000000000005,
+          "areaMm2": 655.0950000000001
         },
         {
           "layer": "bottom",
-          "minX": -30.749999999999996,
-          "maxX": 3.350000000000001,
-          "minY": -8.7,
+          "minX": -5.949999999999997,
+          "maxX": 30.75,
+          "minY": -8.649999999999999,
           "maxY": 6.550000000000001,
-          "widthMm": 34.099999999999994,
-          "heightMm": 15.25,
-          "areaMm2": 520.0249999999999
+          "widthMm": 36.699999999999996,
+          "heightMm": 15.2,
+          "areaMm2": 557.8399999999999
         }
       ],
-      "middleRegionMaxCenterOffsetMm": 14.8599634735237,
+      "middleRegionMaxCenterOffsetMm": 10.49996518803989,
       "middleRegionVacancy": {
         "layers": [
           {
             "layer": "inner2",
-            "envelopeAreaMm2": 414.72353855107553,
-            "unoccupiedAreaMm2": 152.29439361958813,
-            "unoccupiedFraction": 0.36721907358251427,
-            "largestFreeRectangleMm2": 44.62912029748284,
+            "envelopeAreaMm2": 282.443414039009,
+            "unoccupiedAreaMm2": 139.91671742159403,
+            "unoccupiedFraction": 0.4953796423175574,
+            "largestFreeRectangleMm2": 74.10157663572187,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "inner1",
-            "envelopeAreaMm2": 370.33276554362186,
-            "unoccupiedAreaMm2": 160.92849228239766,
-            "unoccupiedFraction": 0.43455105044828046,
-            "largestFreeRectangleMm2": 23.112966927545195,
+            "envelopeAreaMm2": 262.6645459457855,
+            "unoccupiedAreaMm2": 110.65286826157335,
+            "unoccupiedFraction": 0.42127066621474035,
+            "largestFreeRectangleMm2": 41.54675904689863,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "bottom",
-            "envelopeAreaMm2": 181.17522162333037,
-            "unoccupiedAreaMm2": 116.38414838324522,
-            "unoccupiedFraction": 0.6423844681432869,
-            "largestFreeRectangleMm2": 34.18400407987366,
+            "envelopeAreaMm2": 155.06750351864991,
+            "unoccupiedAreaMm2": 97.7730113984245,
+            "unoccupiedFraction": 0.6305190267454418,
+            "largestFreeRectangleMm2": 26.637604314492684,
             "gridResolutionMm": 0.1
           }
         ],
-        "envelopeAreaMm2": 966.2315257180278,
-        "unoccupiedAreaMm2": 429.60703428523107
+        "envelopeAreaMm2": 700.1754635034443,
+        "unoccupiedAreaMm2": 348.34259708159186
       }
     },
-    "after": {
+    "allCopperAreaReductionPercent": 0.0,
+    "signalAreaReductionPercent": 0.0
+  },
+  {
+    "sample": "left",
+    "baselineCommit": "e50b499",
+    "before": {
       "bounds": {
         "minX": -31.6,
         "maxX": 4.610000000000003,
@@ -556,125 +461,124 @@
           {
             "layer": "inner1",
             "envelopeAreaMm2": 307.126366918929,
-            "unoccupiedAreaMm2": 112.79625673619883,
-            "unoccupiedFraction": 0.3672633446218352,
+            "unoccupiedAreaMm2": 113.53918457102934,
+            "unoccupiedFraction": 0.36968230930495083,
             "largestFreeRectangleMm2": 11.114200409064292,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "bottom",
             "envelopeAreaMm2": 181.17522162333037,
-            "unoccupiedAreaMm2": 116.38414838324522,
-            "unoccupiedFraction": 0.6423844681432869,
-            "largestFreeRectangleMm2": 34.18400407987366,
+            "unoccupiedAreaMm2": 116.57240811585902,
+            "unoccupiedFraction": 0.6434235712332513,
+            "largestFreeRectangleMm2": 34.48125628926387,
             "gridResolutionMm": 0.1
           }
         ],
         "envelopeAreaMm2": 833.4036604200621,
-        "unoccupiedAreaMm2": 334.29377275207884
+        "unoccupiedAreaMm2": 335.2249603195231
       }
     },
-    "allCopperAreaReductionPercent": 16.42340620394086,
-    "signalAreaReductionPercent": 18.293593600818568,
-    "unoccupiedMiddleAreaReductionPercent": 22.186150115472834
-  },
-  {
-    "sample": "above",
-    "baselineCommit": "2d337344263ac357a6995e9a0ac72c730d656839",
-    "before": {
+    "after": {
       "bounds": {
-        "minX": -11.463878999999995,
-        "maxX": 10.700000000000003,
-        "minY": -8.249999999999998,
-        "maxY": 33.75,
-        "widthMm": 22.163878999999998,
-        "heightMm": 42,
-        "areaMm2": 930.8829179999999
+        "minX": -31.6,
+        "maxX": 4.610000000000003,
+        "minY": -8.709999999999999,
+        "maxY": 7.000000000000001,
+        "widthMm": 36.21000000000001,
+        "heightMm": 15.71,
+        "areaMm2": 568.8591000000001
       },
       "allCopperBounds": {
-        "minX": -11.463878999999995,
-        "maxX": 10.700000000000003,
-        "minY": -8.249999999999998,
-        "maxY": 33.75,
-        "widthMm": 22.163878999999998,
-        "heightMm": 42,
-        "areaMm2": 930.8829179999999
+        "minX": -31.6,
+        "maxX": 7.401000000000001,
+        "minY": -8.709999999999999,
+        "maxY": 7.401000000000001,
+        "widthMm": 39.001000000000005,
+        "heightMm": 16.111,
+        "areaMm2": 628.3451110000001
       },
       "layers": [
         {
           "layer": "top",
-          "minX": -6.05,
-          "maxX": 4.150000000000001,
+          "minX": -30.749999999999996,
+          "maxX": 3.65,
           "minY": -7.350000000000002,
-          "maxY": 33.55,
-          "widthMm": 10.200000000000001,
-          "heightMm": 40.9,
-          "areaMm2": 417.18
+          "maxY": 6.550000000000001,
+          "widthMm": 34.4,
+          "heightMm": 13.900000000000002,
+          "areaMm2": 478.1600000000001
         },
         {
           "layer": "inner1",
-          "minX": -11.463878999999995,
-          "maxX": 10.700000000000003,
-          "minY": -7.949999999999999,
-          "maxY": 33.55,
-          "widthMm": 22.163878999999998,
-          "heightMm": 41.5,
-          "areaMm2": 919.8009784999999
+          "minX": -31.6,
+          "maxX": 4.610000000000003,
+          "minY": -8.65,
+          "maxY": 6.550000000000001,
+          "widthMm": 36.21000000000001,
+          "heightMm": 15.200000000000001,
+          "areaMm2": 550.3920000000002
         },
         {
           "layer": "inner2",
-          "minX": -8.349999999999998,
-          "maxX": 10.39,
-          "minY": -8.249999999999998,
-          "maxY": 33.75,
-          "widthMm": 18.74,
-          "heightMm": 42,
-          "areaMm2": 787.0799999999999
+          "minX": -31.41,
+          "maxX": 3.350000000000001,
+          "minY": -8.709999999999999,
+          "maxY": 7.000000000000001,
+          "widthMm": 34.76,
+          "heightMm": 15.71,
+          "areaMm2": 546.0796
         },
         {
           "layer": "bottom",
-          "minX": -6.149999999999998,
-          "maxX": 5.410000000000004,
-          "minY": -7.809999999999997,
-          "maxY": 33.55,
-          "widthMm": 11.560000000000002,
-          "heightMm": 41.35999999999999,
-          "areaMm2": 478.1216
+          "minX": -30.749999999999996,
+          "maxX": 3.350000000000001,
+          "minY": -8.7,
+          "maxY": 6.550000000000001,
+          "widthMm": 34.099999999999994,
+          "heightMm": 15.25,
+          "areaMm2": 520.0249999999999
         }
       ],
-      "middleRegionMaxCenterOffsetMm": 11.463878999999995,
+      "middleRegionMaxCenterOffsetMm": 8.709965187860789,
       "middleRegionVacancy": {
         "layers": [
           {
-            "layer": "bottom",
-            "envelopeAreaMm2": 150.54448124000004,
-            "unoccupiedAreaMm2": 80.59221866855754,
-            "unoccupiedFraction": 0.5353382469070808,
-            "largestFreeRectangleMm2": 37.79462989803897,
-            "gridResolutionMm": 0.1
-          },
-          {
             "layer": "inner2",
-            "envelopeAreaMm2": 244.04875245999997,
-            "unoccupiedAreaMm2": 110.61865452781305,
-            "unoccupiedFraction": 0.4532645769043365,
-            "largestFreeRectangleMm2": 25.1797904824127,
+            "envelopeAreaMm2": 248.58145981303582,
+            "unoccupiedAreaMm2": 49.59359432302108,
+            "unoccupiedFraction": 0.19950640872541994,
+            "largestFreeRectangleMm2": 4.2152576180381045,
             "gridResolutionMm": 0.1
           },
           {
             "layer": "inner1",
-            "envelopeAreaMm2": 288.637514387641,
-            "unoccupiedAreaMm2": 99.89466275743094,
-            "unoccupiedFraction": 0.3460903651743346,
-            "largestFreeRectangleMm2": 19.85983310259506,
+            "envelopeAreaMm2": 218.35941405192375,
+            "unoccupiedAreaMm2": 49.48926767956591,
+            "unoccupiedFraction": 0.22664132844667662,
+            "largestFreeRectangleMm2": 3.853227070279638,
+            "gridResolutionMm": 0.1
+          },
+          {
+            "layer": "bottom",
+            "envelopeAreaMm2": 181.17522162333037,
+            "unoccupiedAreaMm2": 116.57240811585902,
+            "unoccupiedFraction": 0.6434235712332513,
+            "largestFreeRectangleMm2": 34.48125628926387,
             "gridResolutionMm": 0.1
           }
         ],
-        "envelopeAreaMm2": 683.230748087641,
-        "unoccupiedAreaMm2": 291.1055359538015
+        "envelopeAreaMm2": 648.11609548829,
+        "unoccupiedAreaMm2": 215.65527011844603
       }
     },
-    "after": {
+    "allCopperAreaReductionPercent": 26.452009819774737,
+    "signalAreaReductionPercent": 28.282606558789713
+  },
+  {
+    "sample": "above",
+    "baselineCommit": "e50b499",
+    "before": {
       "bounds": {
         "minX": -9.899999999999999,
         "maxX": 9.400000000000006,
@@ -767,8 +671,100 @@
         "unoccupiedAreaMm2": 236.45408527495417
       }
     },
-    "allCopperAreaReductionPercent": 12.921379872178484,
-    "signalAreaReductionPercent": 12.921379872178484,
-    "unoccupiedMiddleAreaReductionPercent": 18.77375863010744
+    "after": {
+      "bounds": {
+        "minX": -9.899999999999999,
+        "maxX": 9.400000000000006,
+        "minY": -8.249999999999998,
+        "maxY": 33.75,
+        "widthMm": 19.300000000000004,
+        "heightMm": 42,
+        "areaMm2": 810.6000000000001
+      },
+      "allCopperBounds": {
+        "minX": -9.899999999999999,
+        "maxX": 9.400000000000006,
+        "minY": -8.249999999999998,
+        "maxY": 33.75,
+        "widthMm": 19.300000000000004,
+        "heightMm": 42,
+        "areaMm2": 810.6000000000001
+      },
+      "layers": [
+        {
+          "layer": "top",
+          "minX": -6.05,
+          "maxX": 4.150000000000001,
+          "minY": -7.350000000000002,
+          "maxY": 33.55,
+          "widthMm": 10.200000000000001,
+          "heightMm": 40.9,
+          "areaMm2": 417.18
+        },
+        {
+          "layer": "inner1",
+          "minX": -9.899999999999999,
+          "maxX": 9.400000000000006,
+          "minY": -7.949999999999999,
+          "maxY": 33.55,
+          "widthMm": 19.300000000000004,
+          "heightMm": 41.5,
+          "areaMm2": 800.9500000000002
+        },
+        {
+          "layer": "inner2",
+          "minX": -6.649999999999998,
+          "maxX": 9.050000000000004,
+          "minY": -8.249999999999998,
+          "maxY": 33.75,
+          "widthMm": 15.700000000000003,
+          "heightMm": 42,
+          "areaMm2": 659.4000000000001
+        },
+        {
+          "layer": "bottom",
+          "minX": -6.149999999999998,
+          "maxX": 5.410000000000004,
+          "minY": -7.809999999999997,
+          "maxY": 33.55,
+          "widthMm": 11.560000000000002,
+          "heightMm": 41.35999999999999,
+          "areaMm2": 478.1216
+        }
+      ],
+      "middleRegionMaxCenterOffsetMm": 9.899999999999999,
+      "middleRegionVacancy": {
+        "layers": [
+          {
+            "layer": "bottom",
+            "envelopeAreaMm2": 150.54448124000004,
+            "unoccupiedAreaMm2": 80.59221866855754,
+            "unoccupiedFraction": 0.5353382469070808,
+            "largestFreeRectangleMm2": 37.79462989803897,
+            "gridResolutionMm": 0.1
+          },
+          {
+            "layer": "inner2",
+            "envelopeAreaMm2": 204.45920030000002,
+            "unoccupiedAreaMm2": 80.41851143309984,
+            "unoccupiedFraction": 0.39332302637936034,
+            "largestFreeRectangleMm2": 9.058319000632913,
+            "gridResolutionMm": 0.1
+          },
+          {
+            "layer": "inner1",
+            "envelopeAreaMm2": 251.34156470000005,
+            "unoccupiedAreaMm2": 79.65314244486505,
+            "unoccupiedFraction": 0.3169119383017235,
+            "largestFreeRectangleMm2": 8.16904589762336,
+            "gridResolutionMm": 0.1
+          }
+        ],
+        "envelopeAreaMm2": 606.34524624,
+        "unoccupiedAreaMm2": 240.66387254652244
+      }
+    },
+    "allCopperAreaReductionPercent": 0.0,
+    "signalAreaReductionPercent": 0.0
   }
 ]

@@ -1,3 +1,4 @@
+import { staggeredBankEntries } from "./staggered-bank-entries"
 import { remapCurvedSegments } from "./remap-curved-segments"
 import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
 import { sharedStraightSection } from "./shared-straight-section"
@@ -158,9 +159,6 @@ export function spreadCoupledTuningLanes(
       }
     }
     const width = Math.max(...members.map((t) => (t.route[0] as Wire).width))
-    // A pair occupies one full-width channel at every staggered turn. Using
-    // single-wire pitch here would let neighboring entrances cut its rails.
-    const entryPitch = Math.max(...channels.map((c) => c.width)) + clearance
     let start = Math.max(...channels.map((c) => c.path[0].x)) + width * 2
     let end = Math.min(...channels.map((c) => c.path.at(-1)!.x)) - width * 2
     // Deep package terminals do not bound the open space between components.
@@ -194,6 +192,32 @@ export function spreadCoupledTuningLanes(
         maxV = Math.max(...cuts.flatMap((c) => [c.a!.point.y, c.b!.point.y]))
       const center = (minV + maxV) / 2,
         split = Math.floor(cuts.length / 2)
+      const bankPositions = cuts.map(
+        (_, ordinal) => center + (ordinal - (cuts.length - 1) / 2) * pitch,
+      )
+      const entries =
+        style === "interior"
+          ? staggeredBankEntries(
+              cuts.map((c, i) => ({
+                from: c.a!.point.y,
+                to: bankPositions[i],
+                width: c.channel.width,
+              })),
+              clearance,
+            )
+          : null
+      const exits =
+        style === "interior"
+          ? staggeredBankEntries(
+              cuts.map((c, i) => ({
+                from: c.b!.point.y,
+                to: bankPositions[i],
+                width: c.channel.width,
+              })),
+              clearance,
+            )
+          : null
+      if (style === "interior" && (!entries || !exits)) continue
       for (const extra of style === "interior" ? [1] : [1, 2, 3]) {
         const extent =
           Math.max(
@@ -241,12 +265,16 @@ export function spreadCoupledTuningLanes(
             // Reverse that ordering at the far package to avoid crossings.
             const entry =
               lo +
-              (v > c.a!.point.y ? cuts.length - 1 - ordinal : ordinal) *
-                (style === "interior" ? entryPitch : width + clearance)
+              (entries
+                ? entries[ordinal]
+                : (v > c.a!.point.y ? cuts.length - 1 - ordinal : ordinal) *
+                  (width + clearance))
             const exit =
               hi -
-              (v > c.b!.point.y ? cuts.length - 1 - ordinal : ordinal) *
-                (style === "interior" ? entryPitch : width + clearance)
+              (exits
+                ? exits[ordinal]
+                : (v > c.b!.point.y ? cuts.length - 1 - ordinal : ordinal) *
+                  (width + clearance))
             if (style === "diagonal" && lead + tail >= exit - entry - 4 * width)
               continue
             const diagonal = [

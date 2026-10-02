@@ -1,30 +1,32 @@
-# Interior tuning banks for powered AM3352 routing
+# Space-filling tuning pockets for powered AM3352 routing
 
-The matcher now tries tuning banks inside the package approach envelope before expanding outward. Staggered entrances preserve lane order, with differential pairs treated as one wider channel. The existing rounded, densely packed curves fill these interior banks; unchanged bend-radius, matching and clearance checks decide whether a bank is usable. All routes are computed from native input without saved signal geometry.
+This update starts from merged PR #18 (`e50b499`), including its native-pad and package-local pair-tuning fixes. Bank entrances now reserve longitudinal space only for lanes they cross, including full differential-channel width. That opens longer central runs and allows narrower banks. A new rounded folded serpentine can fill a short, taller pocket by running back and forth across it. It preserves radius, tangency, emitted copper length, and offset pair geometry.
 
-| Placement | Overall copper bounds (mm²) | Further reduction | Unoccupied middle area (mm²) | Routing | Total with validation |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Control | 725.1 → 683.1 | 5.8% | 224.7 → 189.9 | 13.363 s | 14.917 s |
-| Right | 804.2 → 686.5 | 14.6% | 418.7 → 314.0 | 15.142 s | 18.930 s |
-| Left | 1022.2 → 854.3 | 16.4% | 429.6 → 334.3 | 18.013 s | 23.510 s |
-| Above | 930.9 → 810.6 | 12.9% | 291.1 → 236.5 | 25.095 s | 29.839 s |
+Ordinary meanders and partial banks retain priority. Folded single-lane candidates run only if those cannot complete, from the untouched input geometry, with a separate 128-candidate cap. Shared folded candidates remain within the existing paired budget. Fold width is solved from emitted chord length in closed form; there is no amplitude bisection. Entrance ordering costs O(n²) lane comparisons and a DAG traversal, and narrow-bank probes get one tuning attempt before the established fallbacks.
 
-Baseline: merged PR #14 at `2d33734`. Measurements use fresh computed routes on macOS arm64 with Bun 1.3.2. Overall area is the bounding rectangle of signal and immutable power copper, including wire radii and via pads. Runtime is machine-dependent; CI retains its existing 180-second budget.
+| Placement | Overall copper bounds (mm²) | Further reduction | Routing | Total with validation |
+| --- | ---: | ---: | ---: | ---: |
+| Control | 683.1 → 606.5 | 11.2% | 13.764 s | 15.820 s |
+| Right | 686.5 → 686.5 | 0.0% | 12.888 s | 15.291 s |
+| Left | 854.3 → 628.3 | 26.5% | 18.396 s | 23.967 s |
+| Above | 810.6 → 810.6 | 0.0% | 27.707 s | 33.255 s |
 
-The vacancy diagnostic measures each signal layer separately in the open inter-package window. It reports the rectangular envelope, unoccupied area/fraction and largest empty rectangle after reserving copper, clearance and a minimum-width trace radius. Cells are nominally 0.1 mm (coarser above 250,000 cells); the whole-cell safety margin gives a conservative free-area estimate. Layer areas are summed, so this is not a physical board-area measurement. Rotated rectangular obstacles use conservative projected bounds. This metric exposes packing opportunities; it does not replace DRC or reward extra copper merely to fill space.
+Fresh computed routes on macOS arm64 / Bun 1.3.2. Bounds include signal and fixed power copper, wire radii and via pads. Control and left shrink further; right and above retain their previous total bounds. These are measurements, not saved solver inputs or special acceptance rules. CI retains its existing 180-second deadline because runner speeds vary.
 
-The [comparison](footprint-comparison.json) includes before/after signal bounds, center offsets and per-layer vacancy. Signal copper length also falls in all four cases.
+The four-placement gains come from better entrance allocation and narrower banks. Folded curves add a tested alternative for blocked pockets; they are not forced into a layout when the established dense curves already fit. A regression fixture fits 8 mm of additional copper into an obstacle-bounded pocket under 0.775 mm high, with conventional tangents and clearance.
 
-`./benchmark.sh --timeout-seconds 30 --require-all-solved` runs exactly four samples. The [full report](benchmark-results.json) records 47/47 connectivity, native DRC, pad-to-pad length matching, 161 unchanged power dogbones, conventional corners, and zero exterior pair separation for every placement. Both byte buses stay within 0.635 mm skew and every pair within 0.127 mm (including numerical epsilon).
+| Placement | Unoccupied middle area before → after (mm² across layers) | BYTE0 skew | BYTE1 skew | Largest pair skew |
+| --- | ---: | ---: | ---: | ---: |
+| Control | 189.3 → 165.7 | 0.635000 mm | 0.635000 mm | 0.126884 mm |
+| Right | 314.0 → 348.3 | 0.635000 mm | 0.635000 mm | 0.121802 mm |
+| Left | 335.2 → 215.7 | 0.635000 mm | 0.635000 mm | 0.127000 mm |
+| Above | 236.5 → 240.7 | 0.635000 mm | 0.635000 mm | 0.127000 mm |
 
-| Placement | BYTE0 total copper skew | BYTE1 total copper skew | Largest pair skew |
-| --- | ---: | ---: | ---: |
-| Control | 0.635000 mm | 0.635000 mm | 0.127000 mm |
-| Right | 0.635000 mm | 0.635000 mm | 0.127000 mm |
-| Left | 0.635000 mm | 0.635000 mm | 0.127000 mm |
-| Above | 0.635000 mm | 0.635000 mm | 0.127000 mm |
+The [comparison](footprint-comparison.json) retains per-layer envelopes, free area/fraction and largest empty rectangles. Clearance-aware vacancy uses whole 0.1 mm cells (coarser above 250,000 cells) in the open inter-package window. Summed layer area is not board area. Lower vacancy alone is not a goal: shorter copper can leave more free area inside unchanged bounds. Exact native DRC remains authoritative.
 
-The images come from a separate fresh run of `bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 30`. All four must pass connectivity, DRC, matching and coupling validation before the exporter writes any images. Every image was inspected.
+`./benchmark.sh --timeout-seconds 30 --require-all-solved` runs exactly four cases. The [full report](benchmark-results.json) confirms 47/47 signals, native DRC, both byte buses ≤0.635 mm total copper skew, pairs ≤0.127 mm, zero exterior pair separation, and 161 unchanged VCC/GND dogbones in every case (including numerical epsilon).
+
+All four images are from a separate fresh run of `bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 30`. The exporter validates all four before writing any artifact. Every image was inspected.
 
 - [Control](control-solved.png)
 - [Right](right-solved.png)
