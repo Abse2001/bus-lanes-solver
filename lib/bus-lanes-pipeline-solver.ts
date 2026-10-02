@@ -1,3 +1,4 @@
+import { simplifyMatchedTraces } from "./simplify-matched-traces"
 import { routeBackwardPackageBuses } from "./route-backward-package-buses"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
@@ -502,6 +503,24 @@ export class BusLanesPipelineSolver extends BaseSolver {
           refined = step.value
           this.packageCoupling = undefined
         }
+        if (this.options.smoothTuning)
+          refined = simplifyMatchedTraces(
+            {
+              ...this.input,
+              traces: [...(this.input.traces ?? []), ...this.escapes],
+              connections: this.input.connections.map((c) => {
+                const t = refined.find((t) => t.connection_name === c.name)!
+                return {
+                  ...c,
+                  pointsToConnect: [
+                    t.route[0],
+                    t.route.at(-1)!,
+                  ] as typeof c.pointsToConnect,
+                }
+              }),
+            },
+            refined,
+          )
         this.traces = refined.map((lane) => {
           const signalLayer = lane.route.find(
             (p) => p.route_type === "wire",

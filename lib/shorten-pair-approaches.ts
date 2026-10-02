@@ -1,5 +1,6 @@
 import { fixedCopper, routeCopper, VectorScene } from "./vector-scene"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
+import { packageApproachRegions, pointInBox } from "./package-approach-regions"
 import { remapCurvedSegments } from "./remap-curved-segments"
 import type { SimpleRouteJson, Trace, Wire } from "./types"
 
@@ -23,8 +24,35 @@ export function shortenPairApproaches(
       first.width,
       [...fixed, ...result.flatMap(routeCopper)],
     )
-    const prefix = reduceOrdinaryTurns(t.route.slice(0, s + 1), scene),
-      suffix = reduceOrdinaryTurns(t.route.slice(e), scene)
+    const regions = packageApproachRegions(
+      input,
+      first.width +
+        (input.differentialPairs?.find((p) =>
+          p.connectionNames.includes(t.connection_name!),
+        )?.traceGap ?? 0.1) /
+          2 +
+        (input.minTraceToPadEdgeClearance ??
+          input.defaultObstacleMargin ??
+          0.075),
+    )
+    const shorten = (start: number, end: number) => {
+      const local = regions.find((r) =>
+        pointInBox(t.route[start === 0 ? 0 : t.route.length - 1], r.copper),
+      )
+      const externalCurve = (t.curvedSegments ?? []).some(
+        (i) =>
+          i > start &&
+          i <= end &&
+          (!local ||
+            !pointInBox(t.route[i - 1], local.copper) ||
+            !pointInBox(t.route[i], local.copper)),
+      )
+      return externalCurve
+        ? reduceOrdinaryTurns(t.route.slice(start, end + 1), scene)
+        : t.route.slice(start, end + 1)
+    }
+    const prefix = shorten(0, s),
+      suffix = shorten(e, t.route.length - 1)
     const route = [
       ...prefix.slice(0, -1),
       ...t.route.slice(s, e + 1),

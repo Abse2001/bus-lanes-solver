@@ -1,4 +1,4 @@
-import { distance } from "./geometry"
+import { distance, pointSegmentDistanceToPoints } from "./geometry"
 import type { Point, Trace } from "./types"
 
 /** Preserve annotations only for curve chords whose geometry survives an edit.
@@ -10,13 +10,28 @@ export function remapCurvedSegments(trace: Trace, route: Point[]): number[] {
       : [],
   )
   if (!chords.length) return []
-  return route
-    .slice(1)
-    .flatMap((b, i) =>
+  const curved = new Set(trace.curvedSegments)
+  return route.slice(1).flatMap((b, i) => {
+    const a = route[i]
+    if (
       chords.some(
-        ([a0, b0]) => distance(route[i], a0) < 1e-7 && distance(b, b0) < 1e-7,
+        ([a0, b0]) => distance(a, a0) < 1e-7 && distance(b, b0) < 1e-7,
       )
-        ? [i + 1]
-        : [],
     )
+      return [i + 1]
+    // Simplification may coalesce collinear chords of the same existing arc.
+    // Preserve that provenance only when every old chord is annotated and
+    // lies on the replacement; a new shortcut through an arc is not a curve.
+    const start = trace.route.findIndex((p) => distance(p, a) < 1e-7)
+    const end = trace.route.findIndex((p) => distance(p, b) < 1e-7)
+    if (start < 0 || end <= start) return []
+    for (let k = start + 1; k <= end; k++)
+      if (
+        !curved.has(k) ||
+        pointSegmentDistanceToPoints(trace.route[k - 1], a, b) > 1e-10 ||
+        pointSegmentDistanceToPoints(trace.route[k], a, b) > 1e-10
+      )
+        return []
+    return [i + 1]
+  })
 }

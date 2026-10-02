@@ -1,3 +1,4 @@
+import { packageApproachRegions, pointInBox } from "./package-approach-regions"
 import { chamferOrdinaryCorners } from "./chamfer-ordinary-corners"
 import { routeAnglesAreConventional } from "./route-angle-validation"
 import { sharedPairSpacingReports } from "./shared-pair-spacing"
@@ -600,12 +601,54 @@ export function* routeCoupledPair(
               )
                 continue
               try {
-                const tuned = tuneSmoothLengths(
+                let tuned = tuneSmoothLengths(
                   pairInput,
                   shaped,
                   minimumLengthTargets(pairInput, shaped),
                   { maxCandidates: 512 },
                 )
+                const regions = packageApproachRegions(
+                  pairInput,
+                  width + gap / 2 + clearance,
+                )
+                // Fresh two-ended escapes have no completed plane copper to
+                // bound a local correction. Retain established pre-fanouted
+                // choices; only retry those fresh banks inside their packages.
+                const dogboneCounts = new Map<string, number>()
+                for (const t of pairInput.traces ?? [])
+                  dogboneCounts.set(
+                    t.connection_name!,
+                    (dogboneCounts.get(t.connection_name!) ?? 0) + 1,
+                  )
+                const freshSignalEscapes =
+                  (pairInput.traces?.length ?? 0) > 0 &&
+                  [...dogboneCounts.values()].every((n) => n === 2) &&
+                  pairInput.traces!.every(
+                    (t) =>
+                      t.route.filter((p) => p.route_type === "via").length ===
+                      1,
+                  )
+                if (
+                  freshSignalEscapes &&
+                  regions.length &&
+                  tuned.some((t) =>
+                    t.curvedSegments?.some(
+                      (i) =>
+                        !regions.some(
+                          (r) =>
+                            pointInBox(t.route[i - 1], r.copper) &&
+                            pointInBox(t.route[i], r.copper),
+                        ),
+                    ),
+                  )
+                ) {
+                  tuned = tuneSmoothLengths(
+                    pairInput,
+                    shaped,
+                    minimumLengthTargets(pairInput, shaped),
+                    { maxCandidates: 512, packageOnlyPairTuning: true },
+                  )
+                }
                 if (
                   routeAnglesAreConventional(tuned) &&
                   sharedPairSpacingReports(pairInput, tuned).every(
