@@ -139,7 +139,7 @@ if (!workerName) {
     const quality = report.validation?.quality
     if (quality)
       console.log(
-        `  copper=${quality.totalPlanarLengthMm.toFixed(3)}mm max/mean detour=${quality.maxDetourRatio?.toFixed(3)}/${quality.meanDetourRatio?.toFixed(3)} turns=${quality.ordinaryTurns} short_jogs=${quality.shortJogs} acute=${quality.acuteCorners}`,
+        `  copper=${quality.totalPlanarLengthMm.toFixed(3)}mm max/mean detour=${quality.maxDetourRatio?.toFixed(3)}/${quality.meanDetourRatio?.toFixed(3)} turns=${quality.ordinaryTurns} short_jogs=${quality.shortJogs} acute=${quality.acuteCorners} signal_area=${quality.footprint.bounds?.areaMm2.toFixed(3)}mm² all_copper_area=${quality.footprint.allCopperBounds?.areaMm2.toFixed(3)}mm² middle_offset=${quality.footprint.middleRegionMaxCenterOffsetMm?.toFixed(3)}mm`,
       )
   }
   await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")

@@ -1,3 +1,4 @@
+import { measureRoutingFootprint } from "./measure-routing-footprint"
 import { exteriorPairSpacingReports } from "../lib/exterior-pair-spacing"
 import type { Point, SimpleRouteJson, Trace, Wire } from "../lib"
 import { distance } from "../lib/geometry"
@@ -148,6 +149,7 @@ export function measureAm3352RoutingQuality(
 
   return {
     signalCount: traces.length,
+    footprint: measureRoutingFootprint(input, traces),
     totalPlanarLengthMm: sum("planarLengthMm"),
     maxDetourRatio: detours.length ? Math.max(...detours) : null,
     meanDetourRatio: detours.length

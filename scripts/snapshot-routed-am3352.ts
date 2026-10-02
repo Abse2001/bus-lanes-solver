@@ -212,7 +212,15 @@ function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
   graphics.texts!.push({
     x: bounds.minX,
     y: bounds.minY - 1.5,
-    text: "47/47 routed · 161 fixed power dogbones · DRC passed · byte skew ≤0.635 mm · pair skew ≤0.127 mm",
+    text: "47/47 routed · 161 fixed power dogbones · DRC passed",
+    fontSize: 1.1,
+    color: "#cbd5e1",
+    anchorSide: "top_left",
+  })
+  graphics.texts!.push({
+    x: bounds.minX,
+    y: bounds.minY - 3,
+    text: "Byte skew ≤0.635 mm · pair skew ≤0.127 mm",
     fontSize: 1.1,
     color: "#cbd5e1",
     anchorSide: "top_left",
@@ -220,7 +228,7 @@ function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
   return {
     graphics,
     width: signalLayers.length * width + (signalLayers.length - 1) * 3,
-    height: height + 9,
+    height: height + 10.5,
   }
 }
 

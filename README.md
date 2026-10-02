@@ -179,10 +179,10 @@ macOS arm64 with Bun 1.3.2. Run the same strict check with
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| Control | 12.396 s | 14.187 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.073 mm |
-| Right | 16.635 s | 18.149 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.103 mm |
-| Left | 17.949 s | 20.989 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
-| Above | 21.126 s | 23.322 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| Control | 15.326 s | 17.587 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.073 mm |
+| Right | 19.055 s | 24.753 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.103 mm |
+| Left | 21.383 s | 27.463 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
+| Above | 26.453 s | 31.397 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
 
 All four preserve the 161 power dogbones and have zero separated pair length
 outside the native pad/fanout regions. The exterior audit checks both rails along
@@ -221,6 +221,19 @@ Future changes must be submitted through pull requests with reviewed visual snap
 
 ### Meander geometry
 
+The integrated matcher packs rounded meanders into narrow banks before trying
+wider corridors. Cell count comes from the usable run length and minimum bend
+radius; paired curves include both rail offsets when calculating that radius.
+This spends available longitudinal space on more cells, reducing transverse
+excursion without tightening bend radii or separating pairs. Existing fanouts
+remain fixed, and wider candidates remain available when compact packing fails.
+
+Across the four powered AM3352 placements, this reduces signal bounding area by
+**32–39%** versus PR #12, overall copper bounds by **31–39%**, and total
+copper length by **12–15%**. See the
+[footprint comparison](docs/routed-am3352-placements/README.md) for per-placement
+bounds, centerline excursion, and timings.
+
 Length tuning prioritizes long runs over short terminal approaches and centers evenly pitched serpentine lobes along them. The integrated preset uses rounded curves for both individual lanes and shared pair centerlines. Lobe count scales with the required added length, spreading large corrections without turning small corrections into dense teeth. Chamfers scale with lobe dimensions instead of a fixed microscopic corner cut. Returning arms retain at least three trace widths of center-to-center spacing (and the requested copper clearance). When the shortest lanes leave no room, the router opens an octilinear central corridor in winding order and rematches all affected bus lengths. Endpoints and fixed fanouts remain unchanged.
 
 The [routed artifacts](./docs/routed-ddr) contain complete boards. All new carrier bends in the DDR samples are checked to turn by at most 45 degrees; length matching and combined-copper DRC remain mandatory.
@@ -245,7 +258,7 @@ The strict `BusLanesSolver` export remains available for callers that already
 supply fanout handoffs.
 
 The AM3352/RAM integration regression passes without saved geometry or a custom
-algorithm. The four powered AM3352 placements complete in 12–22 seconds on the
+algorithm. The four powered AM3352 placements complete in 15–27 seconds on the
 measured machine; bounded search still reports failure when no acceptable route
 set is found.
 
