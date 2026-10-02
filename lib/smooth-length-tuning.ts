@@ -11,7 +11,7 @@ export function tuneSmoothLengths(
   input: SimpleRouteJson,
   traces: Trace[],
   targets: Map<string, number>,
-  options: { maxCandidates?: number } = {},
+  options: { maxCandidates?: number; packMeanders?: boolean } = {},
 ) {
   let attempted = 0
   const fixed = fixedCopper(input)
@@ -80,9 +80,13 @@ export function tuneSmoothLengths(
         // Spread substantial deficits over several lobes without turning small
         // corrections into dozens of microscopic teeth.
         const maximumTeeth = Math.floor((span * 0.9) / pitch)
+        // Compact banks spend the available run on more rounded cells, so
+        // added length fills the allocated bank without a tall sparse lobe.
         const preferredTeeth = Math.min(
           maximumTeeth,
-          Math.max(2, Math.ceil(delta / (12 * width))),
+          options.packMeanders
+            ? maximumTeeth
+            : Math.max(2, Math.ceil(delta / (12 * width))),
         )
         const counts = Array.from(
           { length: maximumTeeth },

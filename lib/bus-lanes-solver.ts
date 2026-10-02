@@ -450,12 +450,34 @@ export class BusLanesSolver extends BaseSolver {
     const input = this.input
     const original = this.traces
     const fixed = this.fixed
+    const compactCorridors = new WeakSet<Trace[]>()
+    const packBanks =
+      this.options.smoothTuning && original.some((t) => t.coupledSection)
     function* candidates() {
+      // Try the unchanged corridor once before opening new space. Exhausting
+      // every tiny corner-trim variation first repeats the same blocked tuning
+      // work; retain those refinements as fallbacks after compact banks.
       yield original
+      if (packBanks) {
+        for (const multiplier of [8, 12]) {
+          const spread = spreadCoupledTuningLanes(
+            input,
+            original,
+            input.minTraceWidth * multiplier,
+          )
+          if (spread) {
+            compactCorridors.add(spread)
+            yield spread
+          }
+        }
+      }
+      if (packBanks) yield original
       const rounded = roundCoupledReturnBends(input, original, fixed)
       if (rounded.some((t, i) => t !== original[i])) yield rounded
       if (original.some((t) => t.coupledSection)) {
-        for (const multiplier of [20, 16, 12, 8, 6, 4]) {
+        for (const multiplier of packBanks
+          ? [20, 16, 6, 4]
+          : [20, 16, 12, 8, 6, 4]) {
           const spread = spreadCoupledTuningLanes(
             input,
             original,
@@ -482,11 +504,15 @@ export class BusLanesSolver extends BaseSolver {
     }
     let error: unknown
     const attemptedShapes = new Set<string>()
+    let triedOriginal = false
     for (const corridor of candidates()) {
+      const quickOriginal = packBanks && corridor === original && !triedOriginal
+      if (corridor === original) triedOriginal = true
       // Preserve the original package handoffs while allocating tuning space;
       // only then refine the paired approach geometry of this candidate.
       const refinements = function* (fixed: Copper[], smooth?: boolean) {
         yield corridor
+        if (quickOriginal) return
         if (smooth) yield refinePairApproaches(input, corridor, fixed)
         if (smooth && corridor.some((t) => t.coupledSection))
           for (const trim of [
@@ -501,7 +527,9 @@ export class BusLanesSolver extends BaseSolver {
         // Bevels change copper length. Retry smaller trims before choosing a
         // wider tuning bank, so a legal corner never breaks tight pair matching.
         for (const trim of this.options.smoothTuning
-          ? [1.5, 0.75, 0.375, 0.1875, 0.09375, 0.046875, 0.0234375]
+          ? quickOriginal
+            ? [1.5]
+            : [1.5, 0.75, 0.375, 0.1875, 0.09375, 0.046875, 0.0234375]
           : [0]) {
           const candidate = alignCoupledSectionBoundaries(
             input,
@@ -534,6 +562,8 @@ export class BusLanesSolver extends BaseSolver {
               candidate.some((t) => t.coupledSection)
                 ? tuneCoupledLengths(input, candidate, {
                     maxCandidates: corridor === original ? 512 : 4096,
+                    packMeanders:
+                      quickOriginal || compactCorridors.has(corridor),
                   })
                 : (this.options.smoothTuning ? tuneSmoothLengths : tuneLengths)(
                     input,

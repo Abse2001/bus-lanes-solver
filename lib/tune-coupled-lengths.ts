@@ -11,7 +11,7 @@ import type { SimpleRouteJson, Trace, Point, Wire } from "./types"
 export function tuneCoupledLengths(
   input: SimpleRouteJson,
   traces: Trace[],
-  options: { maxCandidates?: number } = {},
+  options: { maxCandidates?: number; packMeanders?: boolean } = {},
 ): Trace[] {
   // First fix pair skew without allowing the individual tuner into the corridor.
   const pairedInput = { ...input, buses: [] }
@@ -81,8 +81,24 @@ export function tuneCoupledLengths(
           x: a.x + ux * x - (uy * offset) / 2,
           y: a.y + uy * x + (ux * offset) / 2,
         })
+        // A shared cell must accommodate both offset rails: its minimum
+        // period is four times the centerline radius. Dense cells reduce
+        // transverse excursion without shrinking either rail's bend radius.
         tuningCandidate: for (const fraction of [0.9, 0.65, 0.4])
-          for (const lobes of Array.from({ length: 16 }, (_, i) => i + 1))
+          for (const lobes of options.packMeanders
+            ? Array.from(
+                {
+                  length: Math.max(
+                    1,
+                    Math.floor(
+                      ((hi - lo) * fraction) /
+                        (4 * (Math.max(width * 1.2, clearance) + spacing / 2)),
+                    ),
+                  ),
+                },
+                (_, i) => i + 1,
+              ).reverse()
+            : Array.from({ length: 16 }, (_, i) => i + 1))
             for (const side of [1, -1])
               for (const createLobes of [
                 roundedPairedLobes,
