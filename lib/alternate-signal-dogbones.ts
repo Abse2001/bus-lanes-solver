@@ -25,11 +25,13 @@ export function routeAlternateSignalDogbones(
     ...input,
     connections: input.connections.filter((c) => busNames.has(c.name)),
   })
-  const turns = backward
-    ? (base + attempt) % 4
-    : attempt === 0
-      ? 0
-      : (base + attempt - 1) % 4
+  // Empty carriers can begin beside the pad column, keeping the local
+  // approach available for rounded skew correction. Supplied copper keeps
+  // the established first site choice; every retry visits a distinct quadrant.
+  const order = input.traces?.length
+    ? [0, ...[0, 1, 2, 3].map((i) => (base + i) % 4).filter((i) => i !== 0)]
+    : [3, 0, 1, 2].map((i) => (base + i) % 4)
+  const turns = backward ? (base + attempt) % 4 : order[attempt % 4]
   const rotate = <T extends Point>(p: T, k: number): T => {
     let { x, y } = p
     for (let i = 0; i < k; i++) [x, y] = [-y, x]

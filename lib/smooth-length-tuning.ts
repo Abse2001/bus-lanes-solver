@@ -1,3 +1,4 @@
+import { packageApproachRegions, pointInBox } from "./package-approach-regions"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { smoothTuningLobes, roundedTuningLobes } from "./smooth-tuning"
 import { fixedRouteLength } from "./route-lengths"
@@ -11,7 +12,11 @@ export function tuneSmoothLengths(
   input: SimpleRouteJson,
   traces: Trace[],
   targets: Map<string, number>,
-  options: { maxCandidates?: number; packMeanders?: boolean } = {},
+  options: {
+    maxCandidates?: number
+    packMeanders?: boolean
+    packageOnlyPairTuning?: boolean
+  } = {},
 ) {
   let attempted = 0
   const fixed = fixedCopper(input)
@@ -34,6 +39,16 @@ export function tuneSmoothLengths(
     }
     const clearance =
       input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
+    const pair = input.differentialPairs?.find((p) =>
+      p.connectionNames.includes(t.connection_name!),
+    )
+    const regions =
+      pair && options.packageOnlyPairTuning
+        ? packageApproachRegions(
+            input,
+            width + (pair.traceGap ?? clearance) / 2 + clearance,
+          )
+        : []
     const returnSpacing = width + clearance
     const pitch = 4 * Math.max(width * 1.2, clearance)
     // Tune the long interior runs before considering short terminal approaches.
@@ -133,7 +148,14 @@ export function tuneSmoothLengths(
                 side,
                 Math.max(width * 1.2, clearance),
               )
-              if (!lobes) continue
+              if (
+                !lobes ||
+                (regions.length &&
+                  !regions.some((r) =>
+                    lobes.every((p) => pointInBox(p, r.copper)),
+                  ))
+              )
+                continue
               const bump: Point[] = [a, ...lobes, b]
               if (!scene.pathVisible(bump)) continue
               const next = (

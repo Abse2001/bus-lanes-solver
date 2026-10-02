@@ -182,122 +182,134 @@ export function* extendPackageCoupling(
         )
           join++
         if (join === other.route.length) continue
-        const search = new GridVisibilitySearch(
-          scene,
-          path.at(-1)!,
-          other.route[join],
-        )
-        try {
-          let steps = 0
-          while (
-            !search.solved &&
-            !search.failed &&
-            steps++ < 256 &&
-            budget-- > 0
-          ) {
-            search.step()
-            yield
+        let accepted = false
+        // The first in-package vertex can force a returning hook. Continue
+        // deeper into the same native fanout when that join fails geometry.
+        for (; join < other.route.length; join++) {
+          if (!pointInBox(other.route[join], region.copper)) continue
+          const search = new GridVisibilitySearch(
+            scene,
+            path.at(-1)!,
+            other.route[join],
+          )
+          try {
+            let steps = 0
+            while (
+              !search.solved &&
+              !search.failed &&
+              steps++ < 256 &&
+              budget-- > 0
+            ) {
+              search.step()
+              yield
+            }
+            if (!search.solved) continue
+          } finally {
+            search.cancel()
           }
-          if (!search.solved) continue
-        } finally {
-          search.cancel()
-        }
-        const wire = (p: Point): Wire => ({
-          ...p,
-          route_type: "wire",
-          layer: (other.route[0] as Wire).layer,
-          width,
-        })
-        const next = preservePoint(
-          preservePoint(
-            simplify([
-              ...other.route.slice(0, oe),
-              ...path,
-              ...reduceOrdinaryTurns(search.result, scene).slice(1),
-              ...other.route.slice(join + 1),
-            ]).map(wire),
-            wire(other.route[os]),
-          ),
-          wire(path.at(-1)!),
-        )
-        if (
-          !scene.pathVisible(next) ||
-          !tuningPathIsSelfClear(next, width + clearance)
-        )
-          continue
-        const replacement = [
-          {
-            ...ref,
-            route: refRoute,
-            curvedSegments: remapCurvedSegments(ref, refRoute),
-            coupledSection: [rs, re + section.length - 1] as [number, number],
-          },
-          {
-            ...other,
-            route: next,
-            curvedSegments: remapCurvedSegments(other, next),
-            coupledSection: [
-              indexOf(next, other.route[os]),
-              indexOf(next, path.at(-1)!),
-            ] as [number, number],
-          },
-        ].map((t) => (reversed ? reverse(t) : t))
-        const unchanged = result.filter(
-          (t) => !pair.connectionNames.includes(t.connection_name!),
-        )
-        const surrounding = [...fixed, ...unchanged.flatMap(routeCopper)]
-        for (const trim of [
-          1.5, 0.75, 0.375, 0.1875, 0.09375, 0.046875, 0.0234375,
-        ]) {
-          // Only these two rails changed. Keep all other completed routes
-          // immutable, and use their copper as hard clearance obstacles.
-          const refinedPair = chamferOrdinaryCorners(
-            input,
-            result
-              .filter((t) => pair.connectionNames.includes(t.connection_name!))
-              .map(
-                (t) =>
-                  replacement.find(
-                    (r) => r.connection_name === t.connection_name,
-                  )!,
-              ),
-            surrounding,
-            trim,
-          )
-          const refined = result.map(
-            (t) =>
-              refinedPair.find(
-                (r) => r.connection_name === t.connection_name,
-              ) ?? t,
+          const wire = (p: Point): Wire => ({
+            ...p,
+            route_type: "wire",
+            layer: (other.route[0] as Wire).layer,
+            width,
+          })
+          const next = preservePoint(
+            preservePoint(
+              simplify([
+                ...other.route.slice(0, oe),
+                ...path,
+                ...reduceOrdinaryTurns(search.result, scene).slice(1),
+                ...other.route.slice(join + 1),
+              ]).map(wire),
+              wire(other.route[os]),
+            ),
+            wire(path.at(-1)!),
           )
           if (
-            !routeAnglesAreConventional(refinedPair) ||
-            (options.preserveMatching !== false &&
-              [
-                ...busLengthReports(input, refined),
-                ...pairLengthReports(input, refined),
-              ].some((r) => r.toleranceMm !== null && !r.matched)) ||
-            sharedPairSpacingReports(input, refined).some((r) => !r.matched)
+            !scene.pathVisible(next) ||
+            !tuningPathIsSelfClear(next, width + clearance)
           )
             continue
-          const copper = [...surrounding, ...refinedPair.flatMap(routeCopper)]
-          if (
-            refinedPair.some((t) => {
-              const w = (t.route[0] as Wire).width
-              return (
-                !tuningPathIsSelfClear(t.route, w + clearance) ||
-                !new VectorScene(
-                  input,
-                  input.connections.find((c) => c.name === t.connection_name)!,
-                  w,
-                  copper,
-                ).pathVisible(t.route)
-              )
-            })
+          const replacement = [
+            {
+              ...ref,
+              route: refRoute,
+              curvedSegments: remapCurvedSegments(ref, refRoute),
+              coupledSection: [rs, re + section.length - 1] as [number, number],
+            },
+            {
+              ...other,
+              route: next,
+              curvedSegments: remapCurvedSegments(other, next),
+              coupledSection: [
+                indexOf(next, other.route[os]),
+                indexOf(next, path.at(-1)!),
+              ] as [number, number],
+            },
+          ].map((t) => (reversed ? reverse(t) : t))
+          const unchanged = result.filter(
+            (t) => !pair.connectionNames.includes(t.connection_name!),
           )
-            continue
-          result = refined
-          break
+          const surrounding = [...fixed, ...unchanged.flatMap(routeCopper)]
+          for (const trim of [
+            1.8, 1.5, 0.75, 0.375, 0.1875, 0.09375, 0.046875, 0.0234375,
+          ]) {
+            // Only these two rails changed. Keep all other completed routes
+            // immutable, and use their copper as hard clearance obstacles.
+            const refinedPair = chamferOrdinaryCorners(
+              input,
+              result
+                .filter((t) =>
+                  pair.connectionNames.includes(t.connection_name!),
+                )
+                .map(
+                  (t) =>
+                    replacement.find(
+                      (r) => r.connection_name === t.connection_name,
+                    )!,
+                ),
+              surrounding,
+              trim,
+            )
+            const refined = result.map(
+              (t) =>
+                refinedPair.find(
+                  (r) => r.connection_name === t.connection_name,
+                ) ?? t,
+            )
+            if (
+              !routeAnglesAreConventional(refinedPair) ||
+              (options.preserveMatching !== false &&
+                [
+                  ...busLengthReports(input, refined),
+                  ...pairLengthReports(input, refined),
+                ].some((r) => r.toleranceMm !== null && !r.matched)) ||
+              sharedPairSpacingReports(input, refined).some((r) => !r.matched)
+            )
+              continue
+            const copper = [...surrounding, ...refinedPair.flatMap(routeCopper)]
+            if (
+              refinedPair.some((t) => {
+                const w = (t.route[0] as Wire).width
+                return (
+                  !tuningPathIsSelfClear(t.route, w + clearance) ||
+                  !new VectorScene(
+                    input,
+                    input.connections.find(
+                      (c) => c.name === t.connection_name,
+                    )!,
+                    w,
+                    copper,
+                  ).pathVisible(t.route)
+                )
+              })
+            )
+              continue
+            result = refined
+            accepted = true
+            break
+          }
+          if (accepted) break
         }
       }
     }

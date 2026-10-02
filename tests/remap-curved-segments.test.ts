@@ -22,3 +22,27 @@ test("removed curves and new arbitrary diagonals are not annotated", () => {
   const route = [trace.route[0], { x: 0.2, y: 0.7 }, ...trace.route.slice(3)]
   expect(remapCurvedSegments(trace, route)).toEqual([])
 })
+
+test("coalesced collinear curve chords retain their geometry provenance", () => {
+  const collinear = {
+    ...trace,
+    route: trace.route.map((p, i) => (i === 3 ? { ...p, y: 0.2 } : p)),
+  }
+  expect(
+    remapCurvedSegments(collinear, [
+      collinear.route[0],
+      collinear.route[1],
+      collinear.route[3],
+      collinear.route[4],
+    ]),
+  ).toEqual([2])
+  // A shortcut across an actual bend is still unannotated.
+  expect(
+    remapCurvedSegments(trace, [
+      trace.route[0],
+      trace.route[1],
+      trace.route[3],
+      trace.route[4],
+    ]),
+  ).toEqual([])
+})

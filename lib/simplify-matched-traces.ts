@@ -6,15 +6,28 @@ import type { Point, SimpleRouteJson, Trace, Wire } from "./types"
 /** Port of the reference board's scripts/simplify-ordinary-turns.py. Generated
  * octilinear candidates preserve length; curves and coupled rails stay intact.
  * No saved coordinates, signal names, or board-specific dimensions are used. */
-export function* ordinaryRunCandidates(a: Point, b: Point) {
+export function* ordinaryRunCandidates(
+  a: Point,
+  b: Point,
+  original: Point[] = [],
+) {
   const dx = b.x - a.x,
     dy = b.y - a.y
   const x = Math.abs(dx),
     y = Math.abs(dy),
     sx = Math.sign(dx),
     sy = Math.sign(dy)
-  for (let fraction = 0; fraction <= 8; fraction++) {
-    const k = (Math.abs(x - y) * fraction) / 8
+  const offsets = new Set(
+    Array.from({ length: 9 }, (_, i) => (Math.abs(x - y) * i) / 8),
+  )
+  for (const p of original) {
+    const offset =
+      x >= y
+        ? (p.x - a.x) * sx - (p.y - a.y) * sy
+        : (p.y - a.y) * sy - (p.x - a.x) * sx
+    if (offset >= 0 && offset <= Math.abs(x - y)) offsets.add(offset)
+  }
+  for (const k of offsets) {
     yield simplify(
       x >= y
         ? [a, { x: a.x + sx * k, y: a.y }, { x: a.x + sx * (k + y), y: b.y }, b]
@@ -77,6 +90,7 @@ export function simplifyMatchedTraces(
           for (const replacement of ordinaryRunCandidates(
             trace.route[i],
             trace.route[j],
+            trace.route.slice(i, j + 1),
           )) {
             if (
               replacement.length >= j - i + 1 ||
