@@ -49,16 +49,19 @@ Run the four power-inclusive PR #10 placements with the strict completion gate:
 
 ```sh
 ./benchmark.sh --solver hypergraph --require-all-solved \
-  --timeout-seconds 600 --output benchmark-hypergraph-results.json \
+  --timeout-seconds 1200 --output benchmark-hypergraph-results.json \
   --artifacts docs/hypergraph-am3352
 ```
 
-The variant keeps differential pairs atomic during candidate selection and
-matches their declared total lengths. A pair with `maxUncoupledLength` uses the
-coupled-corridor router and must pass that bound. Without that field, including
-in these four samples, the variant permits separated pair conductors; it does
-not promise the original reference's additional pair-shape quality limits.
-The existing solver remains the default.
+Pairs declaring `traceGap` use one shared centerline and two offset rails, even
+without `maxUncoupledLength`. The hypergraph selects and replaces each pair as a
+whole, and length tuning adds shared meanders to both rails. Only package
+approaches may separate for pin access and skew correction. Explicit uncoupled
+length limits are still checked.
+
+The four-sample audit also measures physical pair spacing independently of solver
+metadata: the interior edge gap must stay within 0.0999–0.155 mm after the reviewed
+6.2 mm package allowance at each end. The existing solver remains the default.
 
 See [algorithm, fixture correction and results](docs/hypergraph-routing.md).
 

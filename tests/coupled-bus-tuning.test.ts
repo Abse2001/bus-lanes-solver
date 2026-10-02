@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { BusLanesSolver } from "../lib"
+import { BusLanesSolver, HypergraphBusLanesSolver } from "../lib"
 import { busLengthReports, pairLengthReports } from "../lib/route-lengths"
 import { pairCouplingReports } from "../lib/pair-coupling"
 
@@ -45,16 +45,18 @@ test("a pair length-matches its bus by adding shared smooth meanders", () => {
       },
     ],
   }
-  const solver = new BusLanesSolver(input, { smoothTuning: true })
-  solver.solve()
-  expect(solver.error).toBeNull()
-  expect(solver.solved).toBe(true)
-  expect(busLengthReports(input, solver.traces)[0].matched).toBe(true)
-  expect(pairLengthReports(input, solver.traces)[0].matched).toBe(true)
-  expect(pairCouplingReports(input, solver.traces)[0].matched).toBe(true)
-  expect(
-    solver.traces
-      .filter((t) => t.connection_name !== "D")
-      .every((t) => t.curvedSegments!.length > 0),
-  ).toBe(true)
+  for (const Solver of [BusLanesSolver, HypergraphBusLanesSolver]) {
+    const solver = new Solver(input, { smoothTuning: true })
+    solver.solve()
+    expect(solver.error).toBeNull()
+    expect(solver.solved).toBe(true)
+    expect(busLengthReports(input, solver.traces)[0].matched).toBe(true)
+    expect(pairLengthReports(input, solver.traces)[0].matched).toBe(true)
+    expect(pairCouplingReports(input, solver.traces)[0].matched).toBe(true)
+    expect(
+      solver.traces
+        .filter((t) => t.connection_name !== "D")
+        .every((t) => t.curvedSegments!.length > 0),
+    ).toBe(true)
+  }
 })

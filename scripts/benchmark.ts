@@ -149,8 +149,9 @@ if (!workerName) {
       }
     }
     const report = reports.at(-1)!
+    await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")
     console.log(
-      `${report.solved ? "PASS" : "FAIL"} ${report.sample} RAM=(${report.ram.x},${report.ram.y}) ${report.routedSignals}/${report.requestedSignals} signals ${(report.solveMilliseconds / 1000).toFixed(3)}s ${report.solved ? "DRC + matching passed" : (report.error ?? report.status)}`,
+      `${report.solved ? "PASS" : "FAIL"} ${report.sample} RAM=(${report.ram.x},${report.ram.y}) ${report.routedSignals}/${report.requestedSignals} signals ${(report.solveMilliseconds / 1000).toFixed(3)}s ${report.solved ? "DRC + matching + pair spacing passed" : (report.error ?? report.status)}`,
     )
   }
   await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")
@@ -241,7 +242,7 @@ try {
       await exportAm3352Solution(artifactDirectory, solver, metadata)
     report.error = report.solved
       ? null
-      : "Completed routing failed connectivity, DRC, or matching validation"
+      : "Completed routing failed connectivity, DRC, matching, or pair spacing validation"
   }
 } catch (error) {
   report.status = "validation_failed"

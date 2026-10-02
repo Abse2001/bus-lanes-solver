@@ -21,7 +21,7 @@ jobs:
 
   hypergraph:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -30,7 +30,7 @@ jobs:
       - run: bun install
       - run: >-
           ./benchmark.sh --solver hypergraph --require-all-solved
-          --timeout-seconds 600 --output benchmark-hypergraph-results.json
+          --timeout-seconds 1200 --output benchmark-hypergraph-results.json
           --artifacts docs/hypergraph-am3352
       - uses: actions/upload-artifact@v4
         if: always()

@@ -1,3 +1,4 @@
+import { tuningPathIsSelfClear } from "./length-tuning"
 import { repairHypergraphRoutes } from "./repair-hypergraph-routes"
 import { RouteHypergraph } from "./route-hypergraph"
 import type { RoutingStageSnapshot } from "./types"
@@ -26,6 +27,7 @@ export function* negotiateLanes(
   hypergraph = false,
   onStage?: (snapshot: RoutingStageSnapshot) => void,
   captureTopology = false,
+  topologyAttempt = 0,
 ): Generator<Trace[], Trace[] | null> {
   const routed = new Map<string, Trace>()
   const histories = new Map<string, Float32Array>()
@@ -33,9 +35,7 @@ export function* negotiateLanes(
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
   const pairs = (input.differentialPairs ?? []).filter(
-    (p) =>
-      p.maxUncoupledLength !== undefined ||
-      (!hypergraph && p.traceGap !== undefined),
+    (p) => p.maxUncoupledLength !== undefined || p.traceGap !== undefined,
   )
   const pairedNames = new Set(pairs.flatMap((p) => p.connectionNames))
   const units = [
@@ -70,7 +70,7 @@ export function* negotiateLanes(
       ceilings.set(member.name, limit * (hypergraph ? 2 : 4 / 3))
     }
   }
-  const candidates = hypergraph
+  let candidates = hypergraph
     ? new RouteHypergraph(
         clearance,
         (input.differentialPairs ?? []).map((p) => p.connectionNames),
@@ -97,7 +97,7 @@ export function* negotiateLanes(
       )
       .map((unit) => [unit.connections[0].name]),
   ]
-  const copperCache = new WeakMap<Trace, Copper[]>()
+  let copperCache = new WeakMap<Trace, Copper[]>()
   const getCopper = (trace: Trace) => {
     let copper = copperCache.get(trace)
     if (!copper) {
@@ -114,7 +114,8 @@ export function* negotiateLanes(
     pairRefresh = 0
   for (
     let iteration = 0;
-    iteration < (hypergraph ? 600 : 12000) && queue.length;
+    iteration < (hypergraph ? Math.max(180, units.length * 4) : 12000) &&
+    queue.length;
     iteration++
   ) {
     const pass = Math.floor(iteration / Math.max(1, connections.length / 4))
@@ -122,13 +123,17 @@ export function* negotiateLanes(
     // A locked pair corridor can impose a poor topology on the entire bus.
     // Recompute one coupled alternative after a full stagnant routing sweep;
     // candidate selection keeps each pair atomic and checks it against all lanes.
-    if (iteration - lastProgress >= units.length * 8) {
+    if (iteration - lastProgress >= units.length * (hypergraph ? 2 : 8)) {
       // The first compact budget is a search preference, not a proof of
       // impossibility. Widen it gradually; candidate selection still minimizes
       // each bus's longest carrier before length matching.
       for (const [name, limit] of limits) {
         const ceiling = ceilings.get(name)!
-        if (limit < ceiling) limits.set(name, Math.min(ceiling, limit * 1.025))
+        if (limit < ceiling)
+          limits.set(
+            name,
+            Math.min(ceiling, limit * (hypergraph ? 1.1 : 1.025)),
+          )
       }
       const waitingLayers = new Set(
         queue.flatMap((unit) =>
@@ -194,7 +199,12 @@ export function* negotiateLanes(
         const layerCosts = new Map(
           available.map((layer) => [layer, layerCost(layer)]),
         )
-        available.sort((a, b) => layerCosts.get(a)! - layerCosts.get(b)!)
+        const preferredLayer = connection.pointsToConnect[0].layer
+        available.sort(
+          (a, b) =>
+            layerCosts.get(a)! - layerCosts.get(b)! ||
+            Number(a !== preferredLayer) - Number(b !== preferredLayer),
+        )
       }
       const chosenLayer = available[0]
       for (const c of unit.connections)
@@ -208,7 +218,7 @@ export function* negotiateLanes(
       const sceneCopper = [
         ...fixed,
         ...pairedCopper,
-        ...(!hypergraph && !unit.pair
+        ...(!unit.pair
           ? routedLanes
               .filter((t) => pairedNames.has(t.connection_name!))
               .flatMap(getCopper)
@@ -225,15 +235,60 @@ export function* negotiateLanes(
         // Generate rigid paired alternatives independently of provisional
         // lanes; compatibility selection can then move those lanes around the
         // new corridor instead of forcing every retry back to the old topology.
+        // When the pin row faces away from the destination, start with an
+        // exterior package corridor instead of sending two approaches through it.
+        const [from, to] = connection.pointsToConnect
+        const vertical = Math.abs(to.y - from.y) >= Math.abs(to.x - from.x)
+        const axis = vertical ? "y" : "x"
+        const pad = input.obstacles
+          .filter(
+            (o) => o.componentId && o.connectedTo.includes(connection.name),
+          )
+          .sort(
+            (a, b) =>
+              Math.hypot(a.center.x - from.x, a.center.y - from.y) -
+              Math.hypot(b.center.x - from.x, b.center.y - from.y),
+          )[0]
+        const field = pad
+          ? input.obstacles.filter((o) => o.componentId === pad.componentId)
+          : []
+        const fieldCenter = field.length
+          ? (Math.min(...field.map((o) => o.center[axis])) +
+              Math.max(...field.map((o) => o.center[axis]))) /
+            2
+          : from[axis]
+        const exteriorFirst =
+          hypergraph &&
+          (input.buses ?? []).some((b) =>
+            b.connectionNames.includes(connection.name),
+          ) &&
+          (from[axis] - fieldCenter) * (to[axis] - from[axis]) < 0
+        const crossAxis = vertical ? "x" : "y"
+        const bus = input.buses?.find((b) =>
+          b.connectionNames.includes(connection.name),
+        )
+        const starts = connections
+          .filter((c) => bus?.connectionNames.includes(c.name))
+          .map((c) => c.pointsToConnect[0][crossAxis])
+          .sort((a, b) => a - b)
+        const sourceSide =
+          Math.sign(
+            from[crossAxis] -
+              (starts[Math.floor(starts.length / 2)] ?? from[crossAxis]),
+          ) || 1
+        const destinationSide = Math.sign(to[crossAxis] - from[crossAxis]) || 1
+        const exteriorSeed = sourceSide === destinationSide ? 2 : 3
         const generator = routeCoupledPair(input, unit.pair, fixed, {
           copper: [],
           penalty: 0,
-          variant: visit - 1,
+          variant:
+            visit - 1 + (exteriorFirst ? exteriorSeed : 0) + topologyAttempt,
+          matchPairSkew: hypergraph,
         })
         let step = generator.next(),
           iterations = 0
         try {
-          while (!step.done && iterations++ < (hypergraph ? 100000 : 8000)) {
+          while (!step.done && iterations++ < (hypergraph ? 950000 : 8000)) {
             yield routedLanes
             step = generator.next()
           }
@@ -241,7 +296,13 @@ export function* negotiateLanes(
           if (!step.done) step = generator.return(null)
         }
         if (!step.value) {
-          if (previous.length !== unit.connections.length) return null
+          if (previous.length !== unit.connections.length) {
+            if (hypergraph && visit < 8) {
+              queue.unshift(unit)
+              continue
+            }
+            return null
+          }
           for (const trace of previous) {
             routed.set(trace.connection_name!, trace)
             const c = unit.connections.find(
@@ -264,7 +325,10 @@ export function* negotiateLanes(
         routedCopper,
         congestionPenalty,
         histories.get(layer),
-        { maxLength: limits.get(connection.name) },
+        {
+          maxLength: limits.get(connection.name),
+          allowDiagonalPassages: hypergraph,
+        },
       )
       if (!histories.has(layer))
         histories.set(layer, new Float32Array(search.cellCount))
@@ -289,7 +353,10 @@ export function* negotiateLanes(
                 routedCopper,
                 congestionPenalty,
                 histories.get(candidateLayer),
-                { maxLength: limits.get(connection.name) },
+                {
+                  maxLength: limits.get(connection.name),
+                  allowDiagonalPassages: hypergraph,
+                },
               )
         if (!histories.has(candidateLayer))
           histories.set(
@@ -341,6 +408,34 @@ export function* negotiateLanes(
         }
         if (!candidateSearch.solved) continue
         const paths = [candidateSearch.result]
+        if (
+          hypergraph &&
+          visit > 1 &&
+          routedLanes.length >= connections.length - 4
+        ) {
+          const hardScene = new VectorScene(input, connection, width, [
+            ...sceneCopper,
+            ...routedCopper,
+          ])
+          const hard = new GridVisibilitySearch(
+            hardScene,
+            connection.pointsToConnect[0],
+            connection.pointsToConnect[1],
+            [],
+            0,
+            undefined,
+            { step: width / 4, allowDiagonalPassages: true },
+          )
+          try {
+            while (!hard.solved && !hard.failed && hard.expanded < 50000) {
+              hard.step()
+              yield progressRoutes
+            }
+            if (hard.solved) paths.push(hard.result)
+          } finally {
+            hard.cancel()
+          }
+        }
         if (visit > 1 && visit % 2 === 0 && limits.has(connection.name)) {
           const [a, b] = connection.pointsToConnect
           const vertical = Math.abs(b.y - a.y) >= Math.abs(b.x - a.x)
@@ -400,7 +495,11 @@ export function* negotiateLanes(
             )
             if (hit) hits++
           }
-          const score = length(path) + hits * length(connection.pointsToConnect)
+          const score =
+            length(path) +
+            hits *
+              length(connection.pointsToConnect) *
+              (hypergraph ? 1 + pass / 4 : 1)
           const choice: { score: number; trace: Trace } = {
             score,
             trace: {
@@ -541,7 +640,53 @@ export function* negotiateLanes(
       } finally {
         if (!step.done) repair.return(false)
       }
-      if (!step.value) return null
+      if (!step.value) {
+        // A cover can contain a raster return that cannot be cleaned while all
+        // neighboring routes are frozen. Negotiate that lane again, instead of
+        // throwing away the whole cover and repeating the same geometry.
+        const bad = result.filter(
+          (t) =>
+            !tuningPathIsSelfClear(
+              t.route,
+              (t.route[0] as Wire).width + clearance,
+            ),
+        )
+        if (!bad.length) return null
+        for (const trace of bad) {
+          const layer = (trace.route[0] as Wire).layer
+          const projector = searches.get(layer),
+            history = histories.get(layer)
+          if (projector && history)
+            for (let i = 1; i < trace.route.length; i++)
+              projector.penalizeIntersection(
+                history,
+                trace.route[i - 1],
+                trace.route[i],
+                trace.route[i - 1],
+                trace.route[i],
+                clearance * 2,
+                true,
+              )
+          const unit = units.find((u) =>
+            u.connections.some((c) => c.name === trace.connection_name),
+          )!
+          for (const c of unit.connections) routed.delete(c.name)
+          if (!queue.includes(unit)) queue.unshift(unit)
+        }
+        copperCache = new WeakMap()
+        candidates = new RouteHypergraph(
+          clearance,
+          (input.differentialPairs ?? []).map((p) => p.connectionNames),
+        )
+        for (const unit of units) {
+          const retained = unit.connections.flatMap((c) =>
+            routed.has(c.name) ? [routed.get(c.name)!] : [],
+          )
+          if (retained.length === unit.connections.length)
+            candidates.add(unit.connections[0].name, retained)
+        }
+        continue
+      }
     }
     return result
   }

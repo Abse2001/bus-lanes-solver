@@ -163,7 +163,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       })
       const target =
         allowed[
-          this.options.initialRouting === "hypergraph"
+          this.options.initialRouting === "hypergraph" && this.attempt <= 1
             ? 0
             : Math.max(0, this.attempt - 1) % allowed.length
         ]
@@ -217,34 +217,37 @@ export class BusLanesPipelineSolver extends BaseSolver {
     // congestion negotiation. Existing handoffs always keep their fixed layer.
     const terminalLayers = new Map<string, string[]>()
     for (const connection of this.input.connections) {
-      if (
-        (this.input.buses ?? []).some((b) =>
-          b.connectionNames.includes(connection.name),
-        )
+      const memberBuses = (this.input.buses ?? []).filter((b) =>
+        b.connectionNames.includes(connection.name),
       )
+      if (memberBuses.length && this.options.initialRouting !== "hypergraph")
         continue
       const vias = this.escapes
         .filter((t) => t.connection_name === connection.name)
         .flatMap((t) => t.route.filter((p) => p.route_type === "via"))
       if (vias.length !== 2) continue
-      const available = layers.filter((layer) =>
-        vias.every(
-          (via) =>
-            layer !== via.from_layer &&
-            (
-              via.layers ??
-              layers.slice(
-                Math.min(
-                  layers.indexOf(via.from_layer),
-                  layers.indexOf(via.to_layer),
-                ),
-                Math.max(
-                  layers.indexOf(via.from_layer),
-                  layers.indexOf(via.to_layer),
-                ) + 1,
-              )
-            ).includes(layer),
-        ),
+      const available = layers.filter(
+        (layer) =>
+          memberBuses.every(
+            (b) => !b.allowedLayers || b.allowedLayers.includes(layer),
+          ) &&
+          vias.every(
+            (via) =>
+              layer !== via.from_layer &&
+              (
+                via.layers ??
+                layers.slice(
+                  Math.min(
+                    layers.indexOf(via.from_layer),
+                    layers.indexOf(via.to_layer),
+                  ),
+                  Math.max(
+                    layers.indexOf(via.from_layer),
+                    layers.indexOf(via.to_layer),
+                  ) + 1,
+                )
+              ).includes(layer),
+          ),
       )
       if (available.length > 1) terminalLayers.set(connection.name, available)
     }
@@ -319,6 +322,23 @@ export class BusLanesPipelineSolver extends BaseSolver {
             : "all_signals",
       }
       this.progress = this.child!.progress
+      // The preliminary bus-only pass is a cheap first portfolio choice. If
+      // its terminal sites cannot produce even one paired corridor, try a new
+      // dogbone assignment instead of exhausting every handoff combination.
+      if (
+        this.options.initialRouting === "hypergraph" &&
+        this.attempt === 0 &&
+        this.remainingInput &&
+        this.child!.phase === "route" &&
+        this.child!.stats.topologyAttempt === 0 &&
+        this.child!.iterations > 200000 &&
+        !this.child!.traces.length
+      ) {
+        this.child!.tryFinalAcceptance()
+        throw Error(
+          "Initial terminal sites produced no paired corridor within the preliminary search budget",
+        )
+      }
       if (this.child!.failed)
         throw Error(this.child!.error ?? "Bus lanes failed")
       if (this.child!.solved && this.remainingInput) {

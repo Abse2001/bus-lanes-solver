@@ -3,8 +3,10 @@ import { fixedCopper, routeCopper, VectorScene } from "./vector-scene"
 import type { Point, SimpleRouteJson, Trace, Wire } from "./types"
 
 /** Spread only the free span between component fields, retaining the routed
- * package approaches. All coordinates are board-world millimetres. */
-export function spreadHypergraphCorridors(
+ * package approaches. This geometry proposal requires copper validation by the
+ * caller, after virtual pair envelopes have been expanded into real rails.
+ * All coordinates are board-world millimetres. */
+export function buildHypergraphCorridorGeometry(
   input: SimpleRouteJson,
   traces: Trace[],
   pitch: number,
@@ -105,6 +107,27 @@ export function spreadHypergraphCorridors(
       })
     }
   }
+  return result
+}
+
+/** Validate proposed channels against the actual copper before accepting them. */
+export function spreadHypergraphCorridors(
+  input: SimpleRouteJson,
+  traces: Trace[],
+  pitch: number,
+  stagger = 0.1,
+  inset = 0.5,
+  shift = 0,
+): Trace[] | null {
+  const result = buildHypergraphCorridorGeometry(
+    input,
+    traces,
+    pitch,
+    stagger,
+    inset,
+    shift,
+  )
+  if (!result) return null
   const copper = [...fixedCopper(input), ...result.flatMap(routeCopper)]
   if (
     result.some(

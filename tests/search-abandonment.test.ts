@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test"
 import { GridVisibilitySearch } from "../lib/grid-visibility"
 import { BusLanesSolver } from "../lib/bus-lanes-solver"
+import { HypergraphBusLanesSolver } from "../lib/hypergraph-bus-lanes-solver"
 import { negotiateLanes } from "../lib/negotiate-lanes"
 import { routeViaWaypoint } from "../lib/route-via-waypoint"
 import { length } from "../lib/geometry"
@@ -193,5 +194,49 @@ test("returning a waypoint generator releases its active grid search", () => {
     next.cancel()
   } finally {
     GridVisibilitySearch.prototype.step = originalStep
+  }
+})
+
+test("a stalled preliminary pair search releases its grid before trying new dogbones", () => {
+  const input = denseInput()
+  input.layerCount = 2
+  input.buses = [
+    {
+      busId: "data",
+      connectionNames: input.connections.map((c) => c.name),
+      maxLengthSkew: 1,
+    },
+  ]
+  const extra = structuredClone(input.connections.at(-1)!)
+  extra.name = "control"
+  extra.pointsToConnect.forEach((p) => {
+    p.y += 0.4
+  })
+  input.connections.push(extra)
+  input.differentialPairs = [
+    { connectionNames: ["D0", "D1"], traceGap: 0.12, lengthTolerance: 0.127 },
+  ]
+  let active: GridVisibilitySearch | undefined
+  const originalStep = GridVisibilitySearch.prototype.step
+  const originalVisible = VectorScene.prototype.pathVisible
+  GridVisibilitySearch.prototype.step = function () {
+    active = this
+  }
+  VectorScene.prototype.pathVisible = function (path) {
+    return length(path) <= 1 && originalVisible.call(this, path)
+  }
+  try {
+    const solver = new HypergraphBusLanesSolver(input)
+    for (let i = 0; i < 20 && !active; i++) solver.step()
+    expect(active).toBeDefined()
+    const child = solver.activeSubSolver as BusLanesSolver
+    child.iterations = 200001
+    solver.step()
+    expect(solver.phase).toBe("retry_layers")
+    expect(solver.attemptFailures).toHaveLength(1)
+    expectReleased(active!)
+  } finally {
+    GridVisibilitySearch.prototype.step = originalStep
+    VectorScene.prototype.pathVisible = originalVisible
   }
 })

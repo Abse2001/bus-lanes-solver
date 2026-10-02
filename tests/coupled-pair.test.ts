@@ -34,14 +34,31 @@ test("a declared pair shares its corridor and meets the total uncoupled budget",
       },
     ],
   }
-  for (const Solver of [BusLanesSolver, HypergraphBusLanesSolver]) {
-    const solver = new Solver(input)
-    solver.solve()
-    expect(solver.error).toBeNull()
-    expect(solver.solved).toBe(true)
-    expect(pairCouplingReports(input, solver.traces)[0].matched).toBe(true)
-    expect(
-      solver.traces.every((t) => t.route.every((p) => p.route_type === "wire")),
-    ).toBe(true)
-  }
+  for (const constrained of [true, false])
+    for (const Solver of [BusLanesSolver, HypergraphBusLanesSolver]) {
+      const actualInput = structuredClone(input)
+      if (!constrained)
+        delete (
+          actualInput.differentialPairs[0] as { maxUncoupledLength?: number }
+        ).maxUncoupledLength
+      const solver = new Solver(actualInput)
+      solver.solve()
+      expect(solver.error).toBeNull()
+      expect(solver.solved).toBe(true)
+      expect(pairCouplingReports(actualInput, solver.traces)[0].matched).toBe(
+        true,
+      )
+      expect(solver.traces.every((t) => t.coupledSection)).toBe(true)
+      // A gap-only declaration must produce physically adjacent rails too.
+      expect(
+        pairCouplingReports(actualInput, solver.traces)[0].conductors.every(
+          (c) => c.coupledFraction > 0.99,
+        ),
+      ).toBe(true)
+      expect(
+        solver.traces.every((t) =>
+          t.route.every((p) => p.route_type === "wire"),
+        ),
+      ).toBe(true)
+    }
 })

@@ -1,3 +1,4 @@
+import { pairInteriorSpacing } from "../lib/pair-interior-spacing"
 import { validateRoutedCopperDrc } from "@tscircuit/fanout-solver"
 import type { SimpleRouteJson, Trace, Terminal, Wire } from "../lib"
 import { distance } from "../lib/geometry"
@@ -311,6 +312,17 @@ export async function validateAm3352Sample(
     pairLengths.every((p) => p.matched)
   if (signalTraces && !matched)
     issues.push("declared bus or pair length matching is incomplete")
+  // Same package allowance and gap limits as the reviewed AM3352 reference.
+  // Inspect physical copper independently of the solver's coupledSection tags.
+  const pairSpacing = signalTraces
+    ? pairInteriorSpacing(input, signalTraces, 6.2)
+    : []
+  for (const pair of pairSpacing)
+    for (const rail of pair.conductors)
+      if (!rail.samples || rail.minGapMm! < 0.0999 || rail.maxGapMm! > 0.155)
+        issues.push(
+          `${rail.name}: differential pair interior spacing is outside 0.0999–0.155 mm`,
+        )
   const combinedDrc = signalTraces
     ? audit([...metadata.fixedFanoutTraces, ...signalTraces])
     : null
@@ -331,6 +343,7 @@ export async function validateAm3352Sample(
     combinedDrc,
     busLengths,
     pairLengths,
+    pairSpacing,
     issues,
   }
 }

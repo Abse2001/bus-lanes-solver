@@ -1,3 +1,4 @@
+import { spreadHypergraphCoupledCorridors } from "./spread-hypergraph-coupled-corridors"
 import { spreadHypergraphCorridors } from "./spread-hypergraph-corridors"
 import { captureRoutingStage } from "./capture-routing-stage"
 import { visualizeRouteHypergraph } from "./visualize-route-hypergraph"
@@ -60,6 +61,8 @@ export class BusLanesSolver extends BaseSolver {
   private pairIndex = 0
   private congestionPass = 0
   private conflictingLanes = 0
+  private topologyAttempt = 0
+  private lastTopologyFailure?: string
   private negotiated?: Generator<Trace[], Trace[] | null>
   private matching?: Generator<void>
   private hypergraphStats?: Record<string, unknown>
@@ -291,6 +294,27 @@ export class BusLanesSolver extends BaseSolver {
     this.lane = 0
     this.startLane()
   }
+  private retryHypergraphTopology(reason: string) {
+    if (
+      this.options.initialRouting !== "hypergraph" ||
+      !this.input.differentialPairs?.length ||
+      this.topologyAttempt >= 4 ||
+      (reason === "No complete compatible route cover" &&
+        this.topologyAttempt >= 1)
+    )
+      return false
+    this.lastTopologyFailure = reason
+    this.topologyAttempt++
+    this.negotiated?.return(null)
+    this.negotiated = undefined
+    this.matching = undefined
+    this.traces = []
+    this.lane = 0
+    this.congestionPass = 0
+    this.conflictingLanes = this.input.connections.length
+    this.phase = "route"
+    return true
+  }
   private route() {
     if (this.phase === "hypergraph_topology") {
       this.phase = "hypergraph_cover"
@@ -325,14 +349,22 @@ export class BusLanesSolver extends BaseSolver {
           captureRoutingStage(this.options, snapshot)
         },
         this.options.visualizeHypergraphTopology,
+        this.topologyAttempt,
       )
       const step = this.negotiated.next()
       if (!step.done) {
+        if (
+          step.value.length < this.input.connections.length &&
+          this.phase === "route_cleanup"
+        )
+          this.phase = "route"
         this.traces = step.value
         this.lane = this.traces.length - this.pairedTraces.length
         return
       }
       if (!step.value) {
+        if (this.retryHypergraphTopology("No complete compatible route cover"))
+          return
         this.fail(
           "no_planar_route",
           "Negotiated lane search exhausted without a complete route",
@@ -401,6 +433,17 @@ export class BusLanesSolver extends BaseSolver {
         yield [...original]
       }
       if (original.some((t) => t.coupledSection)) {
+        if (hypergraph)
+          for (const inset of [1, 0.5, 2, 3, 4])
+            for (const pitch of [0.9, 0.7, 1, 1.2, 0.6, 0.8, 1.6, 2]) {
+              const spread = spreadHypergraphCoupledCorridors(
+                input,
+                original,
+                pitch * scale,
+                inset,
+              )
+              if (spread) yield spread
+            }
         for (const multiplier of [8, 12, 16, 20]) {
           const spread = spreadCoupledTuningLanes(
             input,
@@ -419,11 +462,13 @@ export class BusLanesSolver extends BaseSolver {
     }
     let error: unknown
     for (const corridor of candidates()) {
-      // Preserve the original package handoffs while allocating tuning space;
-      // only then refine the paired approach geometry of this candidate.
-      const candidate = this.options.smoothTuning
-        ? refinePairApproaches(input, corridor, this.fixed)
-        : corridor
+      // Hypergraph pairs already reserve their approach skew correction.
+      // Preserve it while allocating shared tuning space; the visibility path
+      // retains its existing late approach refinement.
+      const candidate =
+        this.options.smoothTuning && !hypergraph
+          ? refinePairApproaches(input, corridor, this.fixed)
+          : corridor
       const targets = minimumLengthTargets(input, candidate)
       this.traces = candidate
       this.phase = "tuning_corridor"
@@ -462,7 +507,8 @@ export class BusLanesSolver extends BaseSolver {
         error = e
       }
     }
-    this.fail("length_matching_failed", String(error))
+    if (!this.retryHypergraphTopology(String(error)))
+      this.fail("length_matching_failed", String(error))
     return
   }
   private validateOutput() {
@@ -589,6 +635,8 @@ export class BusLanesSolver extends BaseSolver {
           ? "route_hypergraph"
           : "octilinear_visibility",
       attempt: this.attempt,
+      topologyAttempt: this.topologyAttempt,
+      lastTopologyFailure: this.lastTopologyFailure,
       lane: this.lane,
       totalLanes: this.input.connections.length,
       congestionPass: this.congestionPass,

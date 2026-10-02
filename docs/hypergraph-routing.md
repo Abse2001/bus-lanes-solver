@@ -2,20 +2,17 @@
 
 `HypergraphBusLanesSolver` is an opt-in `BusLanesPipelineSolver` variant. It
 computes routes from the current geometry, rather than loading saved solutions.
-The original visibility variant is unchanged by default. The four AM3352 Cosmos
+The visibility solver remains selected by default. The four AM3352 Cosmos
 pages all instantiate the same hypergraph pipeline, on every routing attempt and
 for both matched-bus and control-signal passes. They never switch to visibility
 routing; only diagnostic topology capture is enabled specifically for the debugger.
 
-This is not yet a strict improvement over the visibility solver for every input.
-For example, `tests/negotiated-pair-lanes.test.ts` requires a shared coupled section
-when a pair declares `traceGap`. The visibility solver supplies it; the hypergraph
-variant currently permits independent pair tracks unless `maxUncoupledLength` is
-also supplied. On that fixture, the independent coupling audit measures about
-94.5% and 94.8% coupled copper for the visibility solver versus approximately 0%
-for both hypergraph-routed conductors. The four DDR completion results therefore
-do not justify replacing
-the general-purpose default while preserving its existing behavior.
+The variant now generates a shared corridor whenever a pair declares `traceGap`,
+including when no `maxUncoupledLength` is supplied. Both rails are selected,
+replaced and tuned together. A gap-only regression independently checks copper
+spacing, so assembling unrelated traces into an atomic hyperedge cannot pass.
+The general-purpose visibility solver remains the default; the sample pages all
+use the same hypergraph variant.
 
 ## Representation and search
 
@@ -33,7 +30,9 @@ the general-purpose default while preserving its existing behavior.
   On failure, buses and controls participate in the same initial solve. The
   local dogbone matcher is then evaluated in a routing coordinate frame and
   its new outputs are transformed back. Original pads, fixed fanouts and their provenance do not
-  move. Failed attempts try another frame.
+  move. Failed attempts try another frame. The preliminary bus-only search
+  retries terminal sites after 200,000 iterations without producing a first
+  corridor; active search buffers are released before retrying.
 - A finer bounded search repairs raster returning jogs when needed. It can use
   diagonal edges between occupied orthogonal neighbors only when the actual
   continuous edge passes clearance checks.
@@ -46,11 +45,19 @@ The hypergraph is over route alternatives; the geometric path generator remains
 an octilinear grid search. Candidate and search budgets make this a heuristic,
 not a proof of global optimality or routability.
 
-Pairs with an explicit `maxUncoupledLength` use coupled corridors. With only
-`lengthTolerance` and `traceGap`, the hypergraph variant treats the pair as an
-atomic length-matched choice but does not impose an undeclared maximum separated
-length. This differs from the default solver's preference for a shared pair
-corridor and does not establish the reference board's extra pair-shape limits.
+Pair handoffs and exterior corridors come from package and bus geometry. The
+search reserves skew correction before surrounding lanes consume the approaches.
+Corridor expansion treats the two rails as one wider channel; joint meanders keep
+the rail spacing. Refinement cannot independently shorten a paired trunk.
+Candidate spacing is checked against actual copper, including its approaches.
+The search keeps divergence within a terminal neighborhood of at most 5.5 mm
+(or one fifth of terminal separation for shorter links). This candidate-search
+budget does not replace an explicit `maxUncoupledLength` constraint.
+
+For newly generated terminal vias, bus members and complete pairs can choose another legal
+carrier layer during negotiation, subject to `allowedLayers` and the via span.
+The two rails of a pair share one carrier layer. Existing fanout handoffs and all
+fixed power copper remain unchanged; no carrier vias are introduced.
 
 ## Correction to PR #10's placements
 
@@ -74,7 +81,7 @@ bun test
 bun run typecheck
 bun run test:package
 ./benchmark.sh --solver hypergraph --require-all-solved \
-  --timeout-seconds 600 --output benchmark-hypergraph-results.json \
+  --timeout-seconds 1200 --output benchmark-hypergraph-results.json \
   --artifacts docs/hypergraph-am3352
 ```
 
@@ -82,16 +89,19 @@ Workers run serially in fresh processes. A success requires 47/47 original
 pad-to-pad connections, 161 unchanged power dogbones, zero combined-copper DRC
 issues, exactly two local signal vias per net, via-free carriers, byte-bus skew
 at most 0.635 mm, and pair skew at most 0.127 mm. Lengths include the dogbones.
-Artifacts are written only after solver completion and an independent audit.
+The independent audit also samples physical differential-pair spacing every
+0.01 mm, excluding the reviewed 6.2 mm approach allowance at each terminal. Every
+interior edge gap must be within 0.0999–0.155 mm; it does not rely on a solver's
+`coupledSection` labels. Artifacts are written only after all checks pass.
 
 Fresh serial run on 2026-10-01, Bun 1.3.2: **4/4 solved**. Skews measure total pad-to-pad copper, including local signal dogbones. The limits are 0.635 mm per byte bus and 0.127 mm per pair (with the validator's existing floating-point epsilon). All 161 fixed power fanouts and the original input are unchanged in every case. Solve times include unsuccessful fallback attempts; export and audit time are excluded.
 
-| Placement | Signals | DRC issues | Byte 0 skew (mm) | Byte 1 skew (mm) | Max pair skew (mm) | Solve time (s) |
-| --- | --- | --- | --- | --- | --- | --- |
-| Control | 47/47 | 0 | 0.635000 | 0.635000 | 0.000109 | 10.552 |
-| Right | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 16.288 |
-| Left | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 151.233 |
-| Above | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 426.372 |
+| Placement | Signals | DRC issues | Byte 0 skew (mm) | Byte 1 skew (mm) | Max pair skew (mm) | Interior pair gap (mm) | Solve time (s) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Below (control) | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.11981–0.13813 | 5.426 |
+| Right | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10000–0.14166 | 371.238 |
+| Left | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10869–0.13813 | 74.024 |
+| Above | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10000–0.14166 | 469.881 |
 
 The complete report is [benchmark-hypergraph-results.json](../benchmark-hypergraph-results.json).
 Snapshots show top, inner1, inner2 and bottom separately:
