@@ -11,6 +11,7 @@ import type { SimpleRouteJson, Trace, Point, Wire } from "./types"
 export function tuneCoupledLengths(
   input: SimpleRouteJson,
   traces: Trace[],
+  options: { maxCandidates?: number } = {},
 ): Trace[] {
   // First fix pair skew without allowing the individual tuner into the corridor.
   const pairedInput = { ...input, buses: [] }
@@ -18,7 +19,9 @@ export function tuneCoupledLengths(
     input,
     traces,
     minimumLengthTargets(pairedInput, traces),
+    options,
   )
+  let attempted = 0
   const fixed = fixedCopper(input)
   const total = (trace: Trace) =>
     length(trace.route) + fixedRouteLength(input, trace.connection_name!)
@@ -85,6 +88,8 @@ export function tuneCoupledLengths(
                 roundedPairedLobes,
                 smoothPairedLobes,
               ]) {
+                if (++attempted > (options.maxCandidates ?? Infinity))
+                  throw Error("Coupled tuning candidate budget exhausted")
                 const margin = ((hi - lo) * (1 - fraction)) / 2
                 const waves = createLobes(
                   center(lo + margin),
@@ -169,5 +174,10 @@ export function tuneCoupledLengths(
     })
   }
   // Shared additions can raise overlapping bus targets; propagate before tuning singles.
-  return tuneSmoothLengths(input, result, minimumLengthTargets(input, result))
+  return tuneSmoothLengths(
+    input,
+    result,
+    minimumLengthTargets(input, result),
+    options,
+  )
 }

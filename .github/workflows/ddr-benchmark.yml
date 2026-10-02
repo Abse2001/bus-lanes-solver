@@ -10,9 +10,9 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun install
-      # Run only the four AM3352 placements. Search failures remain failures in
-      # the score; malformed fixtures and invalid completed copper fail the job.
-      - run: ./benchmark.sh
+      # Require all four powered AM3352 placements to complete and pass native
+      # DRC plus full pad-to-pad length matching.
+      - run: ./benchmark.sh --require-all-solved
       - uses: actions/upload-artifact@v4
         if: always()
         with:

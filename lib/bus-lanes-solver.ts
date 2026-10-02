@@ -1,4 +1,14 @@
+import {
+  independentBusGroups,
+  routeIndependentBuses,
+} from "./route-independent-buses"
+import { sharedPairSpacingReports } from "./shared-pair-spacing"
+import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
+import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { refinePairApproaches } from "./refine-pair-approaches"
+import { bevelPairApproaches } from "./bevel-pair-approaches"
+import { routeAnglesAreConventional } from "./route-angle-validation"
+import { chamferOrdinaryCorners } from "./chamfer-ordinary-corners"
 import { spreadCoupledTuningLanes } from "./spread-coupled-tuning-lanes"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
 import { tuneCoupledLengths } from "./tune-coupled-lengths"
@@ -56,7 +66,10 @@ export class BusLanesSolver extends BaseSolver {
   private pairIndex = 0
   private congestionPass = 0
   private conflictingLanes = 0
+  private independent?: Generator<Trace[], Trace[] | null>
+  private independentAttempted = false
   private negotiated?: Generator<Trace[], Trace[] | null>
+  private reservePackageExits?: boolean
   private pairSearch?: Generator<void, Trace[] | null>
   private reportedRoutes?: Array<{ trace: Trace; route: Trace["route"] }>
   private lengthStats?: {
@@ -96,6 +109,8 @@ export class BusLanesSolver extends BaseSolver {
     this.negotiated = undefined
   }
   tryFinalAcceptance() {
+    this.independent?.return(null)
+    this.independent = undefined
     if (!this.solved)
       this.fail(
         "search_budget_exhausted",
@@ -287,6 +302,40 @@ export class BusLanesSolver extends BaseSolver {
       // Dense negotiation owns its searches; the initial lane search is unused.
       if (this.search instanceof GridVisibilitySearch) this.search.cancel()
       this.search = undefined
+      if (!this.independentAttempted) {
+        this.independentAttempted = true
+        const groups = independentBusGroups(this.input)
+        if (groups)
+          this.independent = routeIndependentBuses(
+            groups,
+            this.fixed,
+            this.widths,
+            (input, traces) => {
+              const child = new BusLanesSolver(input, this.options)
+              child.step()
+              child.traces = traces
+              child.phase = "match"
+              child.step()
+              if (!child.failed) child.step()
+              return child.solved ? child.traces : null
+            },
+          )
+      }
+      if (this.independent) {
+        const state = this.independent.next()
+        if (!state.done) {
+          this.traces = state.value
+          this.lane = this.traces.length
+          return
+        }
+        this.independent = undefined
+        if (state.value) {
+          this.traces = state.value
+          this.phase = "validate_output"
+          return
+        }
+      }
+      this.reservePackageExits ??= backwardFacingPackageTerminals(this.input)
       this.negotiated ??= negotiateLanes(
         this.input,
         this.orders[0],
@@ -298,6 +347,7 @@ export class BusLanesSolver extends BaseSolver {
           this.conflictingLanes = conflicts
         },
         this.terminalLayers,
+        () => this.reservePackageExits!,
       )
       const step = this.negotiated.next()
       if (!step.done) {
@@ -351,11 +401,20 @@ export class BusLanesSolver extends BaseSolver {
     function* candidates() {
       yield original
       if (original.some((t) => t.coupledSection)) {
-        for (const multiplier of [8, 12, 16, 20]) {
+        for (const multiplier of [20, 16, 12, 8, 6, 4]) {
           const spread = spreadCoupledTuningLanes(
             input,
             original,
             input.minTraceWidth * multiplier,
+          )
+          if (spread) yield spread
+        }
+        for (const multiplier of [8, 12, 6, 16, 4, 20]) {
+          const spread = spreadCoupledTuningLanes(
+            input,
+            original,
+            input.minTraceWidth * multiplier,
+            "diagonal",
           )
           if (spread) yield spread
         }
@@ -368,28 +427,84 @@ export class BusLanesSolver extends BaseSolver {
       }
     }
     let error: unknown
+    const attemptedShapes = new Set<string>()
     for (const corridor of candidates()) {
       // Preserve the original package handoffs while allocating tuning space;
       // only then refine the paired approach geometry of this candidate.
-      const candidate = this.options.smoothTuning
-        ? refinePairApproaches(input, corridor, this.fixed)
-        : corridor
-      const targets = minimumLengthTargets(input, candidate)
-      try {
-        this.traces =
-          this.options.smoothTuning && candidate.some((t) => t.coupledSection)
-            ? tuneCoupledLengths(input, candidate)
-            : (this.options.smoothTuning ? tuneSmoothLengths : tuneLengths)(
-                input,
-                candidate,
-                targets,
+      const refinements = function* (fixed: Copper[], smooth?: boolean) {
+        yield corridor
+        if (smooth) yield refinePairApproaches(input, corridor, fixed)
+        if (smooth && corridor.some((t) => t.coupledSection))
+          for (const trim of [
+            2.75, 2.5, 2.25, 2, 3, 1.5, 1, 0.5, 0.25, 0.125, 0.0625, 0.03125,
+          ])
+            yield bevelPairApproaches(input, corridor, fixed, trim)
+      }
+      for (const refined of refinements(
+        this.fixed,
+        this.options.smoothTuning,
+      )) {
+        // Bevels change copper length. Retry smaller trims before choosing a
+        // wider tuning bank, so a legal corner never breaks tight pair matching.
+        for (const trim of this.options.smoothTuning
+          ? [1.5, 0.75, 0.375, 0.1875, 0.09375, 0.046875, 0.0234375]
+          : [0]) {
+          const candidate = alignCoupledSectionBoundaries(
+            input,
+            trim
+              ? chamferOrdinaryCorners(input, refined, this.fixed, trim)
+              : refined,
+          )
+          const shapeKey = JSON.stringify(
+            candidate.map((t) => [t.route, t.coupledSection, t.curvedSegments]),
+          )
+          if (attemptedShapes.has(shapeKey)) continue
+          attemptedShapes.add(shapeKey)
+          if (
+            this.options.smoothTuning &&
+            !routeAnglesAreConventional(candidate)
+          ) {
+            error = Error("No clear conventional approach corners")
+            continue
+          }
+          if (
+            sharedPairSpacingReports(input, candidate).some((p) => !p.matched)
+          ) {
+            error = Error("Pair approach refinement separated the shared rails")
+            continue
+          }
+          const targets = minimumLengthTargets(input, candidate)
+          try {
+            this.traces =
+              this.options.smoothTuning &&
+              candidate.some((t) => t.coupledSection)
+                ? tuneCoupledLengths(input, candidate, {
+                    maxCandidates: corridor === original ? 512 : 4096,
+                  })
+                : (this.options.smoothTuning ? tuneSmoothLengths : tuneLengths)(
+                    input,
+                    candidate,
+                    targets,
+                  )
+            if (this.options.smoothTuning)
+              this.traces = simplifyMatchedTraces(input, this.traces)
+            if (
+              this.options.smoothTuning &&
+              !routeAnglesAreConventional(this.traces)
+            )
+              throw Error("Length tuning introduced a sharp corner")
+            if (
+              sharedPairSpacingReports(input, this.traces).some(
+                (p) => !p.matched,
               )
-        if (this.options.smoothTuning)
-          this.traces = simplifyMatchedTraces(input, this.traces)
-        this.phase = "validate_output"
-        return
-      } catch (e) {
-        error = e
+            )
+              throw Error("Length tuning separated the shared pair rails")
+            this.phase = "validate_output"
+            return
+          } catch (e) {
+            error = e
+          }
+        }
       }
     }
     this.fail("length_matching_failed", String(error))
@@ -453,7 +568,7 @@ export class BusLanesSolver extends BaseSolver {
     )
       throw Error("Final bus length skew violation")
     if (pairCouplingReports(this.input, this.traces).some((p) => !p.matched))
-      throw Error("Final pair uncoupled length violation")
+      throw Error("Final pair spacing or uncoupled length violation")
     this.phase = "solved"
     this.solved = true
   }

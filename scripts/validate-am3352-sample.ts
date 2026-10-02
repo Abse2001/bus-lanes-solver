@@ -3,6 +3,7 @@ import type { SimpleRouteJson, Trace, Terminal, Wire } from "../lib"
 import { distance } from "../lib/geometry"
 import { tuningPathIsSelfClear } from "../lib/length-tuning"
 import { busLengthReports, pairLengthReports } from "../lib/route-lengths"
+import { measureAm3352RoutingQuality } from "./measure-am3352-routing-quality"
 import {
   am3352Hash,
   am3352SamplePlacements,
@@ -26,6 +27,28 @@ const traceMap = (traces: Trace[]) => {
     result.set(trace.pcb_trace_id, trace)
   }
   return result
+}
+
+/** Audit the public output independently of the solver's internal signal list.
+ * Native input and the ordered fixed/signal partition must be identical. */
+export function validateAm3352OutputShape(
+  input: SimpleRouteJson,
+  metadata: Am3352SampleMetadata,
+  signals: Trace[],
+  output: SimpleRouteJson,
+) {
+  const fixedCount = metadata.fixedFanoutTraces.length
+  if (
+    fixedCount !== 161 ||
+    signals.length !== 47 ||
+    output.traces?.length !== 208 ||
+    am3352Hash(output.traces.slice(0, fixedCount)) !==
+      am3352Hash(metadata.fixedFanoutTraces) ||
+    am3352Hash(output.traces.slice(fixedCount)) !== am3352Hash(signals) ||
+    am3352Hash({ ...output, traces: undefined }) !==
+      am3352Hash({ ...input, traces: undefined })
+  )
+    fail("output changed fixed power copper or native routing input")
 }
 
 /** Independently audit the four native AM3352/RAM benchmark placements. Fixed
@@ -280,6 +303,49 @@ export async function validateAm3352Sample(
       )
     const traceIds = new Set(fixed.keys())
     for (const trace of signalTraces) {
+      const connection = input.connections.find(
+        (c) => c.name === trace.connection_name,
+      )
+      const width =
+        input.buses?.find((b) =>
+          b.connectionNames.includes(trace.connection_name ?? ""),
+        )?.traceWidth ??
+        connection?.nominalTraceWidth ??
+        connection?.width ??
+        input.minTraceWidth
+      if (
+        trace.route.some(
+          (p) =>
+            !Number.isFinite(p.x) ||
+            !Number.isFinite(p.y) ||
+            (p.route_type === "wire"
+              ? !Number.isFinite(p.width) || Math.abs(p.width - width) > 1e-8
+              : !Number.isFinite(p.via_diameter) ||
+                !Number.isFinite(p.via_hole_diameter) ||
+                p.via_diameter! < (input.minViaPadDiameter ?? 0) - 1e-8 ||
+                p.via_hole_diameter! < (input.minViaHoleDiameter ?? 0) - 1e-8 ||
+                p.via_diameter! <= p.via_hole_diameter!),
+        )
+      )
+        issues.push(`${trace.connection_name}: invalid copper dimensions`)
+      if (
+        trace.route.some((p) => {
+          const radius =
+            p.route_type === "wire" ? p.width / 2 : p.via_diameter! / 2
+          const margin = radius + (input.minBoardEdgeClearance ?? 0)
+          return (
+            p.x < input.bounds.minX + margin - 1e-8 ||
+            p.x > input.bounds.maxX - margin + 1e-8 ||
+            p.y < input.bounds.minY + margin - 1e-8 ||
+            p.y > input.bounds.maxY - margin + 1e-8 ||
+            (p.route_type === "wire" &&
+              !["top", "inner1", "inner2", "bottom"].includes(p.layer))
+          )
+        })
+      )
+        issues.push(
+          `${trace.connection_name}: copper is outside native board/layers`,
+        )
       if (traceIds.has(trace.pcb_trace_id))
         issues.push("duplicate output trace ID")
       traceIds.add(trace.pcb_trace_id)
@@ -297,6 +363,12 @@ export async function validateAm3352Sample(
       if (
         carrier.length < 2 ||
         !carrier.every((p) => p.route_type === "wire" && p.layer === layer) ||
+        input.buses?.some(
+          (b) =>
+            b.connectionNames.includes(trace.connection_name ?? "") &&
+            b.allowedLayers &&
+            !b.allowedLayers.includes(layer ?? ""),
+        ) ||
         !tuningPathIsSelfClear(carrier, (carrier[0] as Wire).width + clearance)
       )
         issues.push(
@@ -315,6 +387,10 @@ export async function validateAm3352Sample(
   const combinedDrc = signalTraces
     ? audit([...metadata.fixedFanoutTraces, ...signalTraces])
     : null
+  const quality = signalTraces?.length
+    ? measureAm3352RoutingQuality(input, signalTraces)
+    : null
+  if (quality) issues.push(...quality.issues)
   return {
     valid:
       fixedDrc.valid &&
@@ -332,6 +408,7 @@ export async function validateAm3352Sample(
     combinedDrc,
     busLengths,
     pairLengths,
+    quality,
     issues,
   }
 }

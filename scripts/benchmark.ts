@@ -1,6 +1,9 @@
 import { BusLanesPipelineSolver } from "../lib"
 import { am3352SamplePlacements, loadAm3352Sample } from "./am3352-samples"
-import { validateAm3352Sample } from "./validate-am3352-sample"
+import {
+  validateAm3352OutputShape,
+  validateAm3352Sample,
+} from "./validate-am3352-sample"
 
 const args = process.argv.slice(2)
 const option = (name: string) => {
@@ -133,6 +136,11 @@ if (!workerName) {
     console.log(
       `${report.solved ? "PASS" : "FAIL"} ${report.sample} RAM=(${report.ram.x},${report.ram.y}) ${report.routedSignals}/${report.requestedSignals} signals ${(report.solveMilliseconds / 1000).toFixed(3)}s ${report.solved ? "DRC + matching passed" : (report.error ?? report.status)}`,
     )
+    const quality = report.validation?.quality
+    if (quality)
+      console.log(
+        `  copper=${quality.totalPlanarLengthMm.toFixed(3)}mm max/mean detour=${quality.maxDetourRatio?.toFixed(3)}/${quality.meanDetourRatio?.toFixed(3)} turns=${quality.ordinaryTurns} short_jogs=${quality.shortJogs} acute=${quality.acuteCorners}`,
+      )
   }
   await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")
   console.log(
@@ -207,6 +215,7 @@ try {
       solver.traces,
     )
     const output = solver.getOutput()
+    validateAm3352OutputShape(input, metadata, solver.traces, output)
     report.fixedPowerPreserved &&=
       JSON.stringify(output.traces.slice(0, input.traces?.length ?? 0)) ===
       fixedBefore

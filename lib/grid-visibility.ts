@@ -99,7 +99,7 @@ interface CopperEntry extends PreparedCopper {
 type Attachment = { id: number; path: Point[] }
 
 interface HardGrid {
-  attachments: Map<string, Attachment | undefined>
+  attachments: Map<string, Attachment[]>
   blocked: Uint8Array
   edgeKnown: Uint8Array
   edgeBlocked: Uint8Array
@@ -336,7 +336,6 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     cost: number
     bit: number
     reverse: number
-    diagonal: boolean
   }>
   private travel?: Float64Array
   private maxLength = Infinity
@@ -355,6 +354,12 @@ export class GridVisibilitySearch extends GridHistoryProjector {
   private goal = -1
   private startPath: Point[] = []
   private endPath: Point[] = []
+  private startAttachments: Attachment[] = []
+  private endAttachments: Attachment[] = []
+  private alternateAttachments = false
+  private rootPaths = new Map<number, Point[]>()
+  private goalPaths = new Map<number, Point[]>()
+  private attachmentResult?: { score: number; path: Point[] }
   private hx: Float64Array
   private hy: Float64Array
   constructor(
@@ -388,7 +393,6 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           dx,
           dy,
           offset: dx + dy * this.nx,
-          diagonal: !!(dx && dy),
           cost: dx && dy ? Math.SQRT2 : 1,
           bit: 1 << index,
           reverse: 1 << (7 - index),
@@ -415,7 +419,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     ])
     const cachedGrid = grids.get(gridKey)
     const attachments =
-      cachedGrid?.attachments ?? new Map<string, Attachment | undefined>()
+      cachedGrid?.attachments ?? new Map<string, Attachment[]>()
     if (cachedGrid) {
       grids.delete(gridKey)
       grids.set(gridKey, cachedGrid)
@@ -673,9 +677,9 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         })
       }
     }
-    const attach = (p: Point): Attachment | undefined => {
+    const attach = (p: Point): Attachment[] => {
       const key = JSON.stringify(p)
-      if (attachments.has(key)) return structuredClone(attachments.get(key))
+      if (attachments.has(key)) return structuredClone(attachments.get(key)!)
       const x = Math.round((p.x - b.minX) / this.stepSize),
         y = Math.round((p.y - b.minY) / this.stepSize)
       const candidates: Array<{ id: number; path: Point[] }> = []
@@ -696,16 +700,22 @@ export class GridVisibilitySearch extends GridHistoryProjector {
               break
             }
         }
-      const result = candidates.sort(
-        (a, b) => length(a.path) - length(b.path),
-      )[0]
+      // Keep a small deterministic alternative set. The nearest node can sit
+      // in a grid-isolated pocket even though another exact connector reaches
+      // the surrounding free space. Successful nearest-node searches retain
+      // their existing route; these alternatives are only used after failure.
+      const result = candidates
+        .sort((a, b) => length(a.path) - length(b.path) || a.id - b.id)
+        .slice(0, 8)
       if (attachments.size >= 128)
         attachments.delete(attachments.keys().next().value!)
       attachments.set(key, structuredClone(result))
       return result
     }
-    const a = attach(start),
-      z = attach(end)
+    this.startAttachments = attach(start)
+    this.endAttachments = attach(end)
+    const a = this.startAttachments[0],
+      z = this.endAttachments[0]
     if (!a || !z) {
       this.failed = true
       if (this.softMemoLease) this.softMemoLease.active = false
@@ -729,6 +739,56 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.parent[a.id] = -1
     if (this.travel) this.travel[a.id] = length(a.path)
     this.heap.push(a.id, 0, this.heuristic(start))
+  }
+  private retryAttachments() {
+    if (
+      this.alternateAttachments ||
+      (this.startAttachments.length <= 1 && this.endAttachments.length <= 1)
+    )
+      return false
+    this.alternateAttachments = true
+    // The search keeps its active scratch and cache leases. Reset only its own
+    // numeric search state, with no occupancy rebuild or new grid allocation.
+    this.heap.clear()
+    this.best.fill(Infinity)
+    for (const attachment of this.startAttachments) {
+      const travelled = length(attachment.path)
+      if (travelled > this.maxLength + 1e-8) continue
+      const cost = travelled / this.stepSize
+      this.best[attachment.id] = cost
+      this.parent[attachment.id] = -1
+      if (this.travel) this.travel[attachment.id] = travelled
+      this.rootPaths.set(attachment.id, attachment.path)
+      this.heap.push(
+        attachment.id,
+        cost,
+        cost + this.heuristic(this.point(attachment.id)),
+      )
+    }
+    for (const attachment of this.endAttachments)
+      this.goalPaths.set(attachment.id, attachment.path.toReversed())
+    return true
+  }
+  private pathTo(id: number, endPath: Point[]) {
+    const path: Point[] = []
+    let root = id
+    for (let current = id; current >= 0; current = this.parent[current]) {
+      root = current
+      path.push(this.point(current))
+    }
+    return simplify([
+      ...(this.alternateAttachments
+        ? this.rootPaths.get(root)!
+        : this.startPath),
+      ...path.reverse().slice(1),
+      ...endPath.slice(1),
+    ])
+  }
+  private finish(path: Point[]) {
+    this.result = path
+    this.solved = true
+    if (this.softMemoLease) this.softMemoLease.active = false
+    this.scratchLease?.release()
   }
   private edgeClear(
     fromX: number,
@@ -828,6 +888,11 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       maxY = bounds.maxY - edge
     for (let batch = 0; batch < 500 && !this.failed && !this.solved; batch++) {
       if (!heap.length) {
+        if (this.attachmentResult) {
+          this.finish(this.attachmentResult.path)
+          return
+        }
+        if (this.retryAttachments()) continue
         this.failed = true
         if (this.softMemoLease) this.softMemoLease.active = false
         this.scratchLease?.release()
@@ -838,39 +903,49 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         curG = heap.g
       if (curG !== best[curId]) continue
       this.expanded++
-      if (curId === this.goal) {
-        const path: Point[] = []
-        for (let id = curId; id >= 0; id = parent[id]) path.push(this.point(id))
-        this.result = simplify([
-          ...this.startPath,
-          ...path.reverse().slice(1),
-          ...this.endPath.slice(1),
-        ])
+      if (
+        this.attachmentResult &&
+        curG + this.heuristic(this.point(curId)) >= this.attachmentResult.score
+      ) {
+        this.finish(this.attachmentResult.path)
+        return
+      }
+      const endPath = this.alternateAttachments
+        ? this.goalPaths.get(curId)
+        : curId === this.goal
+          ? this.endPath
+          : undefined
+      if (endPath) {
+        const result = this.pathTo(curId, endPath)
         if (
-          length(this.result) > maxLength + 1e-8 ||
-          !this.scene.pathVisible(this.result)
+          length(result) > maxLength + 1e-8 ||
+          !this.scene.pathVisible(result)
         ) {
-          this.failed = true
-          if (this.softMemoLease) this.softMemoLease.active = false
-          this.scratchLease?.release()
+          if (!this.alternateAttachments) {
+            if (this.retryAttachments()) continue
+            this.failed = true
+            if (this.softMemoLease) this.softMemoLease.active = false
+            this.scratchLease?.release()
+            return
+          }
+        } else if (this.alternateAttachments) {
+          const score = curG + length(endPath) / stepSize
+          if (!this.attachmentResult || score < this.attachmentResult.score)
+            this.attachmentResult = { score, path: result }
+        } else {
+          this.finish(result)
           return
         }
-        this.solved = true
-        if (this.softMemoLease) this.softMemoLease.active = false
-        this.scratchLease?.release()
-        return
       }
       const x = curId % nx,
         y = Math.floor(curId / nx)
-      for (const { dx, dy, offset, diagonal, cost, bit, reverse } of this
-        .neighbors) {
+      for (const { dx, dy, offset, cost, bit, reverse } of this.neighbors) {
         if (x + dx < 0 || x + dx >= nx || y + dy < 0 || y + dy >= ny) continue
         const id = curId + offset
-        if (
-          blocked[id] ||
-          (diagonal && (blocked[curId + dx] || blocked[curId + dy * nx]))
-        )
-          continue
+        if (blocked[id]) continue
+        // Occupancy of an orthogonal neighbor does not prove that this
+        // diagonal intersects copper, especially around circular via barrels.
+        // The exact continuous edge check below decides every diagonal.
         // With nonnegative occupancy cost, this is a lower bound on g.
         // An edge that cannot improve the route needs no geometry checks.
         // Keep the addition order used by g below to preserve tie decisions.

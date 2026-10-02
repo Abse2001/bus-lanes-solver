@@ -49,6 +49,7 @@ async function invokeBenchmark(options: {
         "benchmark.ts",
         "am3352-samples.ts",
         "validate-am3352-sample.ts",
+        "measure-am3352-routing-quality.ts",
       ])
         copyFileSync(
           join(repository, "scripts", file),

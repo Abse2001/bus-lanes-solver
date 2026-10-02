@@ -1,10 +1,12 @@
 import { distance, pointSegmentDistance } from "./geometry"
+import { sharedPairSpacingReports } from "./shared-pair-spacing"
 import type { SimpleRouteJson, Trace, Wire } from "./types"
 
 /** Measure total uncoupled copper per conductor in board-world mm (+X right,
  * +Y up). Fixed dogbones count too. Sampling reports a conservative interval:
  * ambiguous intervals count as uncoupled, never as proof of compliance. */
 export function pairCouplingReports(input: SimpleRouteJson, traces: Trace[]) {
+  const shared = sharedPairSpacingReports(input, traces)
   const all = [...(input.traces ?? []), ...traces]
   const segments = (name: string) =>
     all
@@ -67,10 +69,13 @@ export function pairCouplingReports(input: SimpleRouteJson, traces: Trace[]) {
         conductors,
         maxUncoupledLengthMm: pair.maxUncoupledLength ?? null,
         matched:
-          pair.maxUncoupledLength === undefined ||
-          conductors.every(
-            (c) => c.uncoupledLengthMm <= pair.maxUncoupledLength! + 1e-8,
-          ),
+          shared.find(
+            (report) => report.connectionNames === pair.connectionNames,
+          )!.matched &&
+          (pair.maxUncoupledLength === undefined ||
+            conductors.every(
+              (c) => c.uncoupledLengthMm <= pair.maxUncoupledLength! + 1e-8,
+            )),
       }
     })
 }

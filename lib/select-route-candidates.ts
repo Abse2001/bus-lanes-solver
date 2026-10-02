@@ -104,6 +104,77 @@ export class RouteCandidatePool {
     this.revision++
   }
 
+  transformUnit(unit: string, transform: (traces: Trace[]) => Trace[] | null) {
+    const alternatives = this.pools.get(unit) ?? []
+    this.pools.delete(unit)
+    this.signatures.delete(unit)
+    this.revision++
+    for (const candidate of alternatives) {
+      const traces = transform(candidate.traces)
+      if (traces) this.add(unit, traces)
+    }
+  }
+
+  hasEveryUnit(units: string[]) {
+    return units.every((unit) => !!this.pools.get(unit)?.length)
+  }
+
+  /** Small unresolved domain set for generating fresh conditional routes.
+   * A bounded search failure is a refinement hint, not an impossibility proof. */
+  unresolvedUnits(units: string[]): string[] | null {
+    if (
+      this.compatible(
+        units.map((n) => this.pools.get(n) ?? []),
+        500000,
+      )
+    )
+      return null
+    let subset = units.slice()
+    for (const unit of units) {
+      const remaining = subset.filter((n) => n !== unit)
+      if (
+        !this.compatible(
+          remaining.map((n) => this.pools.get(n) ?? []),
+          500000,
+        )
+      )
+        subset = remaining
+    }
+    return subset
+  }
+
+  conditionalRoutes(
+    units: string[],
+    trial: number,
+    completion: string[] = [],
+  ): Trace[] | null {
+    if (!units.length) return []
+    const pivot = trial % units.length,
+      index = Math.floor(trial / units.length)
+    const domains = units.map((n, i) => {
+      const pool = this.pools.get(n) ?? []
+      return trial < 0 || i !== pivot || !pool.length
+        ? pool
+        : [pool[index % pool.length]]
+    })
+    let selected = this.compatible(domains, 500000)
+    if (!selected) return null
+    const extended = selected.map((candidate) => [candidate])
+    for (const unit of completion) {
+      if (units.includes(unit)) continue
+      const domain = this.pools.get(unit) ?? []
+      const next = this.compatible([...extended, domain])
+      if (!next) continue
+      extended.push(domain)
+      selected = next
+    }
+    return selected.flatMap((candidate) => candidate.traces)
+  }
+
+  get revisionNumber() {
+    return this.revision
+  }
+
   private collides(a: Candidate, b: Candidate): boolean {
     if (
       a.singleLayer !== undefined &&

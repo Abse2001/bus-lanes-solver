@@ -1,6 +1,7 @@
+import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { GridVisibilitySearch } from "./grid-visibility"
-import { distance, length } from "./geometry"
+import { distance, length, simplify } from "./geometry"
 import { VectorScene, type Copper } from "./vector-scene"
 import type { Point } from "./types"
 
@@ -34,11 +35,12 @@ export function* routeViaWaypoint(
     first.cancel()
   }
   if (!first.solved) return null
+  const firstPath = reduceOrdinaryTurns(first.result, scene)
   const prefix: Copper[] = []
-  let remaining = length(first.result) - scene.width * 4
-  for (let i = 1; i < first.result.length && remaining > 0; i++) {
-    const a = first.result[i - 1],
-      b = first.result[i],
+  let remaining = length(firstPath) - scene.width - scene.margin - 1e-7
+  for (let i = 1; i < firstPath.length && remaining > 0; i++) {
+    const a = firstPath[i - 1],
+      b = firstPath[i],
       span = distance(a, b),
       fraction = Math.min(1, remaining / span)
     prefix.push({
@@ -63,7 +65,7 @@ export function* routeViaWaypoint(
     soft,
     penalty,
     history,
-    { maxLength: maxLength - length(first.result) },
+    { maxLength: maxLength - length(firstPath) },
   )
   try {
     while (!second.solved && !second.failed) {
@@ -74,7 +76,8 @@ export function* routeViaWaypoint(
     second.cancel()
   }
   if (!second.solved) return null
-  const path = [...first.result, ...second.result.slice(1)]
+  const secondPath = reduceOrdinaryTurns(second.result, secondScene)
+  const path = simplify([...firstPath, ...secondPath.slice(1)])
   if (
     length(path) > maxLength + 1e-8 ||
     !tuningPathIsSelfClear(path, scene.width / 2 + scene.margin)

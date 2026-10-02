@@ -242,3 +242,30 @@ test("a failed or empty routing is recorded as incomplete rather than a matching
     true,
   )
 })
+
+test("completed-copper audit refuses thinner wires/vias and geometry outside native board layers", async () => {
+  const { input, metadata } = await loadAm3352Sample("control")
+  const signal = structuredClone(metadata.fixedFanoutTraces[0])
+  signal.pcb_trace_id = "invalid_signal_dimensions"
+  signal.connection_name = input.connections[0].name
+  for (const point of signal.route)
+    if (point.route_type === "wire") point.width = 0.01
+    else point.via_diameter = 0.25
+  const dimensionReport = await validateAm3352Sample(input, metadata, [signal])
+  expect(dimensionReport.valid).toBe(false)
+  expect(dimensionReport.issues).toContain(
+    `${signal.connection_name}: invalid copper dimensions`,
+  )
+  signal.route[0].x = input.bounds.maxX + 1
+  const boardReport = await validateAm3352Sample(input, metadata, [signal])
+  expect(boardReport.issues).toContain(
+    `${signal.connection_name}: copper is outside native board/layers`,
+  )
+  signal.route[0].x = 0
+  for (const point of signal.route)
+    if (point.route_type === "wire") point.layer = "nonphysical"
+  const layerReport = await validateAm3352Sample(input, metadata, [signal])
+  expect(layerReport.issues).toContain(
+    `${signal.connection_name}: copper is outside native board/layers`,
+  )
+})
