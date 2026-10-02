@@ -189,7 +189,11 @@ export function* routeCoupledPair(
   const busMembers = input.connections.filter((c) => busNames.has(c.name))
   if (busMembers.length > 2 && originalPads.some((p) => p.length)) {
     const reserve = busMembers.length * (width + clearance)
-    const side = Math.sign(centers[1][crossAxis] - centers[0][crossAxis]) || 1
+    // Aligned pad columns can differ by a rounding residue after translation.
+    // Use the travel direction for alignment instead of moving the corridor to
+    // the opposite package edge because of a sub-nanometer difference.
+    const crossDelta = centers[1][crossAxis] - centers[0][crossAxis]
+    const side = Math.abs(crossDelta) < 1e-8 ? sign : Math.sign(crossDelta)
     const positions = busMembers.flatMap((c) =>
       c.pointsToConnect.map((p) => p[crossAxis]),
     )
