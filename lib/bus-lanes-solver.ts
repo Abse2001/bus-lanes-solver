@@ -459,6 +459,20 @@ export class BusLanesSolver extends BaseSolver {
       // work; retain those refinements as fallbacks after compact banks.
       yield original
       if (packBanks) {
+        // Fold the banks into the unused center first. Ordered, staggered
+        // entries preserve lane topology without pushing every run outward.
+        for (const multiplier of [8, 12]) {
+          const spread = spreadCoupledTuningLanes(
+            input,
+            original,
+            input.minTraceWidth * multiplier,
+            "interior",
+          )
+          if (spread) {
+            compactCorridors.add(spread)
+            yield spread
+          }
+        }
         for (const multiplier of [8, 12]) {
           const spread = spreadCoupledTuningLanes(
             input,
