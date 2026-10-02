@@ -1,6 +1,7 @@
-import { distance, pointSegmentDistance } from "./geometry"
+import { CopperIndex } from "./copper-index"
+import { distance, pointSegmentDistanceToPoints } from "./geometry"
 import { sharedPairSpacingReports } from "./shared-pair-spacing"
-import type { SimpleRouteJson, Trace, Wire } from "./types"
+import type { SimpleRouteJson, Trace } from "./types"
 
 /** Measure total uncoupled copper per conductor in board-world mm (+X right,
  * +Y up). Fixed dogbones count too. Sampling reports a conservative interval:
@@ -33,6 +34,24 @@ export function pairCouplingReports(input: SimpleRouteJson, traces: Trace[]) {
         input.defaultObstacleMargin ??
         0.075
       const tolerance = Math.max(0.002, gap * 0.1)
+      const indexes = routes.map((route) => {
+        const layers = new Set(route.map((s) => s.a.layer))
+        return new Map(
+          [...layers].map((layer) => [
+            layer,
+            new CopperIndex(
+              route
+                .filter((s) => s.a.layer === layer)
+                .map((s) => ({
+                  ...s,
+                  radius: s.a.width / 2,
+                  layer,
+                  owners: [],
+                })),
+            ),
+          ]),
+        )
+      })
       const conductors = routes.map((route, index) => {
         let uncoupled = 0,
           total = 0
@@ -40,19 +59,19 @@ export function pairCouplingReports(input: SimpleRouteJson, traces: Trace[]) {
           const span = distance(a, b),
             count = Math.max(1, Math.ceil(span / (tolerance / 2)))
           total += span
-          const others = routes[1 - index].filter((s) => s.a.layer === a.layer)
-          const spacing = (x: number, y: number) =>
-            Math.min(
-              ...others.map(
-                (s) =>
-                  pointSegmentDistance({ x, y }, [s.a, s.b]) -
-                  (a.width + s.a.width) / 2,
-              ),
-            )
+          const mate = indexes[1 - index].get(a.layer)
+          const spacing = (p: { x: number; y: number }) =>
+            mate?.distanceToPoint(
+              p,
+              (s) =>
+                pointSegmentDistanceToPoints(p, s.a, s.b) -
+                (a.width + s.radius * 2) / 2,
+              a.width / 2,
+            ) ?? Infinity
           for (let k = 0; k < count; k++) {
             const t = (k + 0.5) / count,
               p = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t }
-            const error = Math.abs(spacing(p.x, p.y) - gap)
+            const error = Math.abs(spacing(p) - gap)
             if (error + span / (2 * count) > tolerance)
               uncoupled += span / count
           }

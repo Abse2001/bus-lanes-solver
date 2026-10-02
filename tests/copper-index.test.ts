@@ -39,3 +39,42 @@ test("spatial clearance queries agree with exhaustive copper checks", () => {
     ).toBe(copper.some(predicate))
   }
 })
+
+test("nearest copper distances equal exhaustive checks, including overlaps and unequal widths", () => {
+  let seed = 37
+  const random = () =>
+    (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32
+  const copper: Copper[] = Array.from({ length: 300 }, (_, i) => {
+    const a = { x: random() * 20 - 10, y: random() * 20 - 10 }
+    return {
+      a,
+      b: i % 4 ? { x: a.x + random() * 3, y: a.y + random() * 3 } : a,
+      radius: 0.05 + random() * 0.3,
+      layer: "bottom",
+      owners: [String(i)],
+    }
+  })
+  const index = new CopperIndex(copper)
+  for (const point of [
+    ...copper.map((c) => c.a),
+    ...Array.from({ length: 500 }, () => ({
+      x: random() * 30 - 15,
+      y: random() * 30 - 15,
+    })),
+  ]) {
+    const distance = (c: Copper) => clearanceToCopper(point, point, c)
+    for (const radius of [0.01, 0.2, 2]) {
+      const expandedDistance = (c: Copper) => distance(c) - radius
+      expect(index.distanceToPoint(point, expandedDistance, radius)).toBe(
+        Math.min(...copper.map(expandedDistance)),
+      )
+    }
+    expect(index.distanceToPoint(point, distance)).toBeCloseTo(
+      Math.min(...copper.map(distance)),
+      12,
+    )
+  }
+  expect(new CopperIndex([]).distanceToPoint({ x: 0, y: 0 }, () => 0)).toBe(
+    Infinity,
+  )
+})
