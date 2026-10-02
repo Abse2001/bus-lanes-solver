@@ -1,0 +1,2 @@
+# Keep measured reports downloadable without obscuring the routing code review.
+docs/routed-am3352-placements/*.json linguist-generated=true

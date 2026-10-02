@@ -68,7 +68,7 @@ export function spreadCoupledTuningLanes(
   input: SimpleRouteJson,
   traces: Trace[],
   pitch: number,
-  style: "dogleg" | "diagonal" = "dogleg",
+  style: "dogleg" | "diagonal" | "interior" = "dogleg",
 ): Trace[] | null {
   let result = alignCoupledSectionBoundaries(input, structuredClone(traces))
   const clearance =
@@ -158,6 +158,9 @@ export function spreadCoupledTuningLanes(
       }
     }
     const width = Math.max(...members.map((t) => (t.route[0] as Wire).width))
+    // A pair occupies one full-width channel at every staggered turn. Using
+    // single-wire pitch here would let neighboring entrances cut its rails.
+    const entryPitch = Math.max(...channels.map((c) => c.width)) + clearance
     let start = Math.max(...channels.map((c) => c.path[0].x)) + width * 2
     let end = Math.min(...channels.map((c) => c.path.at(-1)!.x)) - width * 2
     // Deep package terminals do not bound the open space between components.
@@ -191,7 +194,7 @@ export function spreadCoupledTuningLanes(
         maxV = Math.max(...cuts.flatMap((c) => [c.a!.point.y, c.b!.point.y]))
       const center = (minV + maxV) / 2,
         split = Math.floor(cuts.length / 2)
-      for (const extra of [1, 2, 3]) {
+      for (const extra of style === "interior" ? [1] : [1, 2, 3]) {
         const extent =
           Math.max(
             (maxV - minV) / 2 + pitch,
@@ -228,19 +231,22 @@ export function spreadCoupledTuningLanes(
             if (bottom - top < pitch) continue
             const ordinal = cuts.indexOf(c)
             const v =
-              style === "diagonal"
+              style !== "dogleg"
                 ? center + (ordinal - (cuts.length - 1) / 2) * pitch
                 : center + side * (sideExtent - (group.length - 1 - i) * pitch)
             const lead = Math.abs(v - c.a!.point.y),
               tail = Math.abs(v - c.b!.point.y)
+            // Move inner banks in lane order: upward-moving lanes peel off
+            // from highest to lowest; downward-moving lanes do the reverse.
+            // Reverse that ordering at the far package to avoid crossings.
             const entry =
               lo +
               (v > c.a!.point.y ? cuts.length - 1 - ordinal : ordinal) *
-                (width + clearance)
+                (style === "interior" ? entryPitch : width + clearance)
             const exit =
               hi -
               (v > c.b!.point.y ? cuts.length - 1 - ordinal : ordinal) *
-                (width + clearance)
+                (style === "interior" ? entryPitch : width + clearance)
             if (style === "diagonal" && lead + tail >= exit - entry - 4 * width)
               continue
             const diagonal = [
@@ -256,10 +262,13 @@ export function spreadCoupledTuningLanes(
                 ? diagonal
                 : [
                     ...c.a!.before,
-                    { x: top, y: c.a!.point.y },
-                    { x: top, y: v },
-                    { x: bottom, y: v },
-                    { x: bottom, y: c.b!.point.y },
+                    { x: style === "interior" ? entry : top, y: c.a!.point.y },
+                    { x: style === "interior" ? entry : top, y: v },
+                    { x: style === "interior" ? exit : bottom, y: v },
+                    {
+                      x: style === "interior" ? exit : bottom,
+                      y: c.b!.point.y,
+                    },
                     ...c.b!.after,
                   ],
               width * 1.5,

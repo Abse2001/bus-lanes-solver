@@ -141,6 +141,12 @@ if (!workerName) {
       console.log(
         `  copper=${quality.totalPlanarLengthMm.toFixed(3)}mm max/mean detour=${quality.maxDetourRatio?.toFixed(3)}/${quality.meanDetourRatio?.toFixed(3)} turns=${quality.ordinaryTurns} short_jogs=${quality.shortJogs} acute=${quality.acuteCorners} signal_area=${quality.footprint.bounds?.areaMm2.toFixed(3)}mm² all_copper_area=${quality.footprint.allCopperBounds?.areaMm2.toFixed(3)}mm² middle_offset=${quality.footprint.middleRegionMaxCenterOffsetMm?.toFixed(3)}mm`,
       )
+    if (quality?.footprint.middleRegionVacancy) {
+      const vacancy = quality.footprint.middleRegionVacancy
+      console.log(
+        `  middle_envelope=${vacancy.envelopeAreaMm2.toFixed(3)}mm² free_inside=${vacancy.unoccupiedAreaMm2.toFixed(3)}mm² (clearance-aware grid)`,
+      )
+    }
   }
   await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")
   console.log(

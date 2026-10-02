@@ -1,3 +1,4 @@
+import { measureEnvelopeVacancy } from "./measure-envelope-vacancy"
 import type { Point, SimpleRouteJson, Trace } from "../lib/types"
 import { interPackageTuningWindow } from "../lib/inter-package-tuning-window"
 
@@ -74,6 +75,8 @@ export function measureRoutingFootprint(
       include(b, { x: pad.center.x - dx, y: pad.center.y - dy }, 0)
       include(b, { x: pad.center.x + dx, y: pad.center.y + dy }, 0)
     }
+  let middleRegionVacancy: ReturnType<typeof measureEnvelopeVacancy> | null =
+    null
   let middleRegionMaxCenterOffsetMm: number | null = null
   if (packages.size === 2 && traces.length) {
     let [a, b] = [...packages.values()].map((p) => ({
@@ -97,6 +100,12 @@ export function measureRoutingFootprint(
       const cross = (p: Point) => (p.y - a.y) * ux - (p.x - a.x) * uy
       const window = interPackageTuningWindow(input, traces, along, 0)
       if (window.end > window.start) {
+        middleRegionVacancy = measureEnvelopeVacancy(
+          input,
+          traces,
+          (p) => ({ x: along(p), y: cross(p) }),
+          window,
+        )
         middleRegionMaxCenterOffsetMm = 0
         for (const t of traces)
           for (let i = 1; i < t.route.length; i++) {
@@ -136,5 +145,6 @@ export function measureRoutingFootprint(
     allCopperBounds: measured(allCopper),
     layers: [...layers].map(([layer, b]) => ({ layer, ...measured(b)! })),
     middleRegionMaxCenterOffsetMm,
+    middleRegionVacancy,
   }
 }
