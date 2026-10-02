@@ -13,6 +13,7 @@ import type { Point, Trace, Wire } from "./types"
 export function* rebuildPairedNetwork(
   network: PairedNetwork,
   raw: Trace[],
+  options: { allowPartial?: boolean } = {},
 ): Generator<void, Trace[] | null> {
   const { input, local, transforms } = network,
     fixed = fixedCopper(input)
@@ -181,6 +182,10 @@ export function* rebuildPairedNetwork(
   }
   for (const c of input.connections) {
     const trace = result.find((t) => t.connection_name === c.name)!
+    if (!trace) {
+      if (options.allowPartial) continue
+      return null
+    }
     for (const p of c.pointsToConnect) p.layer = (trace.route[0] as Wire).layer
   }
   return result

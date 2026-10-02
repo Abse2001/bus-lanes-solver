@@ -67,9 +67,12 @@ export function packageApproachRegions(input: SimpleRouteJson, margin: number) {
         2 +
       radius +
       clearance
+    // FanoutSolver reserves peripheral sites with a 0.001 mm clearance guard.
+    // Recognize that local dogbone, while still rejecting remote single-via trunks.
+    const peripheralGuard = 0.001
     if (
-      Math.abs(via.x - first.x) > reachX + 1e-4 ||
-      Math.abs(via.y - first.y) > reachY + 1e-4
+      Math.abs(via.x - first.x) > reachX + peripheralGuard + 1e-4 ||
+      Math.abs(via.y - first.y) > reachY + peripheralGuard + 1e-4
     )
       continue
     include(

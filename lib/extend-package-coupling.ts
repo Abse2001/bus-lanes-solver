@@ -173,10 +173,12 @@ export function* extendPackageCoupling(
           ...routeCopper({ ...ref, route: refRoute }),
         ])
         if (!scene.pathVisible(path)) continue
+        // A local dogbone via may sit outside the pad field. Its native fanout
+        // copper is still a valid place to reconnect the package approach.
         let join = oe + 1
         while (
           join < other.route.length &&
-          !pointInBox(other.route[join], region.pads)
+          !pointInBox(other.route[join], region.copper)
         )
           join++
         if (join === other.route.length) continue

@@ -252,3 +252,81 @@ test("repair stays local when another approach still needs corner cleanup", () =
   expect(other).toEqual(before)
   expect(routeAnglesAreConventional(result.slice(0, 2))).toBe(true)
 })
+
+test("native fanout regions include FanoutSolver's peripheral clearance guard", () => {
+  const { input } = fixture()
+  input.traces = [
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "guarded_dogbone",
+      connection_name: "P",
+      route: [
+        { ...wire(10, 0), layer: "top" },
+        {
+          route_type: "via",
+          x: 10.401,
+          y: 0,
+          from_layer: "top",
+          to_layer: "bottom",
+          via_diameter: 0.3,
+        },
+      ],
+    },
+  ]
+  // Pad half-width + via radius + clearance + the peripheral site's 0.001 mm guard.
+  expect(packageApproachRegions(input, 0.15)[0].copper.maxX).toBeCloseTo(
+    10.701,
+    10,
+  )
+  input.traces[0].route[1].x = 11
+  expect(packageApproachRegions(input, 0.15)[0].copper.maxX).toBeCloseTo(
+    10.3,
+    10,
+  )
+})
+
+test("an approach can join its local fanout via outside the native pad field", () => {
+  const { input, traces } = fixture()
+  for (const pad of input.obstacles) pad.center.x = 10.3
+  input.obstacles.push(
+    ...[0, -0.22].map((y, i) => ({
+      componentId: "cpu",
+      center: { x: 0, y },
+      width: 0.3,
+      height: 0.15,
+      layers: ["top"],
+      connectedTo: [i ? "N" : "P"],
+    })),
+  )
+  input.traces = [0, -0.22].map((y, i) => ({
+    type: "pcb_trace",
+    pcb_trace_id: `dogbone_${i}`,
+    connection_name: i ? "N" : "P",
+    route: [
+      { ...wire(10.3, y), layer: "top" },
+      {
+        route_type: "via",
+        x: 10,
+        y,
+        from_layer: "top",
+        to_layer: "bottom",
+        via_diameter: 0.1,
+      },
+    ],
+  }))
+  const before = structuredClone({ input, traces })
+  expect(exteriorPairSpacingReports(input, traces)[0].matched).toBe(false)
+  const result = run(input, traces)
+  expect(exteriorPairSpacingReports(input, result)[0]).toMatchObject({
+    applicable: true,
+    matched: true,
+    separatedExteriorLengthMm: 0,
+  })
+  expect(sharedPairSpacingReports(input, result)[0].matched).toBe(true)
+  expect(routeAnglesAreConventional(result)).toBe(true)
+  for (let i = 0; i < 2; i++) {
+    expect(result[i].route[0]).toEqual(traces[i].route[0])
+    expect(result[i].route.at(-1)).toEqual(traces[i].route.at(-1))
+  }
+  expect({ input, traces }).toEqual(before)
+})

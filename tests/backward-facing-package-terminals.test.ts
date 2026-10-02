@@ -14,7 +14,9 @@ function preparedMatchingInput(input: SimpleRouteJson) {
     },
   )
   try {
-    new BusLanesPipelineSolver(input).step()
+    // Inspect the common initial dogbone geometry before dense routing chooses
+    // a joint package strategy or reconsiders fresh signal sites.
+    new BusLanesPipelineSolver(input, { denseSearch: false }).step()
     const matchingNames = new Set([
       ...(captured!.buses ?? []).flatMap((bus) => bus.connectionNames),
       ...(captured!.differentialPairs ?? []).flatMap(

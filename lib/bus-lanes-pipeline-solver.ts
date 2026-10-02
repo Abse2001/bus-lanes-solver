@@ -1,3 +1,5 @@
+import { routeBackwardPackageBuses } from "./route-backward-package-buses"
+import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { shortenPairApproaches } from "./shorten-pair-approaches"
 import { busLengthReports } from "./route-lengths"
@@ -26,6 +28,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   phase = "resolve_layers"
   traces: Trace[] = []
   failureCode: string | null = null
+  private backwardPackages?: Generator<void, RepairedBusDogbones | null>
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
@@ -53,6 +56,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
   tryFinalAcceptance() {
+    this.backwardPackages?.return(null)
+    this.backwardPackages = undefined
     this.packageCoupling?.return([])
     this.packageCoupling = undefined
     this.siteRematch?.return({ connections: [], escapes: [] })
@@ -345,6 +350,31 @@ export class BusLanesPipelineSolver extends BaseSolver {
         }),
         { x: 0, y: 0 },
       )
+    if (
+      this.attempt === 0 &&
+      this.options.smoothTuning &&
+      this.options.denseSearch &&
+      Math.abs(direction.y) >= Math.abs(direction.x) &&
+      backwardFacingPackageTerminals({
+        ...this.input,
+        connections: this.input.connections.filter((c) => busNames.has(c.name)),
+      }) &&
+      this.input.connections.every(
+        (c) =>
+          c.pointsToConnect.length === 2 &&
+          c.pointsToConnect.every((p) =>
+            isUnroutedComponentPad(this.input, c, p),
+          ),
+      )
+    ) {
+      this.backwardPackages = routeBackwardPackageBuses(
+        this.input,
+        laneInput,
+        terminalLayers,
+        this.childOptions(),
+      )
+      return
+    }
     const joint =
       (this.attempt > 0 || Math.abs(direction.x) > Math.abs(direction.y)) &&
       backwardFacingPackageTerminals({
@@ -403,7 +433,20 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.siteRematch = undefined
         return
       }
-      if (!this.child) this.prepare()
+      if (!this.child && !this.backwardPackages) this.prepare()
+      if (this.backwardPackages) {
+        this.phase = "route_backward_packages"
+        const step = this.backwardPackages.next()
+        if (!step.done) return
+        this.backwardPackages = undefined
+        if (!step.value) throw Error("Backward package bus routing failed")
+        this.escapes = step.value.escapes
+        this.child = BusLanesSolver.forRefinement(
+          step.value.input,
+          step.value.traces,
+          this.childOptions(),
+        )
+      }
       this.child!.step()
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
@@ -516,6 +559,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.phase = "solved"
       }
     } catch (error) {
+      this.backwardPackages?.return(null)
+      this.backwardPackages = undefined
       this.packageCoupling?.return([])
       this.packageCoupling = undefined
       this.siteRematch?.return({ connections: [], escapes: [] })
