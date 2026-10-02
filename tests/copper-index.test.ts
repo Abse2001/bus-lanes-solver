@@ -78,3 +78,33 @@ test("nearest copper distances equal exhaustive checks, including overlaps and u
     Infinity,
   )
 })
+
+test("median partitions retain every item when dense copper has coincident centers", () => {
+  const copper: Copper[] = Array.from({ length: 2048 }, (_, i) => ({
+    a: { x: 0, y: 0 },
+    b: { x: 0, y: 0 },
+    radius: 0.1,
+    layer: "inner1",
+    owners: [String(i)],
+  }))
+  const before = [...copper]
+  const index = new CopperIndex(copper)
+  const visited = new Set<Copper>()
+  expect(
+    index.some({ minX: -1, maxX: 1, minY: -1, maxY: 1 }, (item) => {
+      expect(visited.has(item)).toBe(false)
+      visited.add(item)
+      return false
+    }),
+  ).toBe(false)
+  expect(visited).toEqual(new Set(copper))
+  expect(copper).toEqual(before)
+  expect(
+    index.distanceToPoint({ x: 0, y: 0 }, (item) =>
+      clearanceToCopper({ x: 0, y: 0 }, { x: 0, y: 0 }, item),
+    ),
+  ).toBe(-0.1)
+  expect(index.some({ minX: 1, maxX: 2, minY: 1, maxY: 2 }, () => true)).toBe(
+    false,
+  )
+})

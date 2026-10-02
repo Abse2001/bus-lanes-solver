@@ -166,6 +166,13 @@ export class BusLanesSolver extends BaseSolver {
         )
         return
       }
+      if (input.allowedLayers && !input.allowedLayers.includes(a.layer)) {
+        this.fail(
+          "forbidden_layer",
+          `${c.name}: forbidden signal layer ${a.layer}`,
+        )
+        return
+      }
       if (![a.x, a.y, b.x, b.y].every(Number.isFinite))
         throw Error("Nonfinite terminal")
       this.widths.set(

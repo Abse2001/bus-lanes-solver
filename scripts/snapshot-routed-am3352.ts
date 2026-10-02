@@ -25,19 +25,20 @@ export interface Am3352SnapshotCandidate {
   metadata: Am3352SampleMetadata
 }
 
-/** All four cases must pass before rendering or writing any review artifact. */
+/** All declared cases must pass before rendering or writing any review artifact. */
 export async function validateAm3352SnapshotCandidates(
   candidates: Am3352SnapshotCandidate[],
 ) {
   if (
-    candidates.length !== 4 ||
-    new Set(candidates.map((c) => c.metadata.name)).size !== 4 ||
+    candidates.length !== am3352SamplePlacements.length ||
+    new Set(candidates.map((c) => c.metadata.name)).size !==
+      am3352SamplePlacements.length ||
     am3352SamplePlacements.some(
       (p) => !candidates.some((c) => c.metadata.name === p.name),
     )
   )
     throw Error(
-      "AM3352 artifacts require exactly the four benchmark placements",
+      "AM3352 artifacts require exactly the declared benchmark samples",
     )
   const reports = []
   for (const placement of am3352SamplePlacements) {
@@ -107,8 +108,13 @@ function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
   }
   const width = bounds.maxX - bounds.minX,
     height = bounds.maxY - bounds.minY
-  const signalLayers = ["inner1", "inner2", "bottom"]
-  if (solver.traces.some((trace) => carrierLayer(trace) === "top"))
+  const signalLayers = solver.input.allowedLayers
+    ? [...solver.input.allowedLayers]
+    : ["inner1", "inner2", "bottom"]
+  if (
+    !signalLayers.includes("top") &&
+    solver.traces.some((trace) => carrierLayer(trace) === "top")
+  )
     signalLayers.push("top")
   const graphics: GraphicsObject = {
     coordinateSystem: "cartesian",

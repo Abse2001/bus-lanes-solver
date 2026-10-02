@@ -64,6 +64,8 @@ export interface Obstacle {
 /** Structural SimpleRouteJson boundary; unknown routing primitives are rejected. */
 export interface SimpleRouteJson {
   layerCount: number
+  /** Allowed signal carrier layers; fixed copper and pad dogbones may use other physical layers. */
+  allowedLayers?: string[]
   minTraceWidth: number
   minViaPadDiameter?: number
   minViaHoleDiameter?: number

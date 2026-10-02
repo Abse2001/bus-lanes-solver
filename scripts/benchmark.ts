@@ -31,6 +31,8 @@ interface BenchmarkReport {
   sample: SampleName
   cpu: { x: number; y: number }
   ram: { x: number; y: number }
+  allowedLayers: string[] | null
+  carrierLayerCounts: Record<string, number>
   status: BenchmarkStatus
   solved: boolean
   timeoutSeconds: number
@@ -56,7 +58,7 @@ if (workerName && !placement)
 if (!workerName) {
   const reports: BenchmarkReport[] = []
   let invalidRun = false
-  // Exactly four cases, serially, in fresh processes. Keep failed routing in
+  // All declared cases, serially, in fresh processes. Keep failed routing in
   // the score and continue collecting the remaining placements.
   for (const placement of am3352SamplePlacements) {
     const workerStart = performance.now()
@@ -95,6 +97,9 @@ if (!workerName) {
       sample: placement.name,
       cpu: { x: 0, y: 0 },
       ram: placement.ram,
+      allowedLayers:
+        "allowedLayers" in placement ? [...placement.allowedLayers] : null,
+      carrierLayerCounts: {},
       status,
       solved: false,
       timeoutSeconds,
@@ -150,11 +155,11 @@ if (!workerName) {
   }
   await Bun.write(outputPath, JSON.stringify(reports, null, 2) + "\n")
   console.log(
-    `AM3352 placements completed: ${reports.filter((report) => report.solved).length}/4; results: ${outputPath}`,
+    `AM3352 placements completed: ${reports.filter((report) => report.solved).length}/${am3352SamplePlacements.length}; results: ${outputPath}`,
   )
   // Exhausted searches are measured outcomes. Corrupt fixtures, crashes and
   // invalid completed copper fail the command. Optional strict mode requires
-  // all four placements to solve; failures are never counted as passes.
+  // all declared placements to solve; failures are never counted as passes.
   process.exit(
     invalidRun ||
       (args.includes("--require-all-solved") &&
@@ -169,6 +174,9 @@ let report: BenchmarkReport = {
   sample: placement!.name,
   cpu: { x: 0, y: 0 },
   ram: placement!.ram,
+  allowedLayers:
+    "allowedLayers" in placement! ? [...placement!.allowedLayers] : null,
+  carrierLayerCounts: {},
   status: "validation_failed",
   solved: false,
   timeoutSeconds,
@@ -227,6 +235,13 @@ try {
       fixedBefore
     if (!report.fixedPowerPreserved)
       throw Error("Output changed immutable power dogbones")
+    for (const trace of solver.traces) {
+      const carrier =
+        trace.route[trace.route.findIndex((p) => p.route_type === "via") + 1]
+      if (carrier?.route_type === "wire")
+        report.carrierLayerCounts[carrier.layer] =
+          (report.carrierLayerCounts[carrier.layer] ?? 0) + 1
+    }
     report.solved = report.validation.valid
     report.status = report.solved ? "solved" : "validation_failed"
     report.error = report.solved

@@ -440,8 +440,9 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         maxX: number,
         minY: number,
         maxY: number,
-        copper: Copper,
+        entry: CopperEntry,
       ) => {
+        const copper = entry.copper
         const loX = Math.max(0, Math.floor((minX - b.minX) / this.stepSize))
         const hiX = Math.min(
           this.nx - 1,
@@ -468,8 +469,21 @@ export class GridVisibilitySearch extends GridHistoryProjector {
               if (Math.sqrt(dx * dx + dy * dy) - copper.radius < threshold)
                 this.blocked[id] = 1
             } else {
-              const p = { x: this.xs[x], y: py }
-              if (clearanceToCopper(p, p, copper) < threshold)
+              // Reuse the chord's prepared projection; preserve the exact
+              // sqrt/subtraction predicate without allocating point objects.
+              if (
+                copperTooClosePrepared(
+                  this.xs[x],
+                  py,
+                  this.xs[x],
+                  py,
+                  0,
+                  0,
+                  0,
+                  entry,
+                  threshold,
+                )
+              )
                 this.blocked[id] = 1
             }
           }
@@ -482,7 +496,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         this.copperBuckets.addCopper(entry, scene.margin)
         if (copper.rect) {
           const q = copper.rect
-          markBox(q.minX - r, q.maxX + r, q.minY - r, q.maxY + r, copper)
+          markBox(q.minX - r, q.maxX + r, q.minY - r, q.maxY + r, entry)
           continue
         }
         const span = distance(copper.a, copper.b),
@@ -492,7 +506,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
             x: copper.a.x + ((copper.b.x - copper.a.x) * i) / steps,
             y: copper.a.y + ((copper.b.y - copper.a.y) * i) / steps,
           }
-          markBox(p.x - r, p.x + r, p.y - r, p.y + r, copper)
+          markBox(p.x - r, p.x + r, p.y - r, p.y + r, entry)
         }
       }
       const bytes =

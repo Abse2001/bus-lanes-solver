@@ -6,13 +6,23 @@ import type {
 } from "@tscircuit/fanout-solver"
 import type { Connection, SimpleRouteJson, Trace } from "../lib"
 
-export type Am3352SampleName = "control" | "right" | "left" | "above"
+export type Am3352SampleName =
+  | "control"
+  | "right"
+  | "left"
+  | "above"
+  | "inner-layers"
 export type Am3352Component = "soc" | "ram"
 export const am3352SamplePlacements = [
   { name: "control", ram: { x: 0, y: -27 } },
   { name: "right", ram: { x: 27, y: 0 } },
   { name: "left", ram: { x: -27, y: 0 } },
   { name: "above", ram: { x: 0, y: 27 } },
+  {
+    name: "inner-layers",
+    ram: { x: 0, y: -27 },
+    allowedLayers: ["inner1", "inner2"],
+  },
 ] as const
 
 export interface PowerConnection extends Connection {
@@ -321,6 +331,8 @@ export async function loadAm3352Sample(name: Am3352SampleName) {
   ])
   if (am3352Hash(input) !== ownership.source.inputSha256)
     throw Error("Native AM3352 input provenance changed")
+  if ("allowedLayers" in placement)
+    input.allowedLayers = [...placement.allowedLayers]
   const pads = powerPads(input, ownership)
   addPowerOwnership(input, pads)
   const ramCenter = ownership.components.ram.center

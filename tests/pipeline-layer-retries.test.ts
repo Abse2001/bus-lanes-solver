@@ -100,3 +100,58 @@ test("layer retries keep explicit bus preferences and allowed layers", async () 
       ).toBe(true)
     }
 })
+
+test("global carrier layers constrain every generated escape on every retry, including clock and controls", async () => {
+  const { input } = await loadAm3352Sample("inner-layers")
+  input.buses![0].preferredLayer = "bottom"
+  const attempts = failedRoutingAttempts(input)
+  expect(attempts).toHaveLength(input.layerCount)
+  for (const attempt of attempts) {
+    expect(attempt.allowedLayers).toEqual(["inner1", "inner2"])
+    expect(
+      attempt.connections.every((c) =>
+        c.pointsToConnect.every((p) => input.allowedLayers!.includes(p.layer)),
+      ),
+    ).toBe(true)
+    const escapes = attempt.traces!.slice(input.traces!.length)
+    expect(escapes).toHaveLength(94)
+    for (const escape of escapes) {
+      const via = escape.route.find((p) => p.route_type === "via")!
+      expect(input.allowedLayers).toContain(via.to_layer)
+      expect(via.layers).toEqual(["top", "inner1", "inner2", "bottom"])
+    }
+    expect(attempt.traces!.slice(0, 161)).toEqual(input.traces!)
+  }
+})
+
+test("global carrier layers cannot move a bus or existing handoff onto an excluded layer", () => {
+  const input: SimpleRouteJson = {
+    layerCount: 4,
+    minTraceWidth: 0.1,
+    allowedLayers: ["inner1", "inner2"],
+    bounds: { minX: -5, maxX: 5, minY: -5, maxY: 5 },
+    obstacles: [],
+    connections: [
+      {
+        name: "D",
+        pointsToConnect: [
+          { x: 0, y: 2, layer: "bottom" },
+          { x: 0, y: -2, layer: "bottom" },
+        ],
+      },
+    ],
+  }
+  for (const options of [{}, { fanout: "none" as const }]) {
+    const solver = new BusLanesPipelineSolver(input, options)
+    solver.solve()
+    expect(solver.failed).toBe(true)
+    expect(solver.traces).toEqual([])
+  }
+  const conflicting = new BusLanesPipelineSolver({
+    ...input,
+    buses: [{ busId: "D", connectionNames: ["D"], allowedLayers: ["bottom"] }],
+  })
+  conflicting.solve()
+  expect(conflicting.failed).toBe(true)
+  expect(conflicting.traces).toEqual([])
+})
