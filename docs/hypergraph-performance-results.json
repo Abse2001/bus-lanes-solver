@@ -1,0 +1,36 @@
+{
+  "baseCommit": "22e0be61bab794ffb731cd4cc81c91f52b8063c9",
+  "runtime": "1.3.2",
+  "date": "2026-10-01",
+  "comparison": {
+    "baselineMedianMs": 222631.088896,
+    "candidateMedianMs": 87894.323688,
+    "medianSpeedup": 2.5329404625294965,
+    "samples": [
+      {
+        "sample": "control",
+        "baselineMs": 5425.788165999999,
+        "candidateMs": 4897.537166,
+        "speedup": 1.107860539306829
+      },
+      {
+        "sample": "right",
+        "baselineMs": 371238.05412499997,
+        "candidateMs": 146143.247459,
+        "speedup": 2.54023405514613
+      },
+      {
+        "sample": "left",
+        "baselineMs": 74024.123667,
+        "candidateMs": 29645.399917,
+        "speedup": 2.496985160404305
+      },
+      {
+        "sample": "above",
+        "baselineMs": 469881.158833,
+        "candidateMs": 177850.78125,
+        "speedup": 2.6419965969814934
+      }
+    ]
+  }
+}

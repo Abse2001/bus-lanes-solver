@@ -30,9 +30,11 @@ use the same hypergraph variant.
   On failure, buses and controls participate in the same initial solve. The
   local dogbone matcher is then evaluated in a routing coordinate frame and
   its new outputs are transformed back. Original pads, fixed fanouts and their provenance do not
-  move. Failed attempts try another frame. The preliminary bus-only search
-  retries terminal sites after 200,000 iterations without producing a first
-  corridor; active search buffers are released before retrying.
+  move. Failed attempts try another frame. The preliminary bus-only search gets 20,000 iterations in the quick round.
+  Other legal terminal assignments are tried before additional topology retries.
+  If the quick round fails, the broader round restores topology retries and the
+  original 200,000-iteration empty-corridor limit. Active search buffers are
+  released before retrying.
 - A finer bounded search repairs raster returning jogs when needed. It can use
   diagonal edges between occupied orthogonal neighbors only when the actual
   continuous edge passes clearance checks.
@@ -73,6 +75,19 @@ pad and remains inside the board. The native capture, board rules, signal
 membership, component pad geometry, power ownership and all 161 saved power
 fanouts are retained.
 
+## Performance
+
+| Placement | Base solve time (s) | New solve time (s) | Speedup |
+| --- | --- | --- | --- |
+| Below (control) | 5.426 | 4.898 | 1.11× |
+| Right | 371.238 | 146.143 | 2.54× |
+| Left | 74.024 | 29.645 | 2.50× |
+| Above | 469.881 | 177.851 | 2.64× |
+| **Median** | **222.631** | **87.894** | **2.53×** |
+
+The median is computed across all four fully validated samples. See
+[performance methodology and reproduction](hypergraph-performance.md).
+
 ## Reproduction
 
 ```sh
@@ -98,10 +113,10 @@ Fresh serial run on 2026-10-01, Bun 1.3.2: **4/4 solved**. Skews measure total p
 
 | Placement | Signals | DRC issues | Byte 0 skew (mm) | Byte 1 skew (mm) | Max pair skew (mm) | Interior pair gap (mm) | Solve time (s) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Below (control) | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.11981–0.13813 | 5.426 |
-| Right | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10000–0.14166 | 371.238 |
-| Left | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10869–0.13813 | 74.024 |
-| Above | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10000–0.14166 | 469.881 |
+| Below (control) | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.11981–0.13813 | 4.898 |
+| Right | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10000–0.14166 | 146.143 |
+| Left | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10869–0.13813 | 29.645 |
+| Above | 47/47 | 0 | 0.635000 | 0.635000 | 0.127000 | 0.10000–0.14166 | 177.851 |
 
 The complete report is [benchmark-hypergraph-results.json](../benchmark-hypergraph-results.json).
 Snapshots show top, inner1, inner2 and bottom separately:

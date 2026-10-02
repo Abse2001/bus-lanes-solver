@@ -298,7 +298,7 @@ export class BusLanesSolver extends BaseSolver {
     if (
       this.options.initialRouting !== "hypergraph" ||
       !this.input.differentialPairs?.length ||
-      this.topologyAttempt >= 4 ||
+      this.topologyAttempt >= (this.options.maxTopologyRetries ?? 4) ||
       (reason === "No complete compatible route cover" &&
         this.topologyAttempt >= 1)
     )

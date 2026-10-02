@@ -96,6 +96,8 @@ export interface SolverOptions {
   denseSearch?: boolean
   maxLaneIterations?: number
   maxSearchIterations?: number
+  /** Hypergraph topology retries per terminal assignment (default 4). */
+  maxTopologyRetries?: number
 }
 
 export interface RoutingStageSnapshot {

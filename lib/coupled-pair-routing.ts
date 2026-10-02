@@ -1,3 +1,4 @@
+import { coupledApproachSearch } from "./coupled-approach-search"
 import { pairInteriorSpacing } from "./pair-interior-spacing"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { minimumLengthTargets } from "./route-lengths"
@@ -302,6 +303,7 @@ export function* routeCoupledPair(
       width,
     })),
   })
+  const approaches = coupledApproachSearch(input)
   let best: Trace[] | null = null,
     bestScore = Infinity,
     viable = 0
@@ -367,6 +369,9 @@ export function* routeCoupledPair(
             paths.unshift(...detours)
           }
           const direct = paths.find((p) => visibleScene.pathVisible(p))
+          // This tier only tries visible connectors. Building a raster search
+          // with no expansion budget cannot add a candidate.
+          if (!direct && searchBudget === 0) continue
           const centerSearch = direct
             ? {
                 solved: true,
@@ -498,7 +503,7 @@ export function* routeCoupledPair(
             ]) {
               const escapes: Trace[][] = [[], []]
               let failed = false
-              for (let end = 0; end < 2; end++)
+              escapeEnds: for (let end = 0; end < 2; end++)
                 for (const i of escapeOrders[end]) {
                   const c = members[i],
                     target = ordered[i][end === 0 ? 0 : ordered[i].length - 1],
@@ -546,6 +551,10 @@ export function* routeCoupledPair(
                   const directEscape = connectors(source, target).find((p) =>
                     visibleEscapeScene.pathVisible(p),
                   )
+                  if (!directEscape && searchBudget === 0) {
+                    failed = true
+                    break escapeEnds
+                  }
                   const fine = originalPads.some((pads) => pads.length > 0)
                   const padding = 30 * width
                   const localBounds = {
@@ -566,48 +575,42 @@ export function* routeCoupledPair(
                       Math.max(source.y, target.y) + padding,
                     ),
                   }
-                  const search = directEscape
-                    ? {
-                        solved: true,
-                        failed: false,
-                        expanded: 0,
-                        result: directEscape,
-                        step() {},
+                  let path = directEscape
+                  if (!path) {
+                    const generator = approaches.route(
+                      escapeScene,
+                      source,
+                      target,
+                      searchBudget,
+                      fine
+                        ? { step: width / 10, bounds: localBounds }
+                        : undefined,
+                      negotiation?.copper,
+                      negotiation?.penalty,
+                      fine ? undefined : negotiation?.history,
+                    )
+                    let step = generator.next()
+                    try {
+                      while (!step.done) {
+                        if (searched++ >= tierBudget) {
+                          if (best) return best
+                          continue searchTier
+                        }
+                        yield
+                        step = generator.next()
                       }
-                    : new GridVisibilitySearch(
-                        escapeScene,
-                        source,
-                        target,
-                        negotiation?.copper,
-                        negotiation?.penalty,
-                        fine ? undefined : negotiation?.history,
-                        fine
-                          ? { step: width / 10, bounds: localBounds }
-                          : undefined,
-                      )
-                  try {
-                    while (
-                      !search.solved &&
-                      !search.failed &&
-                      search.expanded < searchBudget
-                    ) {
-                      if (searched++ >= tierBudget) {
-                        if (best) return best
-                        continue searchTier
-                      }
-                      search.step()
-                      yield
+                    } finally {
+                      if (!step.done) generator.return(null)
                     }
-                  } finally {
-                    if (search instanceof GridVisibilitySearch) search.cancel()
+                    path = step.value ?? undefined
                   }
-                  if (!search.solved) {
+                  if (!path) {
                     failed = true
-                    break
+                    break escapeEnds
                   }
                   escapes[i][end] = makeTrace(
                     c,
-                    reduceOrdinaryTurns(search.result, visibleEscapeScene),
+                    reduceOrdinaryTurns(path, visibleEscapeScene),
                   )
                 }
               if (failed) continue

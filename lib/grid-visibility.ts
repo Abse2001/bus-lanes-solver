@@ -1,3 +1,4 @@
+import { gridPossiblyConnected } from "./grid-connectivity"
 import type { Point, SimpleRouteJson } from "./types"
 import type { GridHeap } from "./grid-heap"
 import { acquireGridScratch, type GridScratchLease } from "./grid-scratch"
@@ -429,41 +430,59 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.maxLength = grid?.maxLength ?? Infinity
     this.allowDiagonalPassages = grid?.allowDiagonalPassages ?? false
     if (!cachedGrid) {
-      // Adjacent samples of a long segment overlap. Test each cell at most
-      // once per copper item, including clear cells in its bounding halo.
-      const testedBy = new Uint32Array(n)
-      let copperStamp = 0
-      const markBox = (
-        minX: number,
-        maxX: number,
-        minY: number,
-        maxY: number,
-        copper: Copper,
-      ) => {
-        const loX = Math.max(0, Math.floor((minX - b.minX) / this.stepSize))
-        const hiX = Math.min(
-          this.nx - 1,
-          Math.ceil((maxX - b.minX) / this.stepSize),
+      // Visit each cell in a copper item's clearance halo once. Intersect
+      // a square-expanded segment with each grid row; the exact distance
+      // predicate below clips the conservative envelope to the true capsule.
+      const threshold = scene.margin - 1e-8
+      for (const copper of scene.copper) {
+        const entry = copperEntry(copper, scene.margin)
+        this.copperBuckets.addCopper(entry, scene.margin)
+        const r = scene.margin + copper.radius
+        const loY = Math.max(
+          0,
+          Math.floor((entry.minY - b.minY) / this.stepSize),
         )
-        const loY = Math.max(0, Math.floor((minY - b.minY) / this.stepSize))
         const hiY = Math.min(
           this.ny - 1,
-          Math.ceil((maxY - b.minY) / this.stepSize),
+          Math.ceil((entry.maxY - b.minY) / this.stepSize),
         )
-        const circle =
-          !copper.rect && copper.a.x === copper.b.x && copper.a.y === copper.b.y
-        const threshold = scene.margin - 1e-8
+        const dx = copper.b.x - copper.a.x,
+          dy = copper.b.y - copper.a.y
+        const circle = !copper.rect && dx === 0 && dy === 0
         for (let y = loY; y <= hiY; y++) {
-          const py = this.ys[y],
-            dy = py - copper.a.y
-          const row = y * this.nx
+          const py = this.ys[y]
+          let minX = entry.minX,
+            maxX = entry.maxX
+          if (!copper.rect) {
+            let lo = 0,
+              hi = 1
+            if (dy === 0) {
+              if (Math.abs(py - copper.a.y) > r) continue
+            } else {
+              const t0 = (py - r - copper.a.y) / dy
+              const t1 = (py + r - copper.a.y) / dy
+              lo = Math.max(0, Math.min(t0, t1))
+              hi = Math.min(1, Math.max(t0, t1))
+              if (lo > hi) continue
+            }
+            const x0 = copper.a.x + dx * lo,
+              x1 = copper.a.x + dx * hi
+            minX = Math.min(x0, x1) - r
+            maxX = Math.max(x0, x1) + r
+          }
+          const loX = Math.max(0, Math.floor((minX - b.minX) / this.stepSize))
+          const hiX = Math.min(
+            this.nx - 1,
+            Math.ceil((maxX - b.minX) / this.stepSize),
+          )
+          const row = y * this.nx,
+            cy = py - copper.a.y
           for (let x = loX; x <= hiX; x++) {
-            const id = x + row
-            if (this.blocked[id] || testedBy[id] === copperStamp) continue
-            testedBy[id] = copperStamp
+            const id = row + x
+            if (this.blocked[id]) continue
             if (circle) {
-              const dx = this.xs[x] - copper.a.x
-              if (Math.sqrt(dx * dx + dy * dy) - copper.radius < threshold)
+              const cx = this.xs[x] - copper.a.x
+              if (Math.sqrt(cx * cx + cy * cy) - copper.radius < threshold)
                 this.blocked[id] = 1
             } else {
               const p = { x: this.xs[x], y: py }
@@ -471,26 +490,6 @@ export class GridVisibilitySearch extends GridHistoryProjector {
                 this.blocked[id] = 1
             }
           }
-        }
-      }
-      for (const copper of scene.copper) {
-        copperStamp++
-        const entry = copperEntry(copper, scene.margin)
-        const r = scene.margin + copper.radius
-        this.copperBuckets.addCopper(entry, scene.margin)
-        if (copper.rect) {
-          const q = copper.rect
-          markBox(q.minX - r, q.maxX + r, q.minY - r, q.maxY + r, copper)
-          continue
-        }
-        const span = distance(copper.a, copper.b),
-          steps = Math.max(1, Math.ceil(span / this.stepSize))
-        for (let i = 0; i <= steps; i++) {
-          const p = {
-            x: copper.a.x + ((copper.b.x - copper.a.x) * i) / steps,
-            y: copper.a.y + ((copper.b.y - copper.a.y) * i) / steps,
-          }
-          markBox(p.x - r, p.x + r, p.y - r, p.y + r, copper)
         }
       }
       const bytes =
@@ -710,6 +709,13 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     const a = attach(start),
       z = attach(end)
     if (!a || !z) {
+      this.failed = true
+      if (this.softMemoLease) this.softMemoLease.active = false
+      return
+    }
+    // Prove sealed-goal failures before exploring the surrounding open board.
+    // The occupancy-only check is a superset of legal continuous edges.
+    if (!gridPossiblyConnected(this.blocked, this.nx, a.id, z.id)) {
       this.failed = true
       if (this.softMemoLease) this.softMemoLease.active = false
       return

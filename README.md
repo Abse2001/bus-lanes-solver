@@ -64,6 +64,7 @@ metadata: the interior edge gap must stay within 0.0999–0.155 mm after the rev
 6.2 mm package allowance at each end. The existing solver remains the default.
 
 See [algorithm, fixture correction and results](docs/hypergraph-routing.md).
+The four-sample median is now **87.9 seconds**, down from 222.6 seconds with coupled pairs (**2.53× faster**); see [performance measurements](docs/hypergraph-performance.md).
 
 ## Review target
 

@@ -29,17 +29,35 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
+  private broadRetry = false
   private completedLanes: Trace[] = []
   private remainingInput?: SimpleRouteJson
   private terminalLayers = new Map<string, string[]>()
+  private get terminalPortfolio() {
+    return (
+      this.options.initialRouting === "hypergraph" &&
+      this.options.fanout !== "none" &&
+      this.input.layerCount > 1 &&
+      !!this.input.differentialPairs?.length
+    )
+  }
+  private get reportedAttempt() {
+    return this.attempt + (this.broadRetry ? this.input.layerCount : 0)
+  }
   private childOptions(): SolverOptions {
     return {
       ...this.options,
+      // Try other legal terminal assignments before spending additional
+      // topology searches on one congested assignment. A second portfolio
+      // round retains the original wider search if every quick choice fails.
+      maxTopologyRetries:
+        this.options.maxTopologyRetries ??
+        (this.terminalPortfolio && !this.broadRetry ? 0 : 4),
       onStage: this.options.onStage
         ? (snapshot) =>
             this.options.onStage!({
               ...snapshot,
-              attempt: this.attempt,
+              attempt: this.reportedAttempt,
               routingStage: this.completedLanes.length
                 ? "remaining_signals"
                 : this.remainingInput
@@ -54,7 +72,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
     this.input = structuredClone(input)
     this.options = { smoothTuning: true, denseSearch: true, ...options }
     this.MAX_ITERATIONS =
-      (options.maxSearchIterations ?? 200000) * Math.max(1, input.layerCount)
+      (options.maxSearchIterations ?? 200000) *
+      Math.max(1, input.layerCount) *
+      (this.terminalPortfolio ? 2 : 1)
   }
   getConstructorParams() {
     return [this.input, this.options]
@@ -261,7 +281,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       stage: "local_dogbones",
       input: this.input,
       traces: this.escapes,
-      attempt: this.attempt,
+      attempt: this.reportedAttempt,
       routingStage: "all_signals",
       stats: { localDogbones: this.escapes.length },
     })
@@ -313,7 +333,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
         ...this.child!.stats,
-        layerAttempt: this.attempt,
+        layerAttempt: this.reportedAttempt,
         dogbones: this.escapes.length,
         routingStage: this.completedLanes.length
           ? "remaining_signals"
@@ -322,21 +342,21 @@ export class BusLanesPipelineSolver extends BaseSolver {
             : "all_signals",
       }
       this.progress = this.child!.progress
-      // The preliminary bus-only pass is a cheap first portfolio choice. If
-      // its terminal sites cannot produce even one paired corridor, try a new
-      // dogbone assignment instead of exhausting every handoff combination.
+      // Give the preliminary bus-only pass a small first-round budget. The
+      // broader fallback retains its old budget for an empty paired search.
       if (
         this.options.initialRouting === "hypergraph" &&
         this.attempt === 0 &&
         this.remainingInput &&
         this.child!.phase === "route" &&
         this.child!.stats.topologyAttempt === 0 &&
-        this.child!.iterations > 200000 &&
-        !this.child!.traces.length
+        (this.terminalPortfolio && !this.broadRetry
+          ? this.child!.iterations > 20000
+          : this.child!.iterations > 200000 && !this.child!.traces.length)
       ) {
         this.child!.tryFinalAcceptance()
         throw Error(
-          "Initial terminal sites produced no paired corridor within the preliminary search budget",
+          "Preliminary bus routing exceeded its search budget; trying another terminal assignment",
         )
       }
       if (this.child!.failed)
@@ -421,18 +441,26 @@ export class BusLanesPipelineSolver extends BaseSolver {
           stage: "assembled_output",
           input: this.input,
           traces: this.traces,
-          attempt: this.attempt,
+          attempt: this.reportedAttempt,
           routingStage: "all_signals",
           stats: { connectedSignals: this.traces.length },
         })
       }
     } catch (error) {
       this.attemptFailures.push({
-        attempt: this.attempt,
+        attempt: this.reportedAttempt,
         phase: this.child?.phase ?? this.phase,
         error: String(error),
       })
       this.attempt++
+      if (
+        this.terminalPortfolio &&
+        !this.broadRetry &&
+        this.attempt >= this.input.layerCount
+      ) {
+        this.broadRetry = true
+        this.attempt = 0
+      }
       if (
         this.options.fanout !== "none" &&
         this.attempt < this.input.layerCount
