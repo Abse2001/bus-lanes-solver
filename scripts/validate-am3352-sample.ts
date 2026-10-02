@@ -106,7 +106,14 @@ export async function validateAm3352Sample(
     traces: _traces,
     ...rules
   }: SimpleRouteJson) => rules
-  if (am3352Hash(rules(input)) !== am3352Hash(rules(native)))
+  const expectedRules = {
+    ...rules(native),
+    buses: native.buses?.map((bus) => ({
+      ...bus,
+      allowedLayers: ["inner1", "inner2", "bottom"],
+    })),
+  }
+  if (am3352Hash(rules(input)) !== am3352Hash(expectedRules))
     fail("native board rules or signal constraints changed")
 
   const expectedPower = new Map<string, PowerConnection>()
@@ -360,6 +367,12 @@ export async function validateAm3352Sample(
       }
       const carrier = trace.route.slice(vias[0] + 1, vias[1])
       const layer = (carrier[0] as Wire | undefined)?.layer
+      // This applies to every signal, including controls outside both buses.
+      // TOP remains valid for the terminal pad-to-via dogbones.
+      if (!["inner1", "inner2", "bottom"].includes(layer ?? ""))
+        issues.push(
+          `${trace.connection_name}: carrier must use inner1, inner2, or bottom`,
+        )
       if (
         carrier.length < 2 ||
         !carrier.every((p) => p.route_type === "wire" && p.layer === layer) ||

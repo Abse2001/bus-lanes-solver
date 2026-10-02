@@ -160,9 +160,12 @@ pad ownership are saved in [the fixture directory](tests/fixtures/am3352-ram).
 The benchmark checks fixed fanout provenance, exact pad joins, complete power
 coverage, and fixed-copper DRC before routing. A completed sample additionally
 requires all 47 signal connections, unchanged power copper, one signal layer
-between each trace's two terminal vias, combined-copper DRC, byte-bus skew
+(`inner1`, `inner2`, or `bottom`) between each trace's two terminal vias,
+combined-copper DRC, byte-bus skew
 within 0.635 mm, and differential-pair skew within 0.127 mm. Matching measures
 full pad-to-pad planar copper, including signal dogbones.
+Top-layer copper is limited to the component pads and their local dogbone stubs;
+the independent output audit rejects top-layer carriers, including control nets.
 
 Each sample runs in a fresh process, serially, with a 180-second routing budget.
 Override it with `./benchmark.sh --timeout-seconds 60`. All four cases are always
@@ -179,10 +182,10 @@ macOS arm64 with Bun 1.3.2. Run the same strict check with
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| Control | 15.326 s | 17.587 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.073 mm |
-| Right | 19.055 s | 24.753 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.103 mm |
-| Left | 21.383 s | 27.463 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
-| Above | 26.453 s | 31.397 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| Control | 13.349 s | 15.477 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.073 mm |
+| Right | 16.730 s | 21.814 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.103 mm |
+| Left | 19.773 s | 25.541 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
+| Above | 25.646 s | 30.638 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
 
 All four preserve the 161 power dogbones and have zero separated pair length
 outside the native pad/fanout regions. The exterior audit checks both rails along

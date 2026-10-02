@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test"
+import type { SimpleRouteJson, Trace } from "../lib"
+import { tuningPathIsSelfClear } from "../lib/length-tuning"
 import {
   am3352SamplePlacements,
   loadAm3352NativeInput,
@@ -34,6 +36,10 @@ test("the four AM3352 samples translate only RAM and retain every real power dog
     expect(input.connections).toHaveLength(47)
     expect(input.obstacles).toHaveLength(420)
     expect(input.traces).toHaveLength(161)
+    expect(input.buses!.map((bus) => bus.allowedLayers)).toEqual([
+      ["inner1", "inner2", "bottom"],
+      ["inner1", "inner2", "bottom"],
+    ])
     expect(input.traces).toEqual(metadata.fixedFanoutTraces)
     expect(metadata.powerConnections).toHaveLength(161)
     expect(
@@ -215,6 +221,11 @@ test("fixture audit rejects relaxed signal constraints and extra signal-to-power
   await expect(
     validateAm3352Sample(relaxed.input, relaxed.metadata),
   ).rejects.toThrow("native board rules or signal constraints changed")
+  const topAllowed = await loadAm3352Sample("control")
+  topAllowed.input.buses![0].allowedLayers!.push("top")
+  await expect(
+    validateAm3352Sample(topAllowed.input, topAllowed.metadata),
+  ).rejects.toThrow("native board rules or signal constraints changed")
   const aliased = await loadAm3352Sample("control")
   const pad = aliased.metadata.powerPadManifest[0]
   aliased.input.obstacles
@@ -268,4 +279,104 @@ test("completed-copper audit refuses thinner wires/vias and geometry outside nat
   expect(layerReport.issues).toContain(
     `${signal.connection_name}: copper is outside native board/layers`,
   )
+})
+
+/** A copper subset in the native board's empty corner isolates the carrier
+ * policy from pad connectivity and bus matching. The original native pads,
+ * constraints and fixed power remain present in every physical DRC audit. */
+function isolatedCarrier(
+  input: SimpleRouteJson,
+  name: string,
+  carrierLayer: string,
+): Trace {
+  const x = input.bounds.maxX - 5,
+    y = input.bounds.maxY - 5
+  const stubLayer = carrierLayer === "top" ? "bottom" : "top"
+  const connection = input.connections.find((c) => c.name === name)!
+  const width =
+    input.buses?.find((b) => b.connectionNames.includes(name))?.traceWidth ??
+    connection.nominalTraceWidth ??
+    connection.width ??
+    input.minTraceWidth
+  const wire = (x: number, layer: string) => ({
+    route_type: "wire" as const,
+    x,
+    y,
+    layer,
+    width,
+  })
+  const via = (x: number, from_layer: string, to_layer: string) => ({
+    route_type: "via" as const,
+    x,
+    y,
+    from_layer,
+    to_layer,
+    layers: ["top", "inner1", "inner2", "bottom"],
+    via_diameter: input.minViaPadDiameter!,
+    via_hole_diameter: input.minViaHoleDiameter!,
+  })
+  return {
+    type: "pcb_trace",
+    pcb_trace_id: `carrier-policy:${name}`,
+    connection_name: name,
+    route: [
+      wire(x - 1, stubLayer),
+      wire(x, stubLayer),
+      via(x, stubLayer, carrierLayer),
+      wire(x, carrierLayer),
+      wire(x + 2, carrierLayer),
+      via(x + 2, carrierLayer, stubLayer),
+      wire(x + 2, stubLayer),
+      wire(x + 3, stubLayer),
+    ],
+  }
+}
+
+test("AM3352 rejects physically clear TOP carriers for bus and non-bus signals while allowing TOP dogbone stubs", async () => {
+  const { input, metadata } = await loadAm3352Sample("control")
+  const before = JSON.stringify({ input, metadata })
+  const busSignal = input.buses![0].connectionNames[0]
+  const controlSignal = input.connections.find(
+    (connection) =>
+      !input.buses!.some((bus) =>
+        bus.connectionNames.includes(connection.name),
+      ) &&
+      !input.differentialPairs!.some((pair) =>
+        pair.connectionNames.includes(connection.name),
+      ),
+  )!.name
+  for (const name of [busSignal, controlSignal]) {
+    for (const layer of ["top", "inner1", "inner2", "bottom"]) {
+      const signal = isolatedCarrier(input, name, layer)
+      const report = await validateAm3352Sample(input, metadata, [signal])
+      const carrier = signal.route.slice(3, 5)
+      expect(
+        carrier.every((p) => p.route_type === "wire" && p.layer === layer),
+      ).toBe(true)
+      expect(
+        tuningPathIsSelfClear(
+          carrier,
+          input.minTraceWidth + input.minTraceToPadEdgeClearance!,
+        ),
+      ).toBe(true)
+      expect(report.complete).toBe(false)
+      expect(report.combinedDrc?.valid).toBe(true)
+      expect(report.combinedDrc?.issues).toEqual([])
+      const policyIssue = `${name}: carrier must use inner1, inner2, or bottom`
+      expect(report.issues.includes(policyIssue)).toBe(layer === "top")
+      expect(report.issues).not.toContain(`${name}: invalid copper dimensions`)
+      expect(report.issues).not.toContain(
+        `${name}: copper is outside native board/layers`,
+      )
+      if (layer !== "top" || name === controlSignal)
+        expect(report.issues).not.toContain(
+          `${name}: carrier must be a clear single-layer route`,
+        )
+      if (layer !== "top") {
+        expect(signal.route[0].route_type).toBe("wire")
+        expect((signal.route[0] as { layer: string }).layer).toBe("top")
+      }
+    }
+  }
+  expect(JSON.stringify({ input, metadata })).toBe(before)
 })

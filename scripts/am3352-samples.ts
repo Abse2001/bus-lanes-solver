@@ -382,6 +382,12 @@ export async function loadAm3352Sample(name: Am3352SampleName) {
     }
   }
   input.traces = fixedFanoutTraces
+  // The top layer is reserved for the native BGA pads and local dogbone
+  // stubs. Keep byte-bus carriers on the three signal layers in every retry.
+  input.buses = input.buses?.map((bus) => ({
+    ...bus,
+    allowedLayers: ["inner1", "inner2", "bottom"],
+  }))
   if (
     input.connections.length !== 47 ||
     input.obstacles.length !== 420 ||

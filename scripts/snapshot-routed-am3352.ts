@@ -108,8 +108,6 @@ function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
   const width = bounds.maxX - bounds.minX,
     height = bounds.maxY - bounds.minY
   const signalLayers = ["inner1", "inner2", "bottom"]
-  if (solver.traces.some((trace) => carrierLayer(trace) === "top"))
-    signalLayers.push("top")
   const graphics: GraphicsObject = {
     coordinateSystem: "cartesian",
     title: `AM3352 / RAM ${metadata.name} · 47/47 signals · DRC and matching passed`,
