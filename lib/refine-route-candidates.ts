@@ -123,7 +123,9 @@ export function* refineRouteCandidates(
           }
           if (!search.solved) continue
           const points = reduceOrdinaryTurns(search.result, scene)
-          if (!tuningPathIsSelfClear(points, width + scene.margin)) continue
+          // margin already includes the candidate's half-width. Self spacing
+          // adds the other half-width, for width + requested clearance.
+          if (!tuningPathIsSelfClear(points, width / 2 + scene.margin)) continue
           const before = candidates.revisionNumber
           candidates.add(name, [
             {

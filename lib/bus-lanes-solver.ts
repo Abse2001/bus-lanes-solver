@@ -1,3 +1,5 @@
+import { routePairedNetwork } from "./route-paired-network"
+import { roundCoupledReturnBends } from "./round-coupled-return-bends"
 import {
   independentBusGroups,
   routeIndependentBuses,
@@ -68,6 +70,8 @@ export class BusLanesSolver extends BaseSolver {
   private conflictingLanes = 0
   private independent?: Generator<Trace[], Trace[] | null>
   private independentAttempted = false
+  private pairedNetwork?: Generator<void, Trace[] | null>
+  private pairedNetworkAttempted = false
   private negotiated?: Generator<Trace[], Trace[] | null>
   private reservePackageExits?: boolean
   private pairSearch?: Generator<void, Trace[] | null>
@@ -87,6 +91,22 @@ export class BusLanesSolver extends BaseSolver {
     this.options = options
     this.MAX_ITERATIONS = options.maxSearchIterations ?? 200000
   }
+  /** Rematch freshly computed carrier geometry after a pipeline refinement.
+   * The ordinary output validator still checks every endpoint and copper edge. */
+  static forRefinement(
+    input: SimpleRouteJson,
+    traces: Trace[],
+    options: SolverOptions = {},
+  ) {
+    const solver = new BusLanesSolver(input, options)
+    solver.initialize()
+    if (solver.failed) return solver
+    if (solver.search instanceof GridVisibilitySearch) solver.search.cancel()
+    solver.search = undefined
+    solver.traces = structuredClone(traces)
+    solver.phase = "match"
+    return solver
+  }
   getConstructorParams() {
     return [this.input, this.options]
   }
@@ -103,12 +123,16 @@ export class BusLanesSolver extends BaseSolver {
     this.failed = true
     this.phase = "failed"
     if (this.search instanceof GridVisibilitySearch) this.search.cancel()
+    this.pairedNetwork?.return(null)
+    this.pairedNetwork = undefined
     this.pairSearch?.return(null)
     this.negotiated?.return(null)
     this.pairSearch = undefined
     this.negotiated = undefined
   }
   tryFinalAcceptance() {
+    this.pairedNetwork?.return(null)
+    this.pairedNetwork = undefined
     this.independent?.return(null)
     this.independent = undefined
     if (!this.solved)
@@ -302,6 +326,33 @@ export class BusLanesSolver extends BaseSolver {
       // Dense negotiation owns its searches; the initial lane search is unused.
       if (this.search instanceof GridVisibilitySearch) this.search.cancel()
       this.search = undefined
+      if (!this.pairedNetworkAttempted) {
+        this.pairedNetworkAttempted = true
+        const constrained = new Set([
+          ...(this.input.buses ?? []).flatMap((b) => b.connectionNames),
+          ...(this.input.differentialPairs ?? []).flatMap(
+            (p) => p.connectionNames,
+          ),
+        ])
+        if (
+          this.input.connections.some((c) => !constrained.has(c.name)) &&
+          backwardFacingPackageTerminals(this.input)
+        )
+          this.pairedNetwork = routePairedNetwork(
+            this.input,
+            this.terminalLayers,
+          )
+      }
+      if (this.pairedNetwork) {
+        const state = this.pairedNetwork.next()
+        if (!state.done) return
+        this.pairedNetwork = undefined
+        if (state.value) {
+          this.traces = state.value
+          this.phase = "match"
+          return
+        }
+      }
       if (!this.independentAttempted) {
         this.independentAttempted = true
         const groups = independentBusGroups(this.input)
@@ -398,8 +449,11 @@ export class BusLanesSolver extends BaseSolver {
   private match() {
     const input = this.input
     const original = this.traces
+    const fixed = this.fixed
     function* candidates() {
       yield original
+      const rounded = roundCoupledReturnBends(input, original, fixed)
+      if (rounded.some((t, i) => t !== original[i])) yield rounded
       if (original.some((t) => t.coupledSection)) {
         for (const multiplier of [20, 16, 12, 8, 6, 4]) {
           const spread = spreadCoupledTuningLanes(

@@ -17,14 +17,7 @@ export function routeAlternateSignalDogbones(
     }),
     { x: 0, y: 0 },
   )
-  const base =
-    Math.abs(delta.x) > Math.abs(delta.y)
-      ? delta.x > 0
-        ? 3
-        : 1
-      : delta.y > 0
-        ? 2
-        : 0
+  const base = Math.abs(delta.x) > Math.abs(delta.y) ? (delta.x > 0 ? 3 : 1) : 0
   const busNames = new Set(
     (input.buses ?? []).flatMap((b) => b.connectionNames),
   )

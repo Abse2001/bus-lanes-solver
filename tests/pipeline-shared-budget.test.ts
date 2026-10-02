@@ -7,8 +7,9 @@ test("a dense bus can converge beyond the old per-layer cutoff while retaining w
   const stages: number[] = []
   const step = spyOn(BusLanesSolver.prototype, "_step").mockImplementation(
     function (this: BusLanesSolver) {
-      // Model a valid dense plan whose alternatives converge just after the
-      // old 200k cutoff. The unconstrained control stage needs only one step.
+      // Model completion timing just after the old 200k cutoff. These straight
+      // placeholder routes test scheduling, not physical routing quality.
+      // The unconstrained control stage needs only one step.
       if (this.input.buses?.length && this.iterations < 200100) return
       stages.push(this.input.connections.length)
       this.traces = this.input.connections.map((connection) => ({
@@ -25,7 +26,8 @@ test("a dense bus can converge beyond the old per-layer cutoff while retaining w
     },
   )
   try {
-    const solver = new BusLanesPipelineSolver(input)
+    // Isolate the shared search budget from geometric post-processing.
+    const solver = new BusLanesPipelineSolver(input, { smoothTuning: false })
     solver.solve()
     expect(solver.solved).toBe(true)
     expect(solver.failed).toBe(false)

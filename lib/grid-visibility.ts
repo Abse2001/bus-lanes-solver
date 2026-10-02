@@ -372,6 +372,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     grid?: {
       step?: number
       maxLength?: number
+      allTerminalAttachments?: boolean
       bounds?: SimpleRouteJson["bounds"]
     },
   ) {
@@ -739,6 +740,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.parent[a.id] = -1
     if (this.travel) this.travel[a.id] = length(a.path)
     this.heap.push(a.id, 0, this.heuristic(start))
+    if (grid?.allTerminalAttachments) this.retryAttachments()
   }
   private retryAttachments() {
     if (

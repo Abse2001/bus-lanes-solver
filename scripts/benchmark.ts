@@ -225,7 +225,9 @@ try {
     report.status = report.solved ? "solved" : "validation_failed"
     report.error = report.solved
       ? null
-      : "Completed routing failed connectivity, DRC, or matching validation"
+      : report.validation.issues.length
+        ? report.validation.issues.join("; ")
+        : "Completed routing failed connectivity, DRC, matching, or coupling validation"
   }
 } catch (error) {
   report.status = "validation_failed"

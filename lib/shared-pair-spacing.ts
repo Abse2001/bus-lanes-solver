@@ -1,3 +1,4 @@
+import { CopperIndex } from "./copper-index"
 import { distance, pointSegmentDistanceToPoints } from "./geometry"
 import type { SimpleRouteJson, Trace, Wire } from "./types"
 
@@ -92,6 +93,16 @@ export function sharedPairSpacingReports(
     for (let side = 0; side < 2; side++) {
       const path = paths[side] as Wire[],
         mate = rails[1 - side]!.route
+      const segments = mate.slice(1).flatMap((v, index) => {
+        const u = mate[index]
+        return u.route_type === "wire" &&
+          v.route_type === "wire" &&
+          u.layer === path[0].layer &&
+          v.layer === path[0].layer
+          ? [{ a: u, b: v, radius: u.width / 2, layer: u.layer, owners: [] }]
+          : []
+      })
+      const index = new CopperIndex(segments)
       for (let i = 1; i < path.length; i++) {
         const a = path[i - 1],
           b = path[i],
@@ -107,22 +118,14 @@ export function sharedPairSpacingReports(
             x: a.x + (b.x - a.x) * fraction,
             y: a.y + (b.y - a.y) * fraction,
           }
-          let separation = Infinity
-          for (let k = 1; k < mate.length; k++) {
-            const u = mate[k - 1],
-              v = mate[k]
-            if (
-              u.route_type !== "wire" ||
-              v.route_type !== "wire" ||
-              u.layer !== a.layer ||
-              v.layer !== a.layer
-            )
-              continue
-            separation = Math.min(
-              separation,
-              pointSegmentDistanceToPoints(p, u, v) - (a.width + u.width) / 2,
-            )
-          }
+          const separation =
+            index.distanceToPoint(
+              p,
+              (segment) =>
+                pointSegmentDistanceToPoints(p, segment.a, segment.b) -
+                segment.radius,
+            ) -
+            a.width / 2
           min = Math.min(min, separation)
           max = Math.max(max, separation)
         }

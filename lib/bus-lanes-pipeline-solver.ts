@@ -1,3 +1,7 @@
+import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
+import { shortenPairApproaches } from "./shorten-pair-approaches"
+import { busLengthReports } from "./route-lengths"
+import { extendPackageCoupling } from "./extend-package-coupling"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
@@ -28,6 +32,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private completedLanes: Trace[] = []
   private remainingInput?: SimpleRouteJson
   private siteRematch?: Generator<void, RematchedSignalDogbones>
+  private packageCoupling?: Generator<void, Trace[]>
   private terminalLayers = new Map<string, string[]>()
   constructor(input: SimpleRouteJson, options: BusLanesPipelineOptions = {}) {
     super()
@@ -48,6 +53,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
   tryFinalAcceptance() {
+    this.packageCoupling?.return([])
+    this.packageCoupling = undefined
     this.siteRematch?.return({ connections: [], escapes: [] })
     this.siteRematch = undefined
     this.child?.tryFinalAcceptance()
@@ -66,6 +73,63 @@ export class BusLanesPipelineSolver extends BaseSolver {
       // before they converge. Unconstrained controls retain a work reserve.
       maxSearchIterations:
         this.options.maxSearchIterations ?? Math.max(1, remaining - reserve),
+    }
+  }
+  private *finishPackageCoupling(
+    input: SimpleRouteJson,
+    lanes: Trace[],
+  ): Generator<void, Trace[]> {
+    let refined = yield* extendPackageCoupling(input, lanes)
+    if (exteriorPairSpacingReports(input, refined).every((r) => r.matched))
+      return refined
+    refined = yield* extendPackageCoupling(
+      input,
+      shortenPairApproaches(input, refined),
+      { preserveMatching: false },
+    )
+    if (exteriorPairSpacingReports(input, refined).some((r) => !r.matched))
+      throw Error(
+        "Pair approaches still separate outside native package fanouts",
+      )
+    const matcher = BusLanesSolver.forRefinement(input, refined, this.options)
+    try {
+      while (!matcher.solved && !matcher.failed) {
+        matcher.step()
+        yield
+      }
+      if (!matcher.solved)
+        throw Error(matcher.error ?? "Package approach length matching failed")
+      const ceilings = new Map(
+        busLengthReports(input, lanes).map((b) => [
+          b.busId,
+          Math.max(
+            ...b.lengths.map(
+              (l) => l.totalLengthMm ?? Number.POSITIVE_INFINITY,
+            ),
+          ),
+        ]),
+      )
+      if (
+        busLengthReports(input, matcher.traces).some(
+          (b) =>
+            Math.max(
+              ...b.lengths.map(
+                (l) => l.totalLengthMm ?? Number.POSITIVE_INFINITY,
+              ),
+            ) >
+            ceilings.get(b.busId)! + 1e-6,
+        )
+      )
+        throw Error("Package refinement increased the bus length target")
+      if (
+        exteriorPairSpacingReports(input, matcher.traces).some(
+          (r) => !r.matched,
+        )
+      )
+        throw Error("Package approach matching separated the pair")
+      return matcher.traces
+    } finally {
+      if (!matcher.solved && !matcher.failed) matcher.tryFinalAcceptance()
     }
   }
   private prepare() {
@@ -272,8 +336,17 @@ export class BusLanesPipelineSolver extends BaseSolver {
     const busNames = new Set(
       (this.input.buses ?? []).flatMap((b) => b.connectionNames),
     )
+    const direction = laneInput.connections
+      .filter((c) => busNames.has(c.name))
+      .reduce(
+        (sum, c) => ({
+          x: sum.x + c.pointsToConnect[1].x - c.pointsToConnect[0].x,
+          y: sum.y + c.pointsToConnect[1].y - c.pointsToConnect[0].y,
+        }),
+        { x: 0, y: 0 },
+      )
     const joint =
-      this.attempt > 0 &&
+      (this.attempt > 0 || Math.abs(direction.x) > Math.abs(direction.y)) &&
       backwardFacingPackageTerminals({
         ...this.input,
         connections: this.input.connections.filter((c) => busNames.has(c.name)),
@@ -358,65 +431,93 @@ export class BusLanesPipelineSolver extends BaseSolver {
         return
       }
       if (this.child!.solved) {
-        this.traces = [...this.completedLanes, ...this.child!.traces].map(
-          (lane) => {
-            const signalLayer = lane.route.find(
-              (p) => p.route_type === "wire",
-            )!.layer
-            const escapes = this.escapes
-              .filter((t) => t.connection_name === lane.connection_name)
-              .map((t) => {
-                const via = t.route.find((p) => p.route_type === "via")!
+        const lanes = [...this.completedLanes, ...this.child!.traces]
+        let refined = lanes
+        if (this.options.smoothTuning && this.input.differentialPairs?.length) {
+          this.packageCoupling ??= this.finishPackageCoupling(
+            {
+              ...this.input,
+              traces: [...(this.input.traces ?? []), ...this.escapes],
+              connections: this.input.connections.map((c) => {
+                const lane = lanes.find((t) => t.connection_name === c.name)!
                 return {
-                  ...t,
-                  route: t.route.map((p) =>
-                    p.route_type === "via"
-                      ? { ...p, to_layer: signalLayer }
-                      : p.layer === via.to_layer
-                        ? { ...p, layer: signalLayer }
-                        : p,
-                  ),
+                  ...c,
+                  pointsToConnect: [
+                    lane.route[0],
+                    lane.route.at(-1)!,
+                  ] as typeof c.pointsToConnect,
                 }
-              })
-            const near = (
-              a: { x: number; y: number },
-              b: { x: number; y: number },
-            ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
-            const prefix = escapes.find((t) =>
-              near(t.route.at(-1)!, lane.route[0]),
-            )
-            const suffix = escapes.find(
-              (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
-            )
-            const prefixRoute = prefix?.route,
-              suffixRoute = suffix?.route
-            const reversed =
-              suffixRoute
-                ?.toReversed()
-                .map((p) =>
+              }),
+            },
+            lanes,
+          )
+          const step = this.packageCoupling.next()
+          if (!step.done) {
+            this.phase = "extend_package_coupling"
+            return
+          }
+          refined = step.value
+          this.packageCoupling = undefined
+        }
+        this.traces = refined.map((lane) => {
+          const signalLayer = lane.route.find(
+            (p) => p.route_type === "wire",
+          )!.layer
+          const escapes = this.escapes
+            .filter((t) => t.connection_name === lane.connection_name)
+            .map((t) => {
+              const via = t.route.find((p) => p.route_type === "via")!
+              return {
+                ...t,
+                route: t.route.map((p) =>
                   p.route_type === "via"
-                    ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
-                    : p,
-                ) ?? []
-            const offset = (prefix?.route.length ?? 1) - 1
-            return {
-              ...lane,
-              coupledSection: lane.coupledSection?.map((i) => i + offset) as
-                | [number, number]
-                | undefined,
-              curvedSegments: lane.curvedSegments?.map((i) => i + offset),
-              route: [
-                ...(prefixRoute?.slice(0, -1) ?? []),
-                ...lane.route,
-                ...reversed.slice(1),
-              ],
-            }
-          },
-        )
+                    ? { ...p, to_layer: signalLayer }
+                    : p.layer === via.to_layer
+                      ? { ...p, layer: signalLayer }
+                      : p,
+                ),
+              }
+            })
+          const near = (
+            a: { x: number; y: number },
+            b: { x: number; y: number },
+          ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
+          const prefix = escapes.find((t) =>
+            near(t.route.at(-1)!, lane.route[0]),
+          )
+          const suffix = escapes.find(
+            (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
+          )
+          const prefixRoute = prefix?.route,
+            suffixRoute = suffix?.route
+          const reversed =
+            suffixRoute
+              ?.toReversed()
+              .map((p) =>
+                p.route_type === "via"
+                  ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
+                  : p,
+              ) ?? []
+          const offset = (prefix?.route.length ?? 1) - 1
+          return {
+            ...lane,
+            coupledSection: lane.coupledSection?.map((i) => i + offset) as
+              | [number, number]
+              | undefined,
+            curvedSegments: lane.curvedSegments?.map((i) => i + offset),
+            route: [
+              ...(prefixRoute?.slice(0, -1) ?? []),
+              ...lane.route,
+              ...reversed.slice(1),
+            ],
+          }
+        })
         this.solved = true
         this.phase = "solved"
       }
     } catch (error) {
+      this.packageCoupling?.return([])
+      this.packageCoupling = undefined
       this.siteRematch?.return({ connections: [], escapes: [] })
       this.siteRematch = undefined
       this.attempt++

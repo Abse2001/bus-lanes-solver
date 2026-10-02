@@ -1,3 +1,4 @@
+import { exteriorPairSpacingReports } from "../lib/exterior-pair-spacing"
 import type { Point, SimpleRouteJson, Trace, Wire } from "../lib"
 import { distance } from "../lib/geometry"
 import { sharedPairSpacingReports } from "../lib/shared-pair-spacing"
@@ -130,6 +131,13 @@ export function measureAm3352RoutingQuality(
   const detours = rows.flatMap((r) =>
     r.detourRatio === null ? [] : [r.detourRatio],
   )
+  const exteriorPairGaps = exteriorPairSpacingReports(input, traces)
+  for (const pair of exteriorPairGaps) {
+    if (!pair.matched)
+      issues.push(
+        `${pair.connectionNames.join("/")}: paired copper separates outside the native package fanout regions`,
+      )
+  }
   const pairGaps = sharedPairSpacingReports(input, traces)
   for (const pair of pairGaps) {
     if (!pair.matched)
@@ -152,6 +160,7 @@ export function measureAm3352RoutingQuality(
     illegalOrdinaryCorners: sum("illegalOrdinaryCorners"),
     nonOctilinearOrdinarySegments: sum("nonOctilinearOrdinarySegments"),
     pairGaps,
+    exteriorPairGaps,
     issues,
   }
 }

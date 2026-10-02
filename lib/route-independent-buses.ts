@@ -1,3 +1,4 @@
+import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { repairGridJogs } from "./repair-grid-jogs"
 import { routeCoupledPair } from "./coupled-pair-routing"
 import { negotiateLanes } from "./negotiate-lanes"
@@ -64,7 +65,13 @@ export function* routeIndependentBuses(
       (c) => !pair?.connectionNames.includes(c.name),
     )
     let solved: Trace[] | null = null
-    for (let variant = 0; variant < 6 && !solved; variant++) {
+    // Alternate nearby and distant handoffs for backward-facing packages;
+    // consecutive neighboring retries often repeat the same closed topology.
+    const variants = backwardFacingPackageTerminals(input)
+      ? [0, 5, 1, 4, 2, 3]
+      : [0, 1, 2, 3, 4, 5]
+    for (const variant of variants) {
+      if (solved) break
       let paired: Trace[] = []
       if (pair) {
         const search = routeCoupledPair(input, pair, fixed, {

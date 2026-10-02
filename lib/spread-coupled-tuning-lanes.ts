@@ -1,3 +1,4 @@
+import { remapCurvedSegments } from "./remap-curved-segments"
 import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
 import { sharedStraightSection } from "./shared-straight-section"
 import { interPackageTuningWindow } from "./inter-package-tuning-window"
@@ -271,6 +272,7 @@ export function spreadCoupledTuningLanes(
               const trace = channel.traces[0]
               replacements.push({
                 ...trace,
+                curvedSegments: remapCurvedSegments(trace, path.map(xy)),
                 route: path.map((p) => ({
                   ...xy(p),
                   route_type: "wire",
@@ -305,13 +307,11 @@ export function spreadCoupledTuningLanes(
                 replacements.push({
                   ...trace,
                   coupledSection: [s, s + points.length - 1],
-                  curvedSegments: trace.curvedSegments?.flatMap((index) =>
-                    index <= s
-                      ? [index]
-                      : index > e
-                        ? [index + points.length - (e - s + 1)]
-                        : [],
-                  ),
+                  curvedSegments: remapCurvedSegments(trace, [
+                    ...trace.route.slice(0, s),
+                    ...points,
+                    ...trace.route.slice(e + 1),
+                  ]),
                   route: [
                     ...trace.route.slice(0, s),
                     ...points.map((p) => ({
