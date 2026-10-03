@@ -232,8 +232,7 @@ export class BusLanesSolver extends BaseSolver {
           radius: this.widths.get(c.name)! / 2,
           owners: [c.name],
         })
-    const negotiatePairs =
-      this.options.denseSearch && input.connections.length > 12
+    const negotiatePairs = this.useNegotiation
     const paired = new Set(
       negotiatePairs
         ? []
@@ -253,6 +252,18 @@ export class BusLanesSolver extends BaseSolver {
     }
     this.phase = "route"
     this.startLane()
+  }
+  // Small remainders still need layer negotiation when their dogbone terminals
+  // can reach more than one signal layer. The fixed-layer visibility search
+  // cannot explore that choice, regardless of how few connections remain.
+  private get useNegotiation() {
+    return (
+      this.options.denseSearch &&
+      (this.input.connections.length > 12 ||
+        this.input.connections.some(
+          (c) => (this.terminalLayers.get(c.name)?.length ?? 0) > 1,
+        ))
+    )
   }
   private coupledPairs() {
     return (this.input.differentialPairs ?? []).filter(
@@ -297,10 +308,9 @@ export class BusLanesSolver extends BaseSolver {
     }
     const c = this.orders[this.attempt][this.lane],
       [a, b] = c.pointsToConnect
-    this.search =
-      this.options.denseSearch && this.input.connections.length > 12
-        ? new GridVisibilitySearch(this.scene(c), a, b)
-        : new VectorVisibilitySearch(this.scene(c), a, b)
+    this.search = this.useNegotiation
+      ? new GridVisibilitySearch(this.scene(c), a, b)
+      : new VectorVisibilitySearch(this.scene(c), a, b)
   }
   private retry() {
     if (this.traces.length > this.bestPartial.length)
@@ -339,7 +349,7 @@ export class BusLanesSolver extends BaseSolver {
     this.startLane()
   }
   private route() {
-    if (this.options.denseSearch && this.input.connections.length > 12) {
+    if (this.useNegotiation) {
       // Dense negotiation owns its searches; the initial lane search is unused.
       if (this.search instanceof GridVisibilitySearch) this.search.cancel()
       this.search = undefined
