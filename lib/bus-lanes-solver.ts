@@ -1,3 +1,4 @@
+import { highDemandPairedLanes } from "./tuning-bank-demands"
 import { routePairedNetwork } from "./route-paired-network"
 import { roundCoupledReturnBends } from "./round-coupled-return-bends"
 import {
@@ -487,6 +488,25 @@ export class BusLanesSolver extends BaseSolver {
       // work; retain those refinements as fallbacks after compact banks.
       yield original
       if (packBanks) {
+        const busNames = new Set(input.buses?.flatMap((b) => b.connectionNames))
+        if (original.some((t) => !busNames.has(t.connection_name!))) {
+          const highDemand = highDemandPairedLanes(input, original).size > 0
+          for (const multiplier of highDemand
+            ? [16, 12, 14, 10, 8]
+            : [10, 8, 12, 14, 16]) {
+            const spread = spreadCoupledTuningLanes(
+              input,
+              original,
+              input.minTraceWidth * multiplier,
+              "dogleg",
+              true,
+            )
+            if (spread) {
+              compactCorridors.add(spread)
+              yield spread
+            }
+          }
+        }
         // Fold the banks into the unused center first. Ordered, staggered
         // entries preserve lane topology without pushing every run outward.
         for (const multiplier of [5, 6, 8, 12]) {
