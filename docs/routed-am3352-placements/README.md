@@ -9,14 +9,14 @@ The strict local benchmark completes **8/8 within 60 seconds per sample**:
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| control | 11.293 s | 13.271 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| right | 11.109 s | 13.465 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| left | 15.366 s | 20.820 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
-| above | 19.436 s | 23.556 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| inner-layers | 20.424 s | 22.543 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
-| inner-layers-right | 26.309 s | 28.496 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
-| inner-layers-left | 38.595 s | 44.321 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.105 mm |
-| inner-layers-above | 56.388 s | 59.221 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| control | 13.622 s | 15.636 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 8.711 s | 11.066 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 12.570 s | 18.276 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 16.907 s | 21.024 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 22.394 s | 24.505 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 20.783 s | 22.934 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 39.223 s | 44.990 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.105 mm |
+| inner-layers-above | 47.775 s | 50.616 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
 
 Measurements use Bun 1.3.2 on macOS arm64. All samples have 47/47 signals,
 161 unchanged power dogbones, native combined-copper DRC, full pad-to-pad byte-bus

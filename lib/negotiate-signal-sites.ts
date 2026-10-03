@@ -275,6 +275,22 @@ export function* negotiateSignalSites(
     for (let k = 0; k < Math.min(choices.length, 4); k++) {
       const option = choices[(visit * 4 + k) % choices.length],
         { scene, connection: local, layer } = option
+      // The terminal dogbones are fixed for this option. Each conflicting
+      // route must be displaced regardless of the carrier path. Together with
+      // straight-line distance this is a conservative score lower bound; skip
+      // searches that cannot beat the incumbent. Full repairs still collect
+      // every alternative for the compatibility pool.
+      if (stopWithOneRemaining && best) {
+        const [a, b] = local.pointsToConnect
+        const forcedHits = others.filter((other) =>
+          overlap(option.escapeCopper, other.copper),
+        ).length
+        if (
+          Math.hypot(a.x - b.x, a.y - b.y) + 100 * forcedHits >
+          best.score + 1e-7
+        )
+          continue
+      }
       if (!projectors.has(layer)) {
         const projector = new GridHistoryProjector(scene)
         projectors.set(layer, projector)
