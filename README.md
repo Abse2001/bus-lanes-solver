@@ -188,19 +188,22 @@ same eight-case measurement and uploads the result JSON.
 The current eight-case run on macOS arm64 with Bun 1.3.2 completes **6/8**
 with a 60-second routing limit per sample. Restricted right completes all 47
 signals; restricted left and above still time out. This is not yet a passing
-all-placement regression. Reproduce the strict check with
+all-placement regression. Flexible-terminal searches skip repairs that hold
+all lanes on their current plane, spending that budget on layer negotiation.
+The completed cases retain the same DRC, matching, and geometry metrics.
+Reproduce the strict check with
 `./benchmark.sh --timeout-seconds 60 --require-all-solved`.
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| control | 12.614 s | 14.736 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| right | 11.801 s | 14.317 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| left | 17.260 s | 22.918 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
-| above | 27.435 s | 33.064 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| inner-layers | 30.767 s | 32.992 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
-| inner-layers-right | 33.113 s | 35.535 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
-| inner-layers-left | 60.000 s | 60.051 s | 0/47 | Timed out | — | — |
-| inner-layers-above | 60.000 s | 60.049 s | 0/47 | Timed out | — | — |
+| control | 12.403 s | 14.449 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 11.885 s | 14.332 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 16.042 s | 21.975 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 23.799 s | 29.388 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 22.111 s | 24.270 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 29.570 s | 31.852 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 60.001 s | 60.049 s | 0/47 | Timed out | — | — |
+| inner-layers-above | 60.000 s | 60.051 s | 0/47 | Timed out | — | — |
 
 All six completed cases preserve the 161 power dogbones and have zero separated
 pair length outside the native pad/fanout regions. The exterior audit checks both
