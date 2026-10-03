@@ -74,11 +74,15 @@ export function spreadCoupledTuningLanes(
   let result = alignCoupledSectionBoundaries(input, structuredClone(traces))
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
-  for (const bus of input.buses ?? []) {
-    const busMembers = result.filter((t) =>
-      bus.connectionNames.includes(t.connection_name!),
-    )
-    const layer = (busMembers[0]?.route[0] as Wire)?.layer
+  const busNames = new Set(input.buses?.flatMap((bus) => bus.connectionNames))
+  const layers = new Set(
+    result
+      .filter((trace) => busNames.has(trace.connection_name!))
+      .map((trace) => (trace.route[0] as Wire).layer),
+  )
+  // A bus may use several permitted planes. Open each physical bank once,
+  // including planes that do not contain a bus's first member.
+  for (const layer of layers) {
     const members = result.filter((t) => (t.route[0] as Wire).layer === layer)
     if (members.length < 3) continue
     const first = members[0].route[0],

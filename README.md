@@ -196,14 +196,14 @@ Reproduce the strict check with
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| control | 12.403 s | 14.449 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| right | 11.885 s | 14.332 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| left | 16.042 s | 21.975 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
-| above | 23.799 s | 29.388 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| inner-layers | 22.111 s | 24.270 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
-| inner-layers-right | 29.570 s | 31.852 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
-| inner-layers-left | 60.001 s | 60.049 s | 0/47 | Timed out | — | — |
-| inner-layers-above | 60.000 s | 60.051 s | 0/47 | Timed out | — | — |
+| control | 11.703 s | 13.690 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 11.131 s | 13.471 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 15.736 s | 21.294 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 22.522 s | 27.981 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 21.315 s | 23.457 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 27.822 s | 30.049 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 60.000 s | 60.047 s | 0/47 | Timed out | — | — |
+| inner-layers-above | 60.000 s | 60.046 s | 0/47 | Timed out | — | — |
 
 All six completed cases preserve the 161 power dogbones and have zero separated
 pair length outside the native pad/fanout regions. The exterior audit checks both
