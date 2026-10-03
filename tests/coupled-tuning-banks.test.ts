@@ -276,3 +276,54 @@ test("buses spanning planes open every bank once regardless of bus membership or
     sharedPairSpacingReports(input, result!).every((pair) => pair.matched),
   ).toBe(true)
 })
+
+test("redundant paired vertices leave the allocated tuning bank unchanged", () => {
+  const traces: Trace[] = [-0.11, 0.11, 1, 2].map((y, i) => ({
+    type: "pcb_trace",
+    pcb_trace_id: `split_${i}`,
+    connection_name: `split_${i}`,
+    coupledSection: i < 2 ? [1, 2] : undefined,
+    route: [0, 1, 19, 20].map((x) => ({
+      x,
+      y,
+      route_type: "wire",
+      layer: "inner1",
+      width: 0.1,
+    })),
+  }))
+  const input: SimpleRouteJson = {
+    layerCount: 4,
+    minTraceWidth: 0.1,
+    minTraceToPadEdgeClearance: 0.1,
+    bounds: { minX: -5, maxX: 25, minY: -10, maxY: 10 },
+    obstacles: [],
+    connections: traces.map((t) => ({
+      name: t.connection_name!,
+      pointsToConnect: [t.route[0], t.route.at(-1)!].map((p) => ({
+        ...p,
+        layer: "inner1",
+      })),
+    })),
+    buses: [{ busId: "data", connectionNames: ["split_2", "split_3"] }],
+    differentialPairs: [
+      {
+        connectionNames: ["split_0", "split_1"],
+        traceGap: 0.12,
+        lengthTolerance: 0.1,
+      },
+    ],
+  }
+  const split = structuredClone(traces)
+  split[1].route.splice(
+    2,
+    0,
+    { ...split[1].route[1], x: 7 },
+    { ...split[1].route[1], x: 10 },
+  )
+  split[1].coupledSection = [1, 4]
+  const before = structuredClone(split)
+  const baseline = spreadCoupledTuningLanes(input, traces, 0.8)
+  expect(baseline).not.toBeNull()
+  expect(spreadCoupledTuningLanes(input, split, 0.8)).toEqual(baseline)
+  expect(split).toEqual(before)
+})

@@ -607,7 +607,7 @@ export class BusLanesSolver extends BaseSolver {
               this.options.smoothTuning &&
               candidate.some((t) => t.coupledSection)
                 ? tuneCoupledLengths(input, candidate, {
-                    maxCandidates: corridor === original ? 512 : 4096,
+                    maxCandidates: corridor === original ? 512 : 16384,
                     packMeanders:
                       quickOriginal || compactCorridors.has(corridor),
                   })

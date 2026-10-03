@@ -2,6 +2,7 @@ import { staggeredBankEntries } from "./staggered-bank-entries"
 import { remapCurvedSegments } from "./remap-curved-segments"
 import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
 import { sharedStraightSection } from "./shared-straight-section"
+import { coalesceSharedRuns } from "./coalesce-shared-runs"
 import { interPackageTuningWindow } from "./inter-package-tuning-window"
 import { offsetPath } from "./coupled-pair-routing"
 import { distance, simplify } from "./geometry"
@@ -112,11 +113,24 @@ export function spreadCoupledTuningLanes(
         (n) => members.find((t) => t.connection_name === n)!,
       )
       if (rails?.every((t) => t.coupledSection)) {
+        rails = coalesceSharedRuns(rails)
         const existing = rails.map((t) =>
           t.route.slice(t.coupledSection![0], t.coupledSection![1] + 1),
         )
         const wholeCorridor =
           existing[0].length === existing[1].length &&
+          [0, existing[0].length - 1].every((i) => {
+            const a = existing[0][i],
+              b = existing[1][i],
+              q = existing[0][i === 0 ? 1 : i - 1],
+              span = distance(a, q)
+            return (
+              span > 1e-8 &&
+              Math.abs(
+                ((b.x - a.x) * (q.x - a.x) + (b.y - a.y) * (q.y - a.y)) / span,
+              ) < 1e-7
+            )
+          }) &&
           existing[0].slice(1).every((point, i) => {
             const a = existing[0][i],
               c = existing[1][i],

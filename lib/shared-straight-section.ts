@@ -1,3 +1,4 @@
+import { coalesceSharedRuns } from "./coalesce-shared-runs"
 import { distance } from "./geometry"
 import type { Trace, Wire } from "./types"
 
@@ -8,6 +9,7 @@ export function sharedStraightSection(
   rails: Trace[],
   spacing: number,
 ): Trace[] | null {
+  rails = coalesceSharedRuns(rails)
   let best:
     | {
         indices: number[]

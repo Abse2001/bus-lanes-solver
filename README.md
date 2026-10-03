@@ -190,19 +190,22 @@ with a 60-second routing limit per sample. Restricted right completes all 47
 signals; restricted left and above still time out. This is not yet a passing
 all-placement regression. Flexible-terminal searches skip repairs that hold
 all lanes on their current plane, spending that budget on layer negotiation.
-The completed cases retain the same DRC, matching, and geometry metrics.
+All six completed cases retain passing DRC, length matching, and pair coupling.
+Two-sided rounded meanders reduce the above-placement trace bounds from
+810.6 to 638.4 mm² and its maximum detour from 1.79× to 1.59×. Redundant
+collinear vertices no longer shorten the paired region available for tuning.
 Reproduce the strict check with
 `./benchmark.sh --timeout-seconds 60 --require-all-solved`.
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| control | 11.703 s | 13.690 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| right | 11.131 s | 13.471 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| left | 15.736 s | 21.294 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
-| above | 22.522 s | 27.981 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| inner-layers | 21.315 s | 23.457 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
-| inner-layers-right | 27.822 s | 30.049 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
-| inner-layers-left | 60.000 s | 60.047 s | 0/47 | Timed out | — | — |
+| control | 11.906 s | 13.896 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 11.350 s | 13.708 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 15.624 s | 21.091 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 20.252 s | 24.464 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 21.317 s | 23.454 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 26.973 s | 29.135 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 60.000 s | 60.045 s | 0/47 | Timed out | — | — |
 | inner-layers-above | 60.000 s | 60.046 s | 0/47 | Timed out | — | — |
 
 All six completed cases preserve the 161 power dogbones and have zero separated

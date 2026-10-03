@@ -1,3 +1,4 @@
+import { bipolarPairedLobes } from "./bipolar-tuning"
 import { foldedPairedLobes } from "./folded-tuning"
 import { smoothPairedLobes, roundedPairedLobes } from "./smooth-tuning"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
@@ -108,6 +109,7 @@ export function tuneCoupledLengths(
                   : Array.from({ length: 16 }, (_, i) => i + 1))
                   for (const side of [1, -1])
                     for (const createLobes of [
+                      bipolarPairedLobes,
                       roundedPairedLobes,
                       smoothPairedLobes,
                     ])
