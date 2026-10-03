@@ -157,59 +157,71 @@ export function* routeSharedLayerBuses(
       buses: [],
       differentialPairs: [],
     }
-    const reachableLayers = new Map(terminalLayers)
-    const rematched = yield* rematchTrappedSignalDogbones(
-      native,
-      pending,
-      matched,
-      escapes,
-      terminalLayers,
-      reachableLayers,
-    )
-    if (
-      pending.connections.some((c) => reachableLayers.get(c.name)?.length === 0)
-    )
-      continue
-    const remainingInput = {
-      ...pending,
-      connections: rematched.connections,
-      traces: [...(native.traces ?? []), ...rematched.escapes, ...matched],
-    }
-    const remaining = new BusLanesSolver(
-      remainingInput,
-      {
-        ...options,
-        maxSearchIterations: Math.min(
-          options.maxSearchIterations ?? 200000,
-          200000,
-        ),
-      },
-      terminalLayers,
-    )
-    try {
-      while (!remaining.solved && !remaining.failed) {
-        remaining.step()
-        yield
+    let rematched = { connections: pending.connections, escapes }
+    // Try the existing sites before searching every control on every layer.
+    // A completed route is stronger evidence than individual reachability
+    // probes, and avoids repairing a usable site just to open a second layer.
+    for (let repair = 0; repair < 2; repair++) {
+      if (repair) {
+        const reachableLayers = new Map(terminalLayers)
+        rematched = yield* rematchTrappedSignalDogbones(
+          native,
+          pending,
+          matched,
+          escapes,
+          terminalLayers,
+          reachableLayers,
+        )
+        if (
+          pending.connections.some(
+            (c) => reachableLayers.get(c.name)?.length === 0,
+          ) ||
+          rematched.escapes.every((trace, i) => trace === escapes[i])
+        )
+          break
       }
-      if (!remaining.solved) continue
-      const traces = [...matched, ...remaining.traces]
-      return {
-        escapes: rematched.escapes,
-        traces,
-        input: {
-          ...local,
-          connections: local.connections.map((c) => {
-            const t = traces.find((t) => t.connection_name === c.name)!
-            return {
-              ...c,
-              pointsToConnect: [t.route[0], t.route.at(-1)!] as Wire[],
-            }
-          }),
-          traces: [...(native.traces ?? []), ...rematched.escapes],
+      const remainingInput = {
+        ...pending,
+        connections: rematched.connections,
+        traces: [...(native.traces ?? []), ...rematched.escapes, ...matched],
+      }
+      const remaining = new BusLanesSolver(
+        remainingInput,
+        {
+          ...options,
+          maxSearchIterations: Math.min(
+            options.maxSearchIterations ?? 200000,
+            200000,
+          ),
         },
+        terminalLayers,
+      )
+      try {
+        while (!remaining.solved && !remaining.failed) {
+          remaining.step()
+          yield
+        }
+        if (!remaining.solved) continue
+        const traces = [...matched, ...remaining.traces]
+        return {
+          escapes: rematched.escapes,
+          traces,
+          input: {
+            ...local,
+            connections: local.connections.map((c) => {
+              const t = traces.find((t) => t.connection_name === c.name)!
+              return {
+                ...c,
+                pointsToConnect: [t.route[0], t.route.at(-1)!] as Wire[],
+              }
+            }),
+            traces: [...(native.traces ?? []), ...rematched.escapes],
+          },
+        }
+      } finally {
+        if (!remaining.solved && !remaining.failed)
+          remaining.tryFinalAcceptance()
       }
-    } finally {
-      if (!remaining.solved && !remaining.failed) remaining.tryFinalAcceptance()
     }
   }
   return null
