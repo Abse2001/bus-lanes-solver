@@ -360,6 +360,12 @@ export class GridVisibilitySearch extends GridHistoryProjector {
   private rootPaths = new Map<number, Point[]>()
   private goalPaths = new Map<number, Point[]>()
   private attachmentResult?: { score: number; path: Point[] }
+  private goalBounds!: {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+  }
   private hx: Float64Array
   private hy: Float64Array
   constructor(
@@ -373,6 +379,9 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       step?: number
       maxLength?: number
       allTerminalAttachments?: boolean
+      nearestTerminalAttachments?: boolean
+      starts?: Point[]
+      ends?: Point[]
       bounds?: SimpleRouteJson["bounds"]
     },
   ) {
@@ -399,8 +408,23 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           reverse: 1 << (7 - index),
         })
       }
-    this.hx = this.xs.map((x) => Math.abs(x - this.end.x) / this.stepSize)
-    this.hy = this.ys.map((y) => Math.abs(y - this.end.y) / this.stepSize)
+    const ends = grid?.ends ?? [end]
+    this.goalBounds = {
+      minX: Math.min(...ends.map((p) => p.x)),
+      maxX: Math.max(...ends.map((p) => p.x)),
+      minY: Math.min(...ends.map((p) => p.y)),
+      maxY: Math.max(...ends.map((p) => p.y)),
+    }
+    this.hx = this.xs.map(
+      (x) =>
+        Math.max(this.goalBounds.minX - x, x - this.goalBounds.maxX, 0) /
+        this.stepSize,
+    )
+    this.hy = this.ys.map(
+      (y) =>
+        Math.max(this.goalBounds.minY - y, y - this.goalBounds.maxY, 0) /
+        this.stepSize,
+    )
     const n = this.nx * this.ny
     const grids = hardGrids.get(scene.input) ?? new Map<string, HardGrid>()
     hardGrids.set(scene.input, grids)
@@ -727,8 +751,30 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       attachments.set(key, structuredClone(result))
       return result
     }
-    this.startAttachments = attach(start)
-    this.endAttachments = attach(end)
+    const distinct = (items: Attachment[]) => {
+      const unique = new Map<number, Attachment>()
+      for (const a of items.sort((a, b) => length(a.path) - length(b.path)))
+        if (!unique.has(a.id)) unique.set(a.id, a)
+      return [...unique.values()]
+    }
+    this.startAttachments = grid?.starts
+      ? distinct(
+          grid.starts.flatMap((point) =>
+            grid.nearestTerminalAttachments
+              ? attach(point).slice(0, 1)
+              : attach(point),
+          ),
+        )
+      : attach(start)
+    this.endAttachments = grid?.ends
+      ? distinct(
+          ends.flatMap((point) =>
+            grid.nearestTerminalAttachments
+              ? attach(point).slice(0, 1)
+              : attach(point),
+          ),
+        )
+      : attach(end)
     const a = this.startAttachments[0],
       z = this.endAttachments[0]
     if (!a || !z) {
@@ -754,7 +800,8 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.parent[a.id] = -1
     if (this.travel) this.travel[a.id] = length(a.path)
     this.heap.push(a.id, 0, this.heuristic(start))
-    if (grid?.allTerminalAttachments) this.retryAttachments()
+    if (grid?.allTerminalAttachments || grid?.starts || grid?.ends)
+      this.retryAttachments()
   }
   private retryAttachments() {
     if (
@@ -858,8 +905,18 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     return true
   }
   private heuristic(point: Point) {
-    const dx = Math.abs(point.x - this.end.x) / this.stepSize
-    const dy = Math.abs(point.y - this.end.y) / this.stepSize
+    const dx =
+      Math.max(
+        this.goalBounds.minX - point.x,
+        point.x - this.goalBounds.maxX,
+        0,
+      ) / this.stepSize
+    const dy =
+      Math.max(
+        this.goalBounds.minY - point.y,
+        point.y - this.goalBounds.maxY,
+        0,
+      ) / this.stepSize
     return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)
   }
   /** Stop an abandoned search before handing its memo to the next search.

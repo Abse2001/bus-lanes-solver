@@ -1,3 +1,4 @@
+import { routeFreshSharedBuses } from "./route-fresh-shared-buses"
 import { routeSharedLayerBuses } from "./route-shared-layer-buses"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
 import { routeBackwardPackageBuses } from "./route-backward-package-buses"
@@ -395,7 +396,26 @@ export class BusLanesPipelineSolver extends BaseSolver {
           ),
         }))
     ) {
-      this.sharedPackages = routeSharedLayerBuses(
+      const freshSites =
+        layers.length === 2 &&
+        !this.input.allowBlindAndBuriedVias &&
+        this.escapes.length === 2 * this.input.connections.length &&
+        backwardFacingPackageTerminals({
+          ...this.input,
+          connections: this.input.connections.filter((c) =>
+            busNames.has(c.name),
+          ),
+        }) &&
+        this.input.connections.every(
+          (c) =>
+            c.pointsToConnect.length === 2 &&
+            c.pointsToConnect.every((p) =>
+              isUnroutedComponentPad(this.input, c, p),
+            ),
+        )
+      this.sharedPackages = (
+        freshSites ? routeFreshSharedBuses : routeSharedLayerBuses
+      )(
         this.input,
         laneInput,
         this.escapes,
