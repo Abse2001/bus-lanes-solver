@@ -1,57 +1,59 @@
-# Successive approximation for bus lanes
+# Anytime bus routing with coordinated space allocation
 
-The new `AnytimeBusLanesSolver` retains a valid incumbent and searches progressively denser tuning shapes. A 1x run is the prefix of a 2x or 5x run: increasing effort continues the same deterministic search, and the accepted objective cannot increase.
+The new search changes complete routing groups and the space they occupy. On AM3352 inner-layers-above, the genuine **1x → 5x** prefix reduces the outer carrier envelope **42.64%**, planar signal copper **16.49%**, and independently measured clearance exclusion **16.23%**. All **14 samples × 3 efforts = 42** complete checkpoints pass their original native connectivity, DRC, matching, and pair checks.
 
-[Open the interactive comparison](index.html), select a sample and copper layer, then zoom or pan any panel to inspect all three efforts at the same physical scale. The report contains the exact, full-precision routed geometry and works offline in a browser supporting `DecompressionStream`.
+[Open the interactive comparison](index.html). Select a sample and copper layer, then pan or zoom the linked panels. Every checkpoint uses the same physical viewport. The report embeds exact full-precision routed geometry and runs offline in browsers supporting `DecompressionStream`.
 
-![AM3352 right inner1: linked 1x, 2x and 5x meander close-up](meander-detail.png)
+![AM3352 inner-above: exact 1x, 2x and 5x routes at the same physical scale](comparison.png)
 
-[View the complete placement and measurements](comparison.png).
+Native review snapshots auto-fit each route. The interactive panels and this comparison screenshot use a shared viewport.
 
 ## Algorithm
 
-1. Immediately return provisional endpoint connections with `status: "best_effort"` and explicit violations. Route the first legal incumbent with the existing bus-lanes pipeline, preserving supplied fanouts and local escapes.
-2. Identify the length-tuning banks and propose rounded or folded raster replacements. Search cell count, longitudinal span and placement, side, bend radius, and added length. Try length-preserving forms first, then small length reductions and ordinary-run shortcuts. Shared differential banks change both offset rails together.
-3. Rebase proposals onto the latest incumbent so accepted changes to different lanes accumulate. Reject proposals whose weighted score does not improve or whose bus/pair lengths fall outside tolerance.
-4. Validate the changed copper and its differential partner against all immutable copper and the other accepted lanes. Apply the original lane, clearance, self-clearance, corner, coupling and exterior pair-spacing checks. Only an accepted proposal can replace the incumbent.
-5. Yield between discovery/trial steps. Continue to the requested effort, or retain the best result when the neighborhood converges. More work can plateau; this is a local optimizer with no global optimality guarantee.
+1. Provide provisional endpoint connections immediately with `status: "best_effort"` and explicit violations. Obtain a valid incumbent using the existing initial router, preserving supplied fanouts and local escapes.
+2. Discover empty coordinate strips crossed only by straight runs. Move all affected lanes together, collapsing compatible strips from the outside inward while anchoring terminals, vias, immutable copper, and package approaches. Explore cumulative and directional subsets in a bounded beam. Separately recover untuned skeletons and search shorter corridors by rerouting blocking nets together on coarse-to-fine visibility grids.
+3. Close overlapping bus and differential-pair constraints into electrical cohorts. Compute a new common length-target vector. Reconstruct banks together across known and newly available pockets, using compact rounded/folded forms and clearance-derived density. Accepted banks can expand or contract their straight legs while retaining bend radii and longitudinal positions. Whole paired lobes can be removed without disturbing the remaining phase. Reserve future immutable handoffs and nonbank approaches during partial construction.
+4. Rebase complete transactions onto the latest incumbent. Check original terminal/port identity, width, layer, ownership, immutable escape geometry, whole-copper matching, native continuous clearance, self-clearance, conventional angles, pair coupling, and accepted physical minimum pair gaps. A strictly valid, better transaction replaces the incumbent atomically.
+5. Yield after bounded discovery and construction chunks. Continue the identical deterministic sequence at higher effort; failed scratch candidates leave the valid result available. The objective never increases after the first valid route.
 
-Feasibility takes priority over score. The objective is
+The optimizer uses low-level geometry and its own transaction search. The original router creates the first incumbent; the original validator audits later candidates.
+
+The configurable objective is
 
 ```text
-normalizedArea + 0.1 * skewPenalty + 0.2 * normalizedLength
+areaWeight * normalizedArea + skewWeight * skewPenalty + lengthWeight * normalizedLength
 ```
 
-Weights are configurable. Area combines per-layer envelopes, mean per-lane envelope, and the sum of tuning-bank envelopes. Wire radii and via pads count in these envelopes. The bank term makes wasted meander space visible even when the outer envelope is fixed by terminal approaches. Skew is the mean squared skew normalized by the declared tolerance, floored at the minimum trace width. Electrical length includes fixed fanouts. The raw measurements are retained separately so tradeoffs remain visible.
+Default weights are **1, 0.1, 0.2**. Area combines the outer copper envelope, mean physical-layer envelope, mean lane envelope, and mean clearance-exclusion union, normalized by the terminal envelope. Wire radii and via pads count. Tuning-bank rectangles are secondary diagnostics and have no effect on acceptance. Length includes immutable fanouts; skew is mean squared skew normalized by its declared tolerance, floored at minimum trace width. Individual components can trade off while the complete route stays valid.
 
-The defaults allocate 128, 256 and 640 cumulative optimization discovery/trial steps to 1x, 2x and 5x. The initial routing cost is separate. If bounded routing fails, higher effort retries routing with 1x, 2x and 5x routing budgets. Each trial is synchronous; responsiveness is bounded by an individual geometry/validation step. `step()` supports external scheduling, and `runIterations(n)` can continue beyond the named presets.
+The default cumulative budgets are **512, 1024, and 2560** optimization steps. Initial routing and independent validation are separate costs. `iterationsPerX` is configurable; a larger base can reach a compact result already at 1x. Additional effort can plateau and does not guarantee a global optimum or proportional elapsed time. `step()` supports external scheduling, and `runIterations(n)` continues beyond the presets.
 
-## Results on every existing positive sample
+## All existing positive samples
 
-All 14 samples pass at all three efforts: **42 complete, independently validated checkpoints**. The eight AM3352 samples also pass the native pad-to-pad connectivity, fixed-power provenance, combined DRC, bus/pair length and routing-quality audit. All 42 routed PNGs were visually inspected. The browser report was checked across every sample, effort and available layer with no runtime errors.
+The table reports physical outer envelopes in mm², total planar signal copper in mm, and signed exclusion reductions from 1x to 5x. Exclusion is measured on one frozen conservative 0.1-mm probe per sample; its union counts overlapping exclusions once and subtracts immutable copper and board exclusions. Summed layer areas use layer-mm². These measurements are independent of the optimizer's score. Negative reductions show a component tradeoff.
 
-The following areas are sums of tuning-bank bounding envelopes, in mm², rather than board area or a union of free space. Objective reductions compare 1x with 5x.
+| Sample | Signals | 1x envelope | 2x envelope | 5x envelope | Envelope reduction | 1x → 5x copper | Exclusion reduction |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| AM3352 / control | 47 | 412.370 | 412.370 | 412.370 | 0.00% | 1525.838 → 1525.633 | 0.05% |
+| AM3352 / right | 47 | 660.450 | 660.450 | 660.450 | 0.00% | 1864.875 → 1870.935 | -0.07% |
+| AM3352 / left | 47 | 568.859 | 568.859 | 568.859 | 0.00% | 1916.743 → 1927.418 | 0.34% |
+| AM3352 / above | 47 | 638.400 | 638.400 | 638.400 | 0.00% | 2100.815 → 2096.467 | 1.32% |
+| AM3352 / inner-layers | 47 | 474.662 | 474.662 | 474.662 | 0.00% | 1622.503 → 1622.425 | 0.01% |
+| AM3352 / inner-layers-right | 47 | 908.315 | 908.315 | 908.315 | 0.00% | 2161.650 → 2161.777 | 0.00% |
+| AM3352 / inner-layers-left | 47 | 1381.394 | 1381.394 | 1319.329 | 4.49% | 2369.826 → 2282.552 | 5.63% |
+| AM3352 / inner-layers-above | 47 | 2217.520 | 2217.520 | 1271.900 | 42.64% | 3195.350 → 2668.320 | 16.23% |
+| AM62L / ddr left io right | 33 | 233.303 | 233.303 | 233.303 | 0.00% | 2198.992 → 2201.992 | 0.46% |
+| AM62L / ddr right io left | 33 | 144.907 | 144.071 | 138.572 | 4.37% | 2588.706 → 2589.706 | 1.71% |
+| AM62L / ddr top io bottom | 33 | 208.073 | 201.084 | 201.122 | 3.34% | 2387.325 → 2374.703 | 5.78% |
+| AM62L / ddr bottom io top | 33 | 424.898 | 424.898 | 424.898 | 0.00% | 2414.416 → 2417.416 | 0.08% |
+| Three-lane obstacle channel | 3 | 14.688 | 14.688 | 14.688 | 0.00% | 30.787 → 30.787 | 0.00% |
+| Skew tolerance / 0.5 mm | 2 | 31.973 | 31.973 | 31.973 | 0.00% | 20.000 → 19.980 | 2.76% |
 
-| Sample | Signals | 1x tuning area | 2x tuning area | 5x tuning area | Objective reduction |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| AM3352 / control | 47 | 58.889 | 58.889 | 51.602 | 0.357% |
-| AM3352 / right | 47 | 63.250 | 61.982 | 55.273 | 0.286% |
-| AM3352 / left | 47 | 94.346 | 94.317 | 94.314 | 0.004% |
-| AM3352 / above | 47 | 123.550 | 122.903 | 122.903 | 0.020% |
-| AM3352 / inner-layers | 47 | 59.622 | 59.622 | 52.335 | 0.332% |
-| AM3352 / inner-layers-right | 47 | 166.296 | 164.040 | 164.040 | 0.071% |
-| AM3352 / inner-layers-left | 47 | 109.536 | 109.536 | 109.536 | 0.223% |
-| AM3352 / inner-layers-above | 47 | 189.490 | 181.402 | 181.402 | 0.116% |
-| AM62L / ddr left io right | 33 | 105.377 | 97.386 | 97.386 | 1.664% |
-| AM62L / ddr right io left | 33 | 155.100 | 135.424 | 134.857 | 2.167% |
-| AM62L / ddr top io bottom | 33 | 94.590 | 90.832 | 90.832 | 0.290% |
-| AM62L / ddr bottom io top | 33 | 1608.442 | 1607.301 | 1593.013 | 0.398% |
-| Three-lane obstacle channel | 3 | 0.000 | 0.000 | 0.000 | 0.000% |
-| Skew tolerance / 0.5 mm | 2 | 2.924 | 2.924 | 2.253 | 6.642% |
+Inner-above's mean layer envelope falls **31.61%**, mean lane envelope **25.89%**, and normalized objective **32.61%**. Its maximum byte-bus/pair skews remain **0.635 / 0.127 mm**; one pair becomes effectively equal-length. Minimum physical pair gaps, fixed copper, terminals, vias, and package approaches remain unchanged. It regains **200.66 layer-mm²** of conservatively certified probe space; envelope reduction and usable space are distinct measurements.
 
-For AM3352 right, tuning area decreases **12.6%**, from 63.250 to 55.273 mm². Optimization takes 2.04, 3.32 and 6.01 seconds cumulatively, in addition to the 39.31-second initial route. Its outer interconnect envelope remains 660.450 mm² and copper length decreases only 0.051 mm. AM62L DDR right also reduces the outer envelope from 137.983 to 137.776 mm², while tuning-bank area decreases 13.1%. Some cases plateau because no further legal local improvement appears within the budget.
+All 42 native-gated routed PNGs were visually inspected. The browser report was exercised across all 14 samples, 42 effort selections, and 82 available layer views without runtime exceptions. Exact gzip outputs, embedded report geometry, inputs, seeds, and frozen source are hash-checked. The measured source fingerprint is `b62e85919bfe8488075a6db9f0f2c17f2e7c94ec55635a30a3d6d910a0b6d814`.
 
-These are measured work budgets, not promises of proportional elapsed time. The captured report reused pristine, hash-checked baseline routes computed earlier in this session; initial-route timings remain recorded separately. Cumulative report runtime includes independent checkpoint validation and adds the original routing time. Runtime is machine/load dependent.
+The report reused pristine, hash-checked initial routes computed independently earlier in this session. It records their original routing cost, new optimization cost, and independent validation overhead separately. Runtimes depend on machine load; the final exporter ran four independent sample workers. No iteration-zero, partial, failed, or provisional routes are review artifacts.
 
 ## Original placement benchmark
 
@@ -73,7 +75,7 @@ The first benchmark run used a 120-second cap: seven placements passed, and inne
 ## Reproduce and use
 
 ```sh
-bun scripts/compare-anytime.ts docs/anytime 128
+bun scripts/compare-anytime.ts docs/anytime 512 --concurrency 4
 bun test
 bun run typecheck
 bun run test:package
@@ -81,6 +83,8 @@ bun run format:check
 ./benchmark.sh --timeout-seconds 240 --require-all-solved
 ```
 
-The exporter refuses to write review artifacts unless all required checkpoints pass. [measurements.json](measurements.json) records input/output hashes, every bus and pair length, objective components, acceptance counts, budgets and validation results. `outputs/<sample>-<effort>x.json.gz` contains the exact output SRJ; `index.html` embeds matching full-precision geometry. The public API and continuation example are documented in the [repository README](../../README.md#anytime-optimization).
+The exporter freezes source, inputs, and pristine seeds. It requires every native checkpoint to pass before writing routed artifacts, and verifies the frozen source again before publication. `--stage-only` retains the complete validated report privately for inspection before copying it into the review directory.
 
-Unsupported or physically impossible inputs retain a labeled provisional result. Such copper is not fabrication-ready and is never exported as a solved comparison. The new tests cover monotone/deterministic continuation, immutable copper, impossible inputs, seed validation, routing retries, detached snapshots and differential-bank changes. Existing regressions and isolated Node, browser and TypeScript package-consumer checks also pass.
+[measurements.json](measurements.json) records every raw bus/pair length, physical metric, objective component, budget, acceptance count, validation result, source fingerprint, and input/output hash. `outputs/<sample>-<effort>x.json.gz` contains the exact output SRJ. The public API and continuation example are in the [repository README](../../README.md#anytime-optimization).
+
+Unsupported or physically impossible routing constraints retain a labeled provisional result. Such copper is not fabrication-ready. A valid incumbent is never replaced by that fallback. Tests cover strict candidate/seed acceptance, monotone and deterministic continuation, immutable ports/copper, routing retries, detached snapshots, paired topology changes, and coordinated space allocation. The existing regression suite and isolated Node, browser, and TypeScript package-consumer checks also pass.

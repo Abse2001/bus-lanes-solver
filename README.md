@@ -31,8 +31,9 @@ Each connection must have exactly two terminals on the same fixed layer. The sol
 ## Anytime optimization
 
 `AnytimeBusLanesSolver` returns a provisional endpoint-connected result immediately,
-then retains the best valid route while searching successively tighter meander
-forms. Existing `BusLanesSolver` and `BusLanesPipelineSolver` behavior is unchanged.
+then retains the best valid route while exploring alternative routing topologies
+and reconstructing whole matching cohorts. Existing `BusLanesSolver` and
+`BusLanesPipelineSolver` behavior is unchanged.
 
 ```ts
 import { AnytimeBusLanesSolver } from "@tscircuit/bus-lanes-solver"
@@ -40,7 +41,7 @@ import { AnytimeBusLanesSolver } from "@tscircuit/bus-lanes-solver"
 const solver = new AnytimeBusLanesSolver(simpleRouteJson, {
   fanout: "auto", // default; use "none" for supplied fixed-layer handoffs
   effort: "1x",
-  iterationsPerX: 128,
+  iterationsPerX: 512,
 })
 const immediate = solver.getResult() // status: "best_effort", with violations
 const one = solver.solve()
@@ -48,7 +49,7 @@ const two = solver.improve("2x")
 const five = solver.improve("5x")
 ```
 
-The levels are cumulative work budgets: 128, 256 and 640 optimization trial or
+The levels are cumulative work budgets: 512, 1024 and 2560 optimization trial or
 discovery steps by default. They follow one deterministic search sequence, and
 continuation produces the same geometry as a fresh run at that effort. Routing
 the first valid incumbent is a separate cost; these labels are not wall-time
@@ -64,25 +65,49 @@ detached snapshots. `tryFinalAcceptance()` interrupts work and preserves the
 current result. A single geometric trial or acceptance check is synchronous,
 so an external time budget is checked between steps rather than preempting them.
 
-The approximation searches the cell count, longitudinal bank size and position,
-side, bend radius, and rounded versus folded raster geometry. It also tries
-slightly shorter corrections and ordinary-run shortcuts. Differential banks
-change both rails atomically. Supplied copper and newly created local signal
-escapes remain immutable. Every improving proposal passes the original strict
-lane validator, bus/pair matching, continuous clearance, self-clearance, angle
-checks, and exterior pair-spacing checks before replacing the incumbent.
+The search recovers untuned carrier skeletons and closes overlapping bus and
+pair constraints into electrical cohorts. A global coordinate contraction
+finds empty strips crossed only by straight runs, moves every affected lane
+together, and removes compatible strips from the outside inward. Terminals,
+via handoffs, package escapes, and supplied copper anchor the stationary side.
+This can reduce a large envelope without changing crossing order. A bounded
+beam reconstructs several contraction candidates concurrently, so an
+infeasible maximal cut does not starve a feasible smaller one.
+
+Scratch transactions can also abandon old
+corridors, rip up blocking nets together, reroute whole cohorts in different
+orders, and contract the search envelope. Coarse-to-fine visibility searches
+preserve known local package approaches. A joint allocator computes a new length
+target vector and distributes the required copper across multiple tuning
+pockets; several skew targets and geometric forms receive work concurrently.
+It uses accepted pocket capacity when choosing shared and independent pair
+lengths, and shortens straight lobe legs while preserving curved bends. Compact
+bank density follows physical width and clearance rather than a fixed radius.
+These searches use geometry primitives rather than rerunning the original lane
+router or matching pass. Scratch routes can be incomplete or unmatched, while
+the public result remains the last strictly accepted complete route. Supplied
+copper and newly created local signal escapes remain immutable.
 
 The objective is `areaWeight * normalizedArea + skewWeight * skewPenalty +
 lengthWeight * normalizedLength`, with default weights 1, 0.1 and 0.2. Area
-includes per-layer envelopes, the mean lane envelope, and tuning-bank envelopes;
-the bank term exposes wasted meander space hidden by terminal approaches. These
-are copper envelopes including wire radii. Area scales come from terminal bounds
-and minimum-width direct copper, and length is normalized by direct terminal
+combines the outer envelope, mean layer envelope, mean lane envelope, and mean
+clearance-exclusion union, normalized by the terminal envelope. The conservative
+board grid counts the
+extra space blocked to an unrelated minimum-width trace beyond immutable copper
+and board edges; overlapping generated exclusions count once per layer. These
+are physical copper envelopes including wire radii and via pads. Tuning-bank
+rectangles are diagnostics and
+do not affect acceptance. Length is normalized by direct terminal
 lengths plus immutable fanouts. Skew is the mean of `(skew / tolerance)^2`,
 with tolerance floored at the minimum trace width. Electrical lengths
 include fixed fanouts. All raw measurements are returned alongside the objective.
 The objective never increases after the first valid route; individual components
 may trade off. Extra effort can plateau and does not guarantee a global optimum.
+Every accepted transaction passes the original strict lane validator, complete
+bus/pair matching, continuous clearance, self-clearance, angle checks, and
+exterior pair-spacing checks. `stats` reports candidate and rejection counts.
+Acceptance also checks original carrier handoffs, widths, ownership, immutable
+escape geometry, and the accepted shared corridors' physical minimum gap.
 
 `status: "best_effort"` always carries violations and must not be treated as
 fabrication-ready copper. Infeasible or unsupported inputs still have a result,
@@ -94,7 +119,7 @@ Generate the complete effort comparison, independent validations, output JSON,
 and an interactive local report with:
 
 ```sh
-bun scripts/compare-anytime.ts docs/anytime 128
+bun scripts/compare-anytime.ts docs/anytime 512 --concurrency 4
 ```
 
 The report covers all eight AM3352 placements, all four complete AM62L DDR

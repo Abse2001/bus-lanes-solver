@@ -3,7 +3,7 @@ import {
   type BusLanesPipelineOptions,
 } from "./bus-lanes-pipeline-solver"
 import { BusLanesSolver } from "./bus-lanes-solver"
-import { compactTuningCandidates } from "./anytime-candidates"
+import { anytimeTransactionCandidates } from "./anytime-transaction-search"
 import { separateAnytimeCarriers } from "./anytime-carriers"
 import {
   scoreAnytimeRoutes,
@@ -11,13 +11,13 @@ import {
   type AnytimeScore,
   type AnytimeScoreWeights,
 } from "./anytime-score"
-import { ordinaryRunCandidates } from "./simplify-matched-traces"
 import { distance } from "./geometry"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { routeAnglesAreConventional } from "./route-angle-validation"
 import { CopperConflictIndex } from "./copper-conflict-index"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { routeCopper } from "./vector-scene"
+import { sharedPairSpacingReports } from "./shared-pair-spacing"
 import {
   getCopperLayerNames,
   validateRoutedCopperDrc,
@@ -85,6 +85,18 @@ export class AnytimeBusLanesSolver {
   private candidates?: Generator<Trace[] | undefined>
   private validation?: BusLanesSolver
   private pending?: { traces: Trace[]; score: AnytimeScore }
+  private proposalStats = {
+    proposals: 0,
+    objectiveRejected: 0,
+    matchingRejected: 0,
+    validationRejected: 0,
+  }
+  private lastValidationFailure: string | null = null
+  private pairGapFloors?: Map<string, number>
+  private carrierAuditContext?: {
+    incumbent: Trace[]
+    context: ReturnType<typeof separateAnytimeCarriers>
+  }
   private revisions: Array<{
     optimizationIterations: number
     score: AnytimeScore
@@ -96,7 +108,7 @@ export class AnytimeBusLanesSolver {
       fanout: "auto",
       ...options,
       effort: options.effort ?? 1,
-      iterationsPerX: options.iterationsPerX ?? 128,
+      iterationsPerX: options.iterationsPerX ?? 512,
     }
     if (
       !Number.isInteger(this.options.iterationsPerX) ||
@@ -463,6 +475,8 @@ export class AnytimeBusLanesSolver {
       optimizationIterations: this.optimizationIterations,
       acceptedImprovements: this.acceptedImprovements,
       budget: this.budget,
+      ...this.proposalStats,
+      lastValidationFailure: this.lastValidationFailure,
     }
   }
 
@@ -471,6 +485,7 @@ export class AnytimeBusLanesSolver {
     // each round. Effort levels retain one deterministic discovery counter.
     for (let round = 0; ; round++) {
       const revision = this.acceptedImprovements
+      const roundScore = this.incumbentScore
       const context = separateAnytimeCarriers(this.input, this.incumbent)
       const rebase = (candidate: Trace[]) => {
         const composed = context.compose(candidate)
@@ -483,79 +498,27 @@ export class AnytimeBusLanesSolver {
         )
         return this.incumbent.map((t) => changed.get(t.connection_name) ?? t)
       }
-      const generator = compactTuningCandidates(context.input, context.traces, {
-        maxCandidates: 16384,
-        validateSelfClear: false,
-      })
+      const generator = anytimeTransactionCandidates(
+        context.input,
+        context.traces,
+      )
       try {
-        for (const candidate of generator)
+        for (const candidate of generator) {
           yield candidate ? rebase(candidate) : undefined
+          // A substantial accepted transaction changes the corridor geometry
+          // seen by other cohorts. Replan from that incumbent rather than
+          // retaining thousands of stale branches behind their old obstacles.
+          if (
+            this.incumbentScore.totalLengthMm <
+              roundScore.totalLengthMm * 0.99 ||
+            this.incumbentScore.envelopeAreaMm2 <
+              roundScore.envelopeAreaMm2 * 0.99 ||
+            this.acceptedImprovements - revision >= 32
+          )
+            break
+        }
       } finally {
         generator.return(undefined as never)
-      }
-      // Shorten ordinary control runs or lanes with available skew slack. Never
-      // cut sampled arcs or independently move a shared differential corridor.
-      for (const [ti, trace] of context.traces.entries()) {
-        if (
-          trace.coupledSection ||
-          context.input.differentialPairs?.some((p) =>
-            p.connectionNames.includes(trace.connection_name!),
-          )
-        )
-          continue
-        const curved = new Set(trace.curvedSegments)
-        for (
-          let start = round % 3;
-          start < trace.route.length - 2;
-          start += 3
-        ) {
-          for (const span of [24, 12, 6, 3]) {
-            const end = Math.min(trace.route.length - 1, start + span)
-            if (
-              end <= start + 1 ||
-              Array.from({ length: end - start }, (_, k) => k + start + 1).some(
-                (k) => curved.has(k),
-              )
-            )
-              continue
-            for (const points of ordinaryRunCandidates(
-              trace.route[start],
-              trace.route[end],
-              trace.route.slice(start, end + 1),
-            )) {
-              const wire = trace.route[start] as Wire
-              const route = [
-                ...trace.route.slice(0, start),
-                ...points.map((p) => ({
-                  ...p,
-                  route_type: "wire" as const,
-                  layer: wire.layer,
-                  width: wire.width,
-                })),
-                ...trace.route.slice(end + 1),
-              ]
-              if (
-                route.length === trace.route.length &&
-                route.every((p, i) => distance(p, trace.route[i]) < 1e-9)
-              ) {
-                yield
-                continue
-              }
-              const delta = points.length - (end - start + 1)
-              const changed = {
-                ...trace,
-                route,
-                curvedSegments: trace.curvedSegments?.map((k) =>
-                  k > end ? k + delta : k,
-                ),
-              }
-              const candidate = context.traces.map((t, i) =>
-                i === ti ? changed : t,
-              )
-              yield rebase(candidate)
-            }
-          }
-        }
       }
       if (revision === this.acceptedImprovements) return
     }
@@ -573,6 +536,126 @@ export class AnytimeBusLanesSolver {
       this.phase = this.solved ? "paused" : "best_effort"
       this.validation = this.pending = undefined
     }
+  }
+
+  /** Check against accepted ports and escapes before deriving a new carrier
+   * input. Deriving ports from the proposal itself would make connectivity and
+   * width checks circular if a search operator ever produced corrupt copper. */
+  private auditCandidate(candidate: Trace[]) {
+    if (
+      candidate.length !== this.incumbent.length ||
+      candidate.some((trace, i) => {
+        const old = this.incumbent[i]
+        return (
+          trace.connection_name !== old.connection_name ||
+          trace.pcb_trace_id !== old.pcb_trace_id ||
+          trace.source_trace_id !== old.source_trace_id ||
+          trace.route.length < 2 ||
+          trace.route.some(
+            (p) =>
+              !Number.isFinite(p.x) ||
+              !Number.isFinite(p.y) ||
+              (p.route_type !== "wire" && p.route_type !== "via") ||
+              (p.route_type === "wire" &&
+                (!Number.isFinite(p.width) || p.width <= 0)),
+          )
+        )
+      })
+    )
+      throw Error("Candidate changed connection ownership or copper primitives")
+    if (!routeAnglesAreConventional(candidate))
+      throw Error("Candidate has a nonconventional corner")
+    if (this.carrierAuditContext?.incumbent !== this.incumbent)
+      this.carrierAuditContext = {
+        incumbent: this.incumbent,
+        context: separateAnytimeCarriers(this.input, this.incumbent),
+      }
+    const accepted = this.carrierAuditContext.context
+    const proposed = separateAnytimeCarriers(this.input, candidate)
+    if (
+      JSON.stringify(
+        accepted.input.traces?.slice(this.input.traces?.length ?? 0),
+      ) !==
+      JSON.stringify(
+        proposed.input.traces?.slice(this.input.traces?.length ?? 0),
+      )
+    )
+      throw Error("Candidate changed an immutable local escape")
+    for (const [i, trace] of proposed.traces.entries()) {
+      const old = accepted.traces[i],
+        first = old.route[0] as Wire,
+        last = old.route.at(-1)! as Wire
+      if (
+        distance(trace.route[0], first) > 1e-8 ||
+        distance(trace.route.at(-1)!, last) > 1e-8 ||
+        trace.route.some(
+          (p) =>
+            p.route_type !== "wire" ||
+            p.layer !== first.layer ||
+            Math.abs(p.width - first.width) > 1e-8,
+        )
+      )
+        throw Error("Candidate changed a carrier handoff, layer, or width")
+    }
+    return proposed
+  }
+
+  private preservesAcceptedPairGaps(candidate: Trace[]) {
+    // Existing curved offsets allow a small chord/miter departure from the
+    // requested gap. Preserve their independently measured physical minimum,
+    // rather than silently allowing contraction down to generic clearance.
+    if (!this.pairGapFloors)
+      this.pairGapFloors = new Map(
+        sharedPairSpacingReports(this.input, this.incumbent).flatMap(
+          (report) =>
+            report.minEdgeGapMm === null
+              ? []
+              : [
+                  [
+                    report.connectionNames.join("\0"),
+                    report.minEdgeGapMm -
+                      (report.maxSamplingErrorMm ?? 0) -
+                      1e-8,
+                  ] as const,
+                ],
+        ),
+      )
+    const conflicts = new CopperConflictIndex()
+    for (const pair of this.input.differentialPairs ?? []) {
+      const floor = this.pairGapFloors.get(pair.connectionNames.join("\0"))
+      if (floor === undefined) continue
+      const rails = pair.connectionNames.map(
+        (name) => candidate.find((t) => t.connection_name === name)!,
+      )
+      if (
+        rails.every(
+          (rail, i) =>
+            rail ===
+            this.incumbent.find(
+              (t) => t.connection_name === pair.connectionNames[i],
+            ),
+        )
+      )
+        continue
+      const completeCopper = rails.map(routeCopper)
+      for (let side = 0; side < 2; side++) {
+        const rail = rails[side],
+          section = rail.coupledSection
+        if (!section) return false
+        if (
+          conflicts.firstConflict(
+            routeCopper({
+              ...rail,
+              route: rail.route.slice(section[0], section[1] + 1),
+            }),
+            completeCopper[1 - side],
+            floor,
+          )
+        )
+          return false
+      }
+    }
+    return true
   }
 
   private advance(): void {
@@ -611,8 +694,12 @@ export class AnytimeBusLanesSolver {
     if (this.validation && this.pending) {
       this.validation.step()
       if (!this.validation.solved && !this.validation.failed) return
+      const acceptedGaps =
+        this.validation.solved &&
+        this.preservesAcceptedPairGaps(this.pending.traces)
       if (
         this.validation.solved &&
+        acceptedGaps &&
         exteriorPairSpacingReports(this.input, this.pending.traces).every(
           (r) => r.matched,
         )
@@ -624,6 +711,13 @@ export class AnytimeBusLanesSolver {
           optimizationIterations: this.optimizationIterations,
           score: this.incumbentScore,
         })
+      } else {
+        this.proposalStats.validationRejected++
+        this.lastValidationFailure =
+          this.validation.error ??
+          (acceptedGaps
+            ? "Exterior pair spacing"
+            : "Accepted shared-pair minimum gap")
       }
       this.validation = this.pending = undefined
     }
@@ -640,15 +734,29 @@ export class AnytimeBusLanesSolver {
     }
     this.optimizationIterations++
     if (!next.value) return
+    this.proposalStats.proposals++
+    let context: ReturnType<typeof separateAnytimeCarriers>
+    try {
+      context = this.auditCandidate(next.value)
+    } catch (error) {
+      this.proposalStats.validationRejected++
+      this.lastValidationFailure =
+        error instanceof Error ? error.message : String(error)
+      return
+    }
     const score = scoreAnytimeRoutes(this.input, next.value, this.weights)
-    if (score.objective >= this.incumbentScore.objective - 1e-10) return
+    if (score.objective >= this.incumbentScore.objective - 1e-10) {
+      this.proposalStats.objectiveRejected++
+      return
+    }
     if (
       [...score.busLengths, ...score.pairLengths].some(
         (r) => r.toleranceMm !== null && !r.matched,
       )
-    )
+    ) {
+      this.proposalStats.matchingRejected++
       return
-    const context = separateAnytimeCarriers(this.input, next.value)
+    }
     const changed = new Set(
       next.value
         .filter((t, i) => t !== this.incumbent[i])

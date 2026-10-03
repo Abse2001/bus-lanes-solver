@@ -1,4 +1,5 @@
 import { length } from "./geometry"
+import { anytimeClearanceFootprint } from "./anytime-clearance-footprint"
 import {
   busLengthReports,
   pairLengthReports,
@@ -34,9 +35,9 @@ const include = (b: Bounds, x: number, y: number, radius: number) => {
 const area = (b: Bounds) =>
   Number.isFinite(b.minX) ? (b.maxX - b.minX) * (b.maxY - b.minY) : 0
 
-/** Sum envelopes of sampled tuning banks. Ordinary gaps of at most three
- * chords connect the quarter-arcs of a bank. This makes compacting a bank
- * visible to the score even when terminal approaches set the larger bounds. */
+/** Diagnostic envelopes of sampled tuning banks. Ordinary gaps of at most
+ * three chords connect the quarter-arcs of a bank. These annotations never
+ * affect candidate acceptance. */
 function tuningArea(traces: Trace[]) {
   let total = 0
   for (const t of traces) {
@@ -124,12 +125,16 @@ export function scoreAnytimeRoutes(
     0,
   )
   const tuningEnvelopeAreaMm2 = tuningArea(traces)
+  const footprint = anytimeClearanceFootprint(input, traces)
+  // Score physical envelopes directly. Bank annotations remain a diagnostic:
+  // changing an annotation or folding an overlapping bank box cannot improve
+  // the objective without moving the actual copper envelopes.
   const normalizedArea =
-    (0.7 * layerEnvelopeAreaMm2 +
-      (0.3 * laneEnvelopeAreaMm2) / Math.max(1, input.connections.length)) /
-      areaScale +
-    (0.2 * tuningEnvelopeAreaMm2) /
-      Math.max(input.minTraceWidth * shortestLengthMm, 1e-9)
+    (envelopeAreaMm2 +
+      layerEnvelopeAreaMm2 / Math.max(1, layers.size) +
+      laneEnvelopeAreaMm2 / Math.max(1, input.connections.length) +
+      footprint.meanLayerAreaMm2) /
+    (4 * areaScale)
   const normalizedLength =
     totalLengthMm / Math.max(shortestLengthMm, input.minTraceWidth, 1e-9)
   return {
@@ -141,6 +146,8 @@ export function scoreAnytimeRoutes(
     layerEnvelopeAreaMm2,
     laneEnvelopeAreaMm2,
     tuningEnvelopeAreaMm2,
+    clearanceFootprintAreaMm2: footprint.areaMm2,
+    clearanceFootprintPitchMm: footprint.pitchMm,
     skewPenalty,
     totalLengthMm,
     normalizedArea,
