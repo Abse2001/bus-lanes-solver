@@ -1,3 +1,4 @@
+import { CopperConflictIndex } from "./copper-conflict-index"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import {
   signalDogboneOptions,
@@ -8,7 +9,6 @@ import {
   fixedCopper,
   routeCopper,
   VectorScene,
-  clearanceToCopper,
   type Copper,
 } from "./vector-scene"
 import { GridVisibilitySearch } from "./grid-visibility"
@@ -141,17 +141,12 @@ export function* findViaAwareSignalPocket(
     name: trace.connection_name!,
     copper: fixedCopper({ ...native, obstacles: [], traces: [trace] }),
   }))
+  const conflicts = new CopperConflictIndex()
   const hits = (copper: Copper[]) =>
     new Set(
       existing
         .filter((other) =>
-          copper.some((a) =>
-            other.copper.some(
-              (b) =>
-                a.layer === b.layer &&
-                clearanceToCopper(a.a, a.b, b) < a.radius + clearance - 1e-8,
-            ),
-          ),
+          conflicts.firstConflict(copper, other.copper, clearance - 1e-8),
         )
         .map((other) => other.name),
     )

@@ -1,3 +1,4 @@
+import { GridComponents } from "./grid-components"
 import type { Point, SimpleRouteJson } from "./types"
 import type { GridHeap } from "./grid-heap"
 import { acquireGridScratch, type GridScratchLease } from "./grid-scratch"
@@ -99,6 +100,7 @@ interface CopperEntry extends PreparedCopper {
 type Attachment = { id: number; path: Point[] }
 
 interface HardGrid {
+  components: GridComponents
   attachments: Map<string, Attachment[]>
   blocked: Uint8Array
   edgeKnown: Uint8Array
@@ -442,7 +444,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       scene.input.bounds,
       scene.copper.map((c) => [c.a.x, c.a.y, c.b.x, c.b.y, c.radius, c.rect]),
     ])
-    const cachedGrid = grids.get(gridKey)
+    let cachedGrid = grids.get(gridKey)
     const attachments =
       cachedGrid?.attachments ?? new Map<string, Attachment[]>()
     if (cachedGrid) {
@@ -454,6 +456,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.hardEdgeBlocked = cachedGrid?.edgeBlocked ?? new Uint8Array(n)
     if (cachedGrid) this.copperBuckets = cachedGrid.buckets
     this.maxLength = grid?.maxLength ?? Infinity
+    let componentIndex = cachedGrid?.components
     if (!cachedGrid) {
       // Adjacent samples of a long segment overlap. Test each cell at most
       // once per copper item, including clear cells in its bounding halo.
@@ -533,7 +536,9 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           markBox(p.x - r, p.x + r, p.y - r, p.y + r, entry)
         }
       }
+      componentIndex = new GridComponents(this.blocked, this.nx)
       const bytes =
+        componentIndex.storageBytes +
         n * 3 +
         this.copperBuckets.storageBytes +
         gridKey.length * 2 +
@@ -552,14 +557,16 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           retained -= grids.get(oldest)!.bytes
           grids.delete(oldest)
         }
-        grids.set(gridKey, {
+        cachedGrid = {
           attachments,
           blocked: this.blocked,
           edgeKnown: this.hardEdgeKnown,
           edgeBlocked: this.hardEdgeBlocked,
           buckets: this.copperBuckets,
           bytes,
-        })
+          components: componentIndex,
+        }
+        grids.set(gridKey, cachedGrid)
       }
     }
     if (this.hasSoftCopper) {
@@ -782,6 +789,24 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       if (this.softMemoLease) this.softMemoLease.active = false
       return
     }
+    const components = componentIndex!
+    const sameComponent = (starts: Attachment[], ends: Attachment[]) =>
+      starts.some((start) =>
+        ends.some(
+          (end) =>
+            components.at(start.id) !== 0 &&
+            components.at(start.id) === components.at(end.id),
+        ),
+      )
+    let forceAlternativeAttachments = false
+    if (!sameComponent([a], [z])) {
+      if (!sameComponent(this.startAttachments, this.endAttachments)) {
+        this.failed = true
+        if (this.softMemoLease) this.softMemoLease.active = false
+        return
+      }
+      forceAlternativeAttachments = true
+    }
     this.scratchLease = acquireGridScratch(
       scene.input,
       n,
@@ -800,7 +825,12 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.parent[a.id] = -1
     if (this.travel) this.travel[a.id] = length(a.path)
     this.heap.push(a.id, 0, this.heuristic(start))
-    if (grid?.allTerminalAttachments || grid?.starts || grid?.ends)
+    if (
+      forceAlternativeAttachments ||
+      grid?.allTerminalAttachments ||
+      grid?.starts ||
+      grid?.ends
+    )
       this.retryAttachments()
   }
   private retryAttachments() {

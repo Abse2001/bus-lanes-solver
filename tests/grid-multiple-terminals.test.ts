@@ -112,3 +112,17 @@ test("empty terminal domains fail without borrowing an active search's scratch",
   }
   expect(solve(pending).solved).toBe(true)
 })
+
+test("disconnected terminal domains fail before A* without disturbing a live search", () => {
+  const scene = fixture()
+  const live = new GridVisibilitySearch(scene, { x: 2, y: 0 }, { x: 4, y: 0 })
+  const disconnected = new GridVisibilitySearch(
+    scene,
+    { x: -3, y: 0 },
+    { x: 4, y: 0 },
+  )
+  expect(disconnected.failed).toBe(true)
+  expect(disconnected.expanded).toBe(0)
+  disconnected.cancel()
+  expect(solve(live).solved).toBe(true)
+})

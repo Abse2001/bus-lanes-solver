@@ -228,6 +228,11 @@ test("supplied connected pad copper is never redogboned", () => {
 test("interrupting a local-site search releases its grid lease", () => {
   const { input, pending, completed, escapes } = fixture()
   const cancel = spyOn(GridVisibilitySearch.prototype, "cancel")
+  // Disconnected sites now fail before allocating a search lease. Wait for
+  // an active search, and hold it open so interruption tests that lifecycle.
+  const step = spyOn(GridVisibilitySearch.prototype, "step").mockImplementation(
+    () => {},
+  )
   try {
     const generator = rematchTrappedSignalDogbones(
       input,
@@ -236,11 +241,16 @@ test("interrupting a local-site search releases its grid lease", () => {
       escapes,
       new Map([["DATA", ["bottom"]]]),
     )
-    expect(generator.next().done).toBe(false)
+    let result = generator.next()
+    for (let i = 0; !result.done && !step.mock.calls.length && i < 100; i++)
+      result = generator.next()
+    expect(result.done).toBe(false)
+    expect(step).toHaveBeenCalled()
     generator.return({ connections: [], escapes: [] })
     expect(cancel).toHaveBeenCalledTimes(1)
   } finally {
     cancel.mockRestore()
+    step.mockRestore()
   }
 })
 

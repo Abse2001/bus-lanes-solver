@@ -1,3 +1,4 @@
+import { CopperConflictIndex } from "./copper-conflict-index"
 import { length } from "./geometry"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import {
@@ -10,7 +11,6 @@ import {
   fixedCopper,
   routeCopper,
   VectorScene,
-  clearanceToCopper,
   type Copper,
 } from "./vector-scene"
 import { RouteConflictIndex } from "./route-conflict-index"
@@ -170,16 +170,9 @@ export function* negotiateSignalSites(
     if (!choices.length) return null
     variants.set(connection.name, choices)
   }
-  const overlap = (a: Copper[], b: Copper[]): [Copper, Copper] | undefined => {
-    for (const first of a)
-      for (const second of b)
-        if (
-          first.layer === second.layer &&
-          clearanceToCopper(first.a, first.b, second) <
-            first.radius + clearance - 1e-8
-        )
-          return [first, second]
-  }
+  const copperConflicts = new CopperConflictIndex()
+  const overlap = (a: Copper[], b: Copper[]) =>
+    copperConflicts.firstConflict(a, b, clearance - 1e-8)
   const conflicts = new RouteConflictIndex(),
     pools = new Map<string, Candidate[]>(),
     signatures = new Map<string, Set<string>>(),
