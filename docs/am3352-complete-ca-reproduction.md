@@ -7,6 +7,57 @@ This reproduction changes only `buses`: it retains native pad geometry, net
 identities, layer restrictions, all three pairs, and 161 fixed power dogbones
 with their FanoutSolver provenance. It does not change production routing code.
 
+## Visual reproduction
+
+![Reproduction input: two timing buses versus three, with identical pads and fixed power copper](am3352-ca-input.svg)
+
+This explicitly requested diagnostic shows the exact inputs side by side.
+Colored straight lines are **airwires**, not routed signal copper. Gray short
+paths and via rings are the unchanged physical power escapes. The added CA/CK
+membership is cyan. It is not a successful-routing artifact: the three-bus case
+has no completed output to show. Regenerate it with:
+
+```sh
+bun scripts/snapshot-am3352-ca-input.ts
+```
+
+For comparison, this is the existing, successfully validated two-bus baseline:
+
+![Completed baseline: 47 signals on inner1 and inner2, with only the two byte buses checked for group skew](routed-am3352-placements/inner-layers-solved.png)
+
+Its routing/DRC/matching pass applies to the configured two byte buses and
+three pairs. It does not establish CA/clock group matching or DDR compliance.
+
+## Which configuration is correct?
+
+The upstream fixture is a valid **partial router benchmark**. Its constraint set
+is incomplete if used as an AM3352 DDR compliance test. The SBC's grouping is
+more complete, but its present routed copper fails its own timing checks.
+Neither result is a verified compliant DDR board.
+
+| Check | Upstream fixture | SBC / reproduction |
+| --- | --- | --- |
+| Byte 0: D0–D7, DM0, DQS0± | 11-member bus, 0.635 mm skew | Same |
+| Byte 1: D8–D15, DM1, DQS1± | 11-member bus, 0.635 mm skew | Same |
+| DQS0±, DQS1± and CK± | Three pairs, 0.127 mm skew | Same |
+| Address/control relative to clock | No group-skew constraint | 24-member CA/CK bus, 0.635 mm skew |
+| TI absolute-length limits | Not checked | Checked separately by SBC; not implemented by this reproduction |
+
+TI SPRS717L §7.7.2.3.4 says CK and ADDR_CTRL are length matched to minimize
+skew between them; §7.7.2.3.6.1 and Table 7-68 define the topology-specific
+length/skew rules. The SBC uses 25 mil (0.635 mm) as a conservative whole-group
+bound for its single-load case. This is an explicit modeling choice, not a
+claim that every topology uses one universal whole-route constraint. Table
+7-69 requires matching within each byte and to its associated strobe; it does
+not require matching byte 0 to byte 1. A differential-pair constraint by itself
+matches the two clock conductors, not address/control timing to that clock.
+
+The earlier investigation incorrectly treated unpowered DDR-first trials as
+equivalent to the powered upstream sample and did not clearly separate routing
+success from complete DDR checks. This reproduction corrects that comparison.
+The failure demonstrates a solver limitation for the specified request; it
+does not prove the PCB is unroutable or substitute for electrical verification.
+
 ## Reproduce
 
 ```sh
@@ -87,7 +138,8 @@ success cannot pass this runner.
 
 The eight existing successful routed snapshots were individually inspected.
 They describe the original two-bus benchmark, not a successful CA reproduction.
-No failed or unrouted diagnostic is attached as a routing artifact.
+The requested input diagnostic above is separately labeled and is not counted
+as a successfully routed artifact.
 
 | Placement | Automatic signal layers | Inner1/inner2 only |
 | --- | --- | --- |
