@@ -7,6 +7,7 @@
       "!examples/data/**",
       "!examples/fanout-solver-outputs/**",
       "!cosmos-export/**",
+      "!docs/anytime/**",
       "!node_modules/**",
       "!dist/**",
       "!.cache/**"
