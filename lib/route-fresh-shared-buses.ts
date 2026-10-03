@@ -121,6 +121,7 @@ export function* routeFreshSharedBuses(
       layers,
       () => false,
       true,
+      true,
     )
     let state: FlexibleSignalState | undefined
     try {

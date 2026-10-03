@@ -56,6 +56,8 @@ export function* expandSignalSitePocket(
         c.pointsToConnect[1],
         lanes.flatMap(routeCopper),
         100,
+        undefined,
+        { checkReachability: true },
       )
       try {
         let steps = 0
@@ -231,6 +233,8 @@ export function* findViaAwareSignalPocket(
               .filter((t) => !pairs.has(t.connection_name!))
               .flatMap(routeCopper),
             100,
+            undefined,
+            { checkReachability: true },
           )
           try {
             let steps = 0

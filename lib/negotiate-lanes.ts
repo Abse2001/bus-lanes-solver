@@ -25,6 +25,7 @@ export function* negotiateLanes(
   terminalLayers: ReadonlyMap<string, string[]> = new Map(),
   enableTerminalReservations: () => boolean = () => true,
   deferRetainedSelfClearance = false,
+  checkReachability = false,
 ): Generator<Trace[], Trace[] | null> {
   const flexibleTerminals = connections.some(
     (connection) => (terminalLayers.get(connection.name)?.length ?? 1) > 1,
@@ -295,7 +296,7 @@ export function* negotiateLanes(
         [...routedCopper, ...pendingCopper],
         congestionPenalty,
         histories.get(layer),
-        { maxLength: limits.get(connection.name) },
+        { maxLength: limits.get(connection.name), checkReachability },
       )
       if (!histories.has(layer))
         histories.set(layer, new Float32Array(search.cellCount))
@@ -320,7 +321,7 @@ export function* negotiateLanes(
                 [...routedCopper, ...pendingCopper],
                 congestionPenalty,
                 histories.get(candidateLayer),
-                { maxLength: limits.get(connection.name) },
+                { maxLength: limits.get(connection.name), checkReachability },
               )
         if (!histories.has(candidateLayer))
           histories.set(
@@ -345,6 +346,10 @@ export function* negotiateLanes(
             candidateScene,
             connection.pointsToConnect[0],
             connection.pointsToConnect[1],
+            [],
+            0,
+            undefined,
+            { checkReachability },
           )
           try {
             while (!candidateSearch.solved && !candidateSearch.failed) {

@@ -122,7 +122,7 @@ export function* reachableSignalDogbones(
         [],
         0,
         undefined,
-        { starts, ends, nearestTerminalAttachments },
+        { starts, ends, nearestTerminalAttachments, checkReachability: true },
       )
       try {
         let steps = 0

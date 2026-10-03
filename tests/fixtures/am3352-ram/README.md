@@ -65,3 +65,7 @@ All four use global signal-carrier
 `allowedLayers: ["inner1", "inner2"]`. Native pads, byte/pair skew bounds, and
 saved power fanouts are unchanged. Top pad joins and through-via barrels remain
 physical copper; there are no bottom-layer signal carriers.
+
+`core-am3352-unpowered.test.ts` also routes `native-input.json` directly, without
+adding the power-fanout fixtures. It preserves core's original copper-length,
+detour, and physical pair-spacing acceptance limits for the published preset.

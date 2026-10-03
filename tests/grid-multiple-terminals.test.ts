@@ -120,9 +120,33 @@ test("disconnected terminal domains fail before A* without disturbing a live sea
     scene,
     { x: -3, y: 0 },
     { x: 4, y: 0 },
+    [],
+    0,
+    undefined,
+    { checkReachability: true },
   )
   expect(disconnected.failed).toBe(true)
   expect(disconnected.expanded).toBe(0)
   disconnected.cancel()
   expect(solve(live).solved).toBe(true)
+})
+
+test("a warmed reachability index does not advance ordinary attachment retries", () => {
+  const scene = fixture(),
+    start = { x: -3, y: 0 },
+    end = { x: 4, y: 0 }
+  const optedIn = new GridVisibilitySearch(
+    scene,
+    start,
+    end,
+    [],
+    0,
+    undefined,
+    { checkReachability: true },
+  )
+  expect(optedIn.failed).toBe(true)
+  optedIn.cancel()
+  const ordinary = new GridVisibilitySearch(scene, start, end)
+  expect(ordinary.failed).toBe(false)
+  expect(solve(ordinary).failed).toBe(true)
 })
