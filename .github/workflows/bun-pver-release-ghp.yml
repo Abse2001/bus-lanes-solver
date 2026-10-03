@@ -6,7 +6,6 @@ on:
 permissions:
   contents: write
   packages: write
-  pull-requests: write
 concurrency:
   group: publish-github-packages
   cancel-in-progress: false
@@ -33,28 +32,10 @@ jobs:
           node-version: 22
           registry-url: https://npm.pkg.github.com
           scope: '@tscircuit'
+      # pver records the released version on main; GITHUB_TOKEN prevents
+      # that version commit from recursively triggering another release.
       - name: Publish bundled package for jscdn
-        run: pver release --no-push-main
+        run: pver release
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Read released version
-        id: version
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-      - uses: peter-evans/create-pull-request@v6
-        id: version-pr
-        with:
-          token: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
-          commit-message: 'chore: bump version'
-          title: 'chore: bump version to v${{ steps.version.outputs.version }}'
-          body: 'Record the version published to GitHub Packages for jscdn.'
-          branch: version-bumps/v${{ steps.version.outputs.version }}
-          base: main
-          committer: tscircuitbot <githubbot@tscircuit.com>
-          author: tscircuitbot <githubbot@tscircuit.com>
-      - name: Enable version PR auto-merge
-        if: steps.version-pr.outputs.pull-request-number != ''
-        run: gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
-        env:
-          GH_TOKEN: ${{ secrets.TSCIRCUIT_BOT_GITHUB_TOKEN }}
-          PR_NUMBER: ${{ steps.version-pr.outputs.pull-request-number }}
