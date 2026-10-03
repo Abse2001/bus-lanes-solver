@@ -185,28 +185,30 @@ or invalid completed copper. Use `./benchmark.sh --require-all-solved` for a
 strict gate that also exits nonzero when any sample remains unrouted. CI runs the
 same eight-case measurement and uploads the result JSON.
 
-The five-case baseline below was measured on macOS arm64 with Bun 1.3.2
-before adding the restricted right, left, and above placements. Those three
-additions are not yet a passing benchmark. The current eight-case run completes
-6/8 at a 45-second limit: restricted right passes all 47 signals in 35.472 s,
-while restricted left and above time out. The restricted below case takes
-31.536 s in that run. The new 60-second target is not yet met by every sample. Run the strict check with
+The current eight-case run on macOS arm64 with Bun 1.3.2 completes **6/8**
+with a 60-second routing limit per sample. Restricted right completes all 47
+signals; restricted left and above still time out. This is not yet a passing
+all-placement regression. Reproduce the strict check with
 `./benchmark.sh --timeout-seconds 60 --require-all-solved`.
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| Control | 12.004 s | 13.491 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| Right | 12.575 s | 16.133 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| Left | 17.381 s | 22.141 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
-| Above | 21.965 s | 25.918 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| Inner layers only | 27.817 s | 29.367 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| control | 12.613 s | 14.632 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 12.049 s | 14.647 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 17.838 s | 23.590 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 26.670 s | 32.263 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 31.442 s | 33.680 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 36.140 s | 38.595 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 60.000 s | 60.049 s | 0/47 | Timed out | — | — |
+| inner-layers-above | 60.000 s | 60.049 s | 0/47 | Timed out | — | — |
 
-All five preserve the 161 power dogbones and have zero separated pair length
-outside the native pad/fanout regions. The exterior audit checks both rails along
-their actual copper, including meanders; it does not exempt a fixed approach
-length. Ordinary bends are octilinear, and tuning uses smooth curves. Runtime
-varies by machine; these timings include routing and length matching, with
-native DRC and fixture validation reported separately in the total column.
+All six completed cases preserve the 161 power dogbones and have zero separated
+pair length outside the native pad/fanout regions. The exterior audit checks both
+rails along their actual copper, including meanders; it does not exempt a fixed
+approach length. Ordinary bends are octilinear, and tuning uses smooth curves.
+Runtime varies by machine; routing includes length matching, with native DRC and
+fixture validation reported separately in the total column. Failed cases have no
+accepted routes or routed snapshot artifacts.
 
 When a standalone pair shares a carrier layer with a matched bus, the pipeline
 matches the independent buses first, places the standalone pair as coupled rails,
