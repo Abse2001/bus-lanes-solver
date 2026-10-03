@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { sharedPairSpacingReports } from "../lib/shared-pair-spacing"
 import { spreadCoupledTuningLanes } from "../lib/spread-coupled-tuning-lanes"
 import { fixedCopper, routeCopper, VectorScene } from "../lib/vector-scene"
 import { tuningPathIsSelfClear } from "../lib/length-tuning"
@@ -130,5 +131,59 @@ test("staggered shared handoffs are aligned before reconstructing a tuning bank"
         t.route,
       ),
     ).toBe(true)
+  }
+})
+
+test("a bus tuning bank preserves a standalone pair sharing its layer", () => {
+  const traces: Trace[] = [-0.11, 0.11, 1, 2].map((y, i) => ({
+    type: "pcb_trace",
+    pcb_trace_id: `shared_${i}`,
+    connection_name: `signal_${i}`,
+    coupledSection: i < 2 ? [1, 2] : undefined,
+    route: [0, 1, 19, 20].map((x) => ({
+      x,
+      y,
+      route_type: "wire",
+      layer: "inner1",
+      width: 0.1,
+    })),
+  }))
+  const input: SimpleRouteJson = {
+    layerCount: 4,
+    minTraceWidth: 0.1,
+    minTraceToPadEdgeClearance: 0.1,
+    bounds: { minX: -5, maxX: 25, minY: -10, maxY: 10 },
+    obstacles: [],
+    connections: traces.map((t) => ({
+      name: t.connection_name!,
+      pointsToConnect: [t.route[0], t.route.at(-1)!].map((p) => ({
+        x: p.x,
+        y: p.y,
+        layer: "inner1",
+      })),
+    })),
+    buses: [{ busId: "data", connectionNames: ["signal_2", "signal_3"] }],
+    differentialPairs: [
+      {
+        connectionNames: ["signal_0", "signal_1"],
+        traceGap: 0.12,
+        lengthTolerance: 0.1,
+      },
+    ],
+  }
+  const result = spreadCoupledTuningLanes(input, traces, 0.8)
+  expect(result).not.toBeNull()
+  expect(sharedPairSpacingReports(input, result!).every((r) => r.matched)).toBe(
+    true,
+  )
+  const copper = [...fixedCopper(input), ...result!.flatMap(routeCopper)]
+  for (const trace of result!) {
+    const connection = input.connections.find(
+      (c) => c.name === trace.connection_name,
+    )!
+    expect(
+      new VectorScene(input, connection, 0.1, copper).pathVisible(trace.route),
+    ).toBe(true)
+    expect(tuningPathIsSelfClear(trace.route, 0.2)).toBe(true)
   }
 })
