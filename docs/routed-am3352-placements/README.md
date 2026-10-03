@@ -1,34 +1,41 @@
-# Space-filling tuning pockets for powered AM3352 routing
+# Eight powered AM3352/RAM routing placements
 
-This update starts from merged PR #18 (`e50b499`), including its native-pad and package-local pair-tuning fixes. Bank entrances now reserve longitudinal space only for lanes they cross, including full differential-channel width. That opens longer central runs and allows narrower banks. A new rounded folded serpentine can fill a short, taller pocket by running back and forth across it. It preserves radius, tangency, emitted copper length, and offset pair geometry.
+The processor stays at (0, 0) mm. RAM moves below, right, left, and above it;
+each placement is tested with automatic signal layers and with only inner1/inner2.
+Every run computes routes from the original pads. Supplied power dogbones remain
+immutable obstacles, including their through-via barrels.
 
-Ordinary meanders and partial banks retain priority. Folded single-lane candidates run only if those cannot complete, from the untouched input geometry, with a separate 128-candidate cap. Shared folded candidates remain within the existing paired budget. Fold width is solved from emitted chord length in closed form; there is no amplitude bisection. Entrance ordering costs O(n²) lane comparisons and a DAG traversal, and narrow-bank probes get one tuning attempt before the established fallbacks.
+The strict local benchmark completes **8/8 within 60 seconds per sample**:
 
-| Placement | Overall copper bounds (mm²) | Further reduction | Routing | Total with validation |
-| --- | ---: | ---: | ---: | ---: |
-| Control | 683.1 → 606.5 | 11.2% | 13.764 s | 15.820 s |
-| Right | 686.5 → 686.5 | 0.0% | 12.888 s | 15.291 s |
-| Left | 854.3 → 628.3 | 26.5% | 18.396 s | 23.967 s |
-| Above | 810.6 → 810.6 | 0.0% | 27.707 s | 33.255 s |
+| Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
+| --- | ---: | ---: | --- | --- | --- | --- |
+| control | 13.622 s | 15.636 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 8.711 s | 11.066 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 12.570 s | 18.276 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 16.907 s | 21.024 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 22.394 s | 24.505 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 20.783 s | 22.934 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 39.223 s | 44.990 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.105 mm |
+| inner-layers-above | 47.775 s | 50.616 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
 
-Fresh computed routes on macOS arm64 / Bun 1.3.2. Bounds include signal and fixed power copper, wire radii and via pads. Control and left shrink further; right and above retain their previous total bounds. These are measurements, not saved solver inputs or special acceptance rules. CI retains its existing 180-second deadline because runner speeds vary.
+Measurements use Bun 1.3.2 on macOS arm64. All samples have 47/47 signals,
+161 unchanged power dogbones, native combined-copper DRC, full pad-to-pad byte-bus
+skew ≤0.635 mm and differential-pair skew ≤0.127 mm (including numerical epsilon).
+Exterior pair spacing, self-clearance, and conventional-angle checks also pass.
+Routing includes length matching; the total column adds fixture/native validation.
+The [complete report](benchmark-results.json) retains quality and provenance data.
 
-The four-placement gains come from better entrance allocation and narrower banks. Folded curves add a tested alternative for blocked pockets; they are not forced into a layout when the established dense curves already fit. A regression fixture fits 8 mm of additional copper into an obstacle-bounded pocket under 0.775 mm high, with conventional tangents and clearance.
+Run `./benchmark.sh --require-all-solved` to reproduce all eight measurements.
+Generate routed artifacts with
+`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 60`.
+The exporter validates every declared sample before writing any images.
 
-| Placement | Unoccupied middle area before → after (mm² across layers) | BYTE0 skew | BYTE1 skew | Largest pair skew |
-| --- | ---: | ---: | ---: | ---: |
-| Control | 189.3 → 165.7 | 0.635000 mm | 0.635000 mm | 0.126884 mm |
-| Right | 314.0 → 348.3 | 0.635000 mm | 0.635000 mm | 0.121802 mm |
-| Left | 335.2 → 215.7 | 0.635000 mm | 0.635000 mm | 0.127000 mm |
-| Above | 236.5 → 240.7 | 0.635000 mm | 0.635000 mm | 0.127000 mm |
+| RAM position | Automatic layers | Inner1/inner2 only |
+| --- | --- | --- |
+| Below | [Routed control](control-solved.png) | [Routed below](inner-layers-solved.png) |
+| Right | [Routed right](right-solved.png) | [Routed inner right](inner-layers-right-solved.png) |
+| Left | [Routed left](left-solved.png) | [Routed inner left](inner-layers-left-solved.png) |
+| Above | [Routed above](above-solved.png) | [Routed inner above](inner-layers-above-solved.png) |
 
-The [comparison](footprint-comparison.json) retains per-layer envelopes, free area/fraction and largest empty rectangles. Clearance-aware vacancy uses whole 0.1 mm cells (coarser above 250,000 cells) in the open inter-package window. Summed layer area is not board area. Lower vacancy alone is not a goal: shorter copper can leave more free area inside unchanged bounds. Exact native DRC remains authoritative.
-
-`./benchmark.sh --timeout-seconds 30 --require-all-solved` runs exactly four cases. The [full report](benchmark-results.json) confirms 47/47 signals, native DRC, both byte buses ≤0.635 mm total copper skew, pairs ≤0.127 mm, zero exterior pair separation, and 161 unchanged VCC/GND dogbones in every case (including numerical epsilon).
-
-All four images are from a separate fresh run of `bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 30`. The exporter validates all four before writing any artifact. Every image was inspected.
-
-- [Control](control-solved.png)
-- [Right](right-solved.png)
-- [Left](left-solved.png)
-- [Above](above-solved.png)
+`footprint-comparison.json` records the earlier four-placement compaction study;
+it is historical evidence, not the current eight-placement benchmark.

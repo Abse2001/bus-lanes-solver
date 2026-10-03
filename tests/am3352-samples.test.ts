@@ -13,6 +13,9 @@ test("the AM3352 samples translate only RAM and retain every real power dogbone"
     "left",
     "above",
     "inner-layers",
+    "inner-layers-right",
+    "inner-layers-left",
+    "inner-layers-above",
   ])
   const control = await loadAm3352Sample("control")
   const ramComponentId = control.metadata.powerPadManifest.find(
@@ -271,19 +274,25 @@ test("completed-copper audit refuses thinner wires/vias and geometry outside nat
   )
 })
 
-test("inner-layer sample changes only carrier availability and the audit rejects opening bottom", async () => {
-  const control = await loadAm3352Sample("control")
-  const restricted = await loadAm3352Sample("inner-layers")
-  expect(restricted.input.allowedLayers).toEqual(["inner1", "inner2"])
-  expect({ ...restricted.input, allowedLayers: undefined }).toEqual({
-    ...control.input,
-    allowedLayers: undefined,
+for (const [unrestricted, restrictedName] of [
+  ["control", "inner-layers"],
+  ["right", "inner-layers-right"],
+  ["left", "inner-layers-left"],
+  ["above", "inner-layers-above"],
+] as const)
+  test(`${restrictedName} changes only carrier availability and the audit rejects opening bottom`, async () => {
+    const control = await loadAm3352Sample(unrestricted)
+    const restricted = await loadAm3352Sample(restrictedName)
+    expect(restricted.input.allowedLayers).toEqual(["inner1", "inner2"])
+    expect({ ...restricted.input, allowedLayers: undefined }).toEqual({
+      ...control.input,
+      allowedLayers: undefined,
+    })
+    expect(restricted.metadata.fixedFanoutTraces).toEqual(
+      control.metadata.fixedFanoutTraces,
+    )
+    restricted.input.allowedLayers!.push("bottom")
+    await expect(
+      validateAm3352Sample(restricted.input, restricted.metadata),
+    ).rejects.toThrow("native board rules or signal constraints changed")
   })
-  expect(restricted.metadata.fixedFanoutTraces).toEqual(
-    control.metadata.fixedFanoutTraces,
-  )
-  restricted.input.allowedLayers!.push("bottom")
-  await expect(
-    validateAm3352Sample(restricted.input, restricted.metadata),
-  ).rejects.toThrow("native board rules or signal constraints changed")
-})

@@ -33,6 +33,7 @@ export function chamferOrdinaryCorners(
       obstacles: [],
       traces: result.filter((_, i) => i !== traceIndex),
     })
+    const scenes = new Map<string, VectorScene>()
     for (let i = 1; i < trace.route.length - 1; i++) {
       const [a, b, c] = trace.route.slice(i - 1, i + 2)
       if (
@@ -59,18 +60,23 @@ export function chamferOrdinaryCorners(
       const acute = Math.abs(dot + Math.SQRT1_2) < 1e-8
       if (!octilinear(u) || !octilinear(v) || (Math.abs(dot) > 1e-8 && !acute))
         continue
-      const scene = new VectorScene(
-        input,
-        {
-          ...connection,
-          pointsToConnect: connection.pointsToConnect.map((p) => ({
-            ...p,
-            layer: b.layer,
-          })),
-        },
-        b.width,
-        [...fixed, ...otherCopper],
-      )
+      const key = `${b.layer}/${b.width}`
+      let scene = scenes.get(key)
+      if (!scene) {
+        scene = new VectorScene(
+          input,
+          {
+            ...connection,
+            pointsToConnect: connection.pointsToConnect.map((p) => ({
+              ...p,
+              layer: b.layer,
+            })),
+          },
+          b.width,
+          [...fixed, ...otherCopper],
+        )
+        scenes.set(key, scene)
+      }
       const maximumTrim = Math.min(
         maxTrimInTraceWidths * b.width,
         before / 2,

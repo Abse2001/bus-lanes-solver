@@ -107,6 +107,16 @@ export class BusLanesSolver extends BaseSolver {
     solver.phase = "match"
     return solver
   }
+  /** Accept already matched candidates through the ordinary output validator. */
+  static forValidation(
+    input: SimpleRouteJson,
+    traces: Trace[],
+    options: SolverOptions = {},
+  ) {
+    const solver = BusLanesSolver.forRefinement(input, traces, options)
+    if (!solver.failed) solver.phase = "validate_output"
+    return solver
+  }
   getConstructorParams() {
     return [this.input, this.options]
   }
@@ -222,8 +232,7 @@ export class BusLanesSolver extends BaseSolver {
           radius: this.widths.get(c.name)! / 2,
           owners: [c.name],
         })
-    const negotiatePairs =
-      this.options.denseSearch && input.connections.length > 12
+    const negotiatePairs = this.useNegotiation
     const paired = new Set(
       negotiatePairs
         ? []
@@ -243,6 +252,18 @@ export class BusLanesSolver extends BaseSolver {
     }
     this.phase = "route"
     this.startLane()
+  }
+  // Small remainders still need layer negotiation when their dogbone terminals
+  // can reach more than one signal layer. The fixed-layer visibility search
+  // cannot explore that choice, regardless of how few connections remain.
+  private get useNegotiation() {
+    return (
+      this.options.denseSearch &&
+      (this.input.connections.length > 12 ||
+        this.input.connections.some(
+          (c) => (this.terminalLayers.get(c.name)?.length ?? 0) > 1,
+        ))
+    )
   }
   private coupledPairs() {
     return (this.input.differentialPairs ?? []).filter(
@@ -287,10 +308,9 @@ export class BusLanesSolver extends BaseSolver {
     }
     const c = this.orders[this.attempt][this.lane],
       [a, b] = c.pointsToConnect
-    this.search =
-      this.options.denseSearch && this.input.connections.length > 12
-        ? new GridVisibilitySearch(this.scene(c), a, b)
-        : new VectorVisibilitySearch(this.scene(c), a, b)
+    this.search = this.useNegotiation
+      ? new GridVisibilitySearch(this.scene(c), a, b)
+      : new VectorVisibilitySearch(this.scene(c), a, b)
   }
   private retry() {
     if (this.traces.length > this.bestPartial.length)
@@ -329,7 +349,7 @@ export class BusLanesSolver extends BaseSolver {
     this.startLane()
   }
   private route() {
-    if (this.options.denseSearch && this.input.connections.length > 12) {
+    if (this.useNegotiation) {
       // Dense negotiation owns its searches; the initial lane search is unused.
       if (this.search instanceof GridVisibilitySearch) this.search.cancel()
       this.search = undefined
@@ -587,7 +607,7 @@ export class BusLanesSolver extends BaseSolver {
               this.options.smoothTuning &&
               candidate.some((t) => t.coupledSection)
                 ? tuneCoupledLengths(input, candidate, {
-                    maxCandidates: corridor === original ? 512 : 4096,
+                    maxCandidates: corridor === original ? 512 : 16384,
                     packMeanders:
                       quickOriginal || compactCorridors.has(corridor),
                   })
@@ -621,6 +641,8 @@ export class BusLanesSolver extends BaseSolver {
     return
   }
   private validateOutput() {
+    if (this.options.smoothTuning && !routeAnglesAreConventional(this.traces))
+      throw Error("Final route has a nonconventional corner")
     for (const c of this.input.connections) {
       const t = this.traces.find((t) => t.connection_name === c.name)
       if (!t) throw Error("Missing lane")
@@ -636,6 +658,13 @@ export class BusLanesSolver extends BaseSolver {
         )
       )
         throw Error("Invalid lane geometry")
+      if (
+        t.route.some(
+          (p) =>
+            p.route_type !== "wire" || p.layer !== c.pointsToConnect[0].layer,
+        )
+      )
+        throw Error("Carrier layer does not match its terminals")
       const scene = this.scene(c)
       if (
         !tuningPathIsSelfClear(

@@ -1,3 +1,5 @@
+import { routeFreshSharedBuses } from "./route-fresh-shared-buses"
+import { routeSharedLayerBuses } from "./route-shared-layer-buses"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
 import { routeBackwardPackageBuses } from "./route-backward-package-buses"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
@@ -29,6 +31,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   phase = "resolve_layers"
   traces: Trace[] = []
   failureCode: string | null = null
+  private sharedPackages?: Generator<void, RepairedBusDogbones | null>
   private backwardPackages?: Generator<void, RepairedBusDogbones | null>
   private child?: BusLanesSolver
   private escapes: Trace[] = []
@@ -58,6 +61,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
   tryFinalAcceptance() {
+    this.sharedPackages?.return(null)
+    this.sharedPackages = undefined
     this.backwardPackages?.return(null)
     this.backwardPackages = undefined
     this.packageCoupling?.return([])
@@ -379,6 +384,48 @@ export class BusLanesPipelineSolver extends BaseSolver {
       )
     if (
       this.attempt === 0 &&
+      deferStandalonePairs &&
+      (laneInput.buses?.length ?? 0) > 1 &&
+      this.options.smoothTuning &&
+      this.options.denseSearch &&
+      (Math.abs(direction.x) > Math.abs(direction.y) ||
+        backwardFacingPackageTerminals({
+          ...this.input,
+          connections: this.input.connections.filter((c) =>
+            busNames.has(c.name),
+          ),
+        }))
+    ) {
+      const freshSites =
+        layers.length === 2 &&
+        !this.input.allowBlindAndBuriedVias &&
+        this.escapes.length === 2 * this.input.connections.length &&
+        backwardFacingPackageTerminals({
+          ...this.input,
+          connections: this.input.connections.filter((c) =>
+            busNames.has(c.name),
+          ),
+        }) &&
+        this.input.connections.every(
+          (c) =>
+            c.pointsToConnect.length === 2 &&
+            c.pointsToConnect.every((p) =>
+              isUnroutedComponentPad(this.input, c, p),
+            ),
+        )
+      this.sharedPackages = (
+        freshSites ? routeFreshSharedBuses : routeSharedLayerBuses
+      )(
+        this.input,
+        laneInput,
+        this.escapes,
+        terminalLayers,
+        this.childOptions(),
+      )
+      return
+    }
+    if (
+      this.attempt === 0 &&
       this.options.smoothTuning &&
       this.options.denseSearch &&
       Math.abs(direction.y) >= Math.abs(direction.x) &&
@@ -480,7 +527,21 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.siteRematch = undefined
         return
       }
-      if (!this.child && !this.backwardPackages) this.prepare()
+      if (!this.child && !this.backwardPackages && !this.sharedPackages)
+        this.prepare()
+      if (this.sharedPackages) {
+        this.phase = "route_shared_layers"
+        const state = this.sharedPackages.next()
+        if (!state.done) return
+        this.sharedPackages = undefined
+        if (!state.value) throw Error("Shared-layer bus routing exhausted")
+        this.escapes = state.value.escapes
+        this.child = BusLanesSolver.forValidation(
+          state.value.input,
+          state.value.traces,
+          this.childOptions(),
+        )
+      }
       if (this.backwardPackages) {
         this.phase = "route_backward_packages"
         const step = this.backwardPackages.next()
@@ -628,6 +689,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.phase = "solved"
       }
     } catch (error) {
+      this.sharedPackages?.return(null)
+      this.sharedPackages = undefined
       this.backwardPackages?.return(null)
       this.backwardPackages = undefined
       this.packageCoupling?.return([])

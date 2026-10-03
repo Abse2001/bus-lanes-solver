@@ -2,6 +2,7 @@ import { staggeredBankEntries } from "./staggered-bank-entries"
 import { remapCurvedSegments } from "./remap-curved-segments"
 import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
 import { sharedStraightSection } from "./shared-straight-section"
+import { coalesceSharedRuns } from "./coalesce-shared-runs"
 import { interPackageTuningWindow } from "./inter-package-tuning-window"
 import { offsetPath } from "./coupled-pair-routing"
 import { distance, simplify } from "./geometry"
@@ -74,11 +75,15 @@ export function spreadCoupledTuningLanes(
   let result = alignCoupledSectionBoundaries(input, structuredClone(traces))
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
-  for (const bus of input.buses ?? []) {
-    const busMembers = result.filter((t) =>
-      bus.connectionNames.includes(t.connection_name!),
-    )
-    const layer = (busMembers[0]?.route[0] as Wire)?.layer
+  const busNames = new Set(input.buses?.flatMap((bus) => bus.connectionNames))
+  const layers = new Set(
+    result
+      .filter((trace) => busNames.has(trace.connection_name!))
+      .map((trace) => (trace.route[0] as Wire).layer),
+  )
+  // A bus may use several permitted planes. Open each physical bank once,
+  // including planes that do not contain a bus's first member.
+  for (const layer of layers) {
     const members = result.filter((t) => (t.route[0] as Wire).layer === layer)
     if (members.length < 3) continue
     const first = members[0].route[0],
@@ -100,17 +105,32 @@ export function spreadCoupledTuningLanes(
       const pair = input.differentialPairs?.find(
         (p) =>
           p.connectionNames.includes(trace.connection_name!) &&
-          p.connectionNames.every((n) => bus.connectionNames.includes(n)),
+          p.connectionNames.every((n) =>
+            members.some((t) => t.connection_name === n),
+          ),
       )
       let rails = pair?.connectionNames.map(
         (n) => members.find((t) => t.connection_name === n)!,
       )
       if (rails?.every((t) => t.coupledSection)) {
+        rails = coalesceSharedRuns(rails)
         const existing = rails.map((t) =>
           t.route.slice(t.coupledSection![0], t.coupledSection![1] + 1),
         )
         const wholeCorridor =
           existing[0].length === existing[1].length &&
+          [0, existing[0].length - 1].every((i) => {
+            const a = existing[0][i],
+              b = existing[1][i],
+              q = existing[0][i === 0 ? 1 : i - 1],
+              span = distance(a, q)
+            return (
+              span > 1e-8 &&
+              Math.abs(
+                ((b.x - a.x) * (q.x - a.x) + (b.y - a.y) * (q.y - a.y)) / span,
+              ) < 1e-7
+            )
+          }) &&
           existing[0].slice(1).every((point, i) => {
             const a = existing[0][i],
               c = existing[1][i],

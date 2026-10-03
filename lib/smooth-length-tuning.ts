@@ -1,3 +1,4 @@
+import { routeAnglesAreConventional } from "./route-angle-validation"
 import { foldedTuningLobes } from "./folded-tuning"
 import { packageApproachRegions, pointInBox } from "./package-approach-regions"
 import { tuningPathIsSelfClear } from "./length-tuning"
@@ -194,7 +195,7 @@ export function tuneSmoothLengths(
               )
                 continue
               if (!tuningPathIsSelfClear(next, returnSpacing)) continue
-              yield {
+              const candidate: Trace = {
                 ...t,
                 coupledSection: t.coupledSection
                   ? (t.coupledSection.map((v) =>
@@ -215,6 +216,7 @@ export function tuneSmoothLengths(
                   width,
                 })),
               }
+              if (routeAnglesAreConventional([candidate])) yield candidate
             }
         }
       }

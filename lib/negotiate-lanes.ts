@@ -26,6 +26,9 @@ export function* negotiateLanes(
   enableTerminalReservations: () => boolean = () => true,
   deferRetainedSelfClearance = false,
 ): Generator<Trace[], Trace[] | null> {
+  const flexibleTerminals = connections.some(
+    (connection) => (terminalLayers.get(connection.name)?.length ?? 1) > 1,
+  )
   const routed = new Map<string, Trace>()
   const histories = new Map<string, Float32Array>()
   const searches = new Map<string, GridHistoryProjector>()
@@ -536,12 +539,16 @@ export function* negotiateLanes(
       lastProgress = iteration
     }
     let missing = connections.length - routed.size
+    // Fixed-layer repairs cannot explore the alternate planes of flexible
+    // handoffs. Keep negotiating those layer choices instead of repeatedly
+    // spending the bounded search budget on their current assignment.
     // A nearly complete bus can have a small pocket sealed by otherwise legal
     // lanes. Repair the local hard-constraint assignment instead of repeating
     // whole-board soft-cost sweeps. The parent still owns the shared budget.
     if (
       missing > 0 &&
       missing <= 3 &&
+      !flexibleTerminals &&
       closureAttempts < 6 &&
       iteration >= units.length * 2 &&
       iteration - lastClosureRepair >= units.length * 4 &&
@@ -582,6 +589,7 @@ export function* negotiateLanes(
     if (
       missing > 0 &&
       missing <= 3 &&
+      !flexibleTerminals &&
       refinementAttempts < 2 &&
       iteration >=
         units.length *

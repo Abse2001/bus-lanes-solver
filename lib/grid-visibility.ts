@@ -1,3 +1,4 @@
+import { GridComponents } from "./grid-components"
 import type { Point, SimpleRouteJson } from "./types"
 import type { GridHeap } from "./grid-heap"
 import { acquireGridScratch, type GridScratchLease } from "./grid-scratch"
@@ -99,6 +100,7 @@ interface CopperEntry extends PreparedCopper {
 type Attachment = { id: number; path: Point[] }
 
 interface HardGrid {
+  components: GridComponents
   attachments: Map<string, Attachment[]>
   blocked: Uint8Array
   edgeKnown: Uint8Array
@@ -360,6 +362,12 @@ export class GridVisibilitySearch extends GridHistoryProjector {
   private rootPaths = new Map<number, Point[]>()
   private goalPaths = new Map<number, Point[]>()
   private attachmentResult?: { score: number; path: Point[] }
+  private goalBounds!: {
+    minX: number
+    maxX: number
+    minY: number
+    maxY: number
+  }
   private hx: Float64Array
   private hy: Float64Array
   constructor(
@@ -373,6 +381,9 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       step?: number
       maxLength?: number
       allTerminalAttachments?: boolean
+      nearestTerminalAttachments?: boolean
+      starts?: Point[]
+      ends?: Point[]
       bounds?: SimpleRouteJson["bounds"]
     },
   ) {
@@ -399,8 +410,23 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           reverse: 1 << (7 - index),
         })
       }
-    this.hx = this.xs.map((x) => Math.abs(x - this.end.x) / this.stepSize)
-    this.hy = this.ys.map((y) => Math.abs(y - this.end.y) / this.stepSize)
+    const ends = grid?.ends ?? [end]
+    this.goalBounds = {
+      minX: Math.min(...ends.map((p) => p.x)),
+      maxX: Math.max(...ends.map((p) => p.x)),
+      minY: Math.min(...ends.map((p) => p.y)),
+      maxY: Math.max(...ends.map((p) => p.y)),
+    }
+    this.hx = this.xs.map(
+      (x) =>
+        Math.max(this.goalBounds.minX - x, x - this.goalBounds.maxX, 0) /
+        this.stepSize,
+    )
+    this.hy = this.ys.map(
+      (y) =>
+        Math.max(this.goalBounds.minY - y, y - this.goalBounds.maxY, 0) /
+        this.stepSize,
+    )
     const n = this.nx * this.ny
     const grids = hardGrids.get(scene.input) ?? new Map<string, HardGrid>()
     hardGrids.set(scene.input, grids)
@@ -418,7 +444,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       scene.input.bounds,
       scene.copper.map((c) => [c.a.x, c.a.y, c.b.x, c.b.y, c.radius, c.rect]),
     ])
-    const cachedGrid = grids.get(gridKey)
+    let cachedGrid = grids.get(gridKey)
     const attachments =
       cachedGrid?.attachments ?? new Map<string, Attachment[]>()
     if (cachedGrid) {
@@ -430,6 +456,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.hardEdgeBlocked = cachedGrid?.edgeBlocked ?? new Uint8Array(n)
     if (cachedGrid) this.copperBuckets = cachedGrid.buckets
     this.maxLength = grid?.maxLength ?? Infinity
+    let componentIndex = cachedGrid?.components
     if (!cachedGrid) {
       // Adjacent samples of a long segment overlap. Test each cell at most
       // once per copper item, including clear cells in its bounding halo.
@@ -509,7 +536,9 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           markBox(p.x - r, p.x + r, p.y - r, p.y + r, entry)
         }
       }
+      componentIndex = new GridComponents(this.blocked, this.nx)
       const bytes =
+        componentIndex.storageBytes +
         n * 3 +
         this.copperBuckets.storageBytes +
         gridKey.length * 2 +
@@ -528,14 +557,16 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           retained -= grids.get(oldest)!.bytes
           grids.delete(oldest)
         }
-        grids.set(gridKey, {
+        cachedGrid = {
           attachments,
           blocked: this.blocked,
           edgeKnown: this.hardEdgeKnown,
           edgeBlocked: this.hardEdgeBlocked,
           buckets: this.copperBuckets,
           bytes,
-        })
+          components: componentIndex,
+        }
+        grids.set(gridKey, cachedGrid)
       }
     }
     if (this.hasSoftCopper) {
@@ -727,14 +758,54 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       attachments.set(key, structuredClone(result))
       return result
     }
-    this.startAttachments = attach(start)
-    this.endAttachments = attach(end)
+    const distinct = (items: Attachment[]) => {
+      const unique = new Map<number, Attachment>()
+      for (const a of items.sort((a, b) => length(a.path) - length(b.path)))
+        if (!unique.has(a.id)) unique.set(a.id, a)
+      return [...unique.values()]
+    }
+    this.startAttachments = grid?.starts
+      ? distinct(
+          grid.starts.flatMap((point) =>
+            grid.nearestTerminalAttachments
+              ? attach(point).slice(0, 1)
+              : attach(point),
+          ),
+        )
+      : attach(start)
+    this.endAttachments = grid?.ends
+      ? distinct(
+          ends.flatMap((point) =>
+            grid.nearestTerminalAttachments
+              ? attach(point).slice(0, 1)
+              : attach(point),
+          ),
+        )
+      : attach(end)
     const a = this.startAttachments[0],
       z = this.endAttachments[0]
     if (!a || !z) {
       this.failed = true
       if (this.softMemoLease) this.softMemoLease.active = false
       return
+    }
+    const components = componentIndex!
+    const sameComponent = (starts: Attachment[], ends: Attachment[]) =>
+      starts.some((start) =>
+        ends.some(
+          (end) =>
+            components.at(start.id) !== 0 &&
+            components.at(start.id) === components.at(end.id),
+        ),
+      )
+    let forceAlternativeAttachments = false
+    if (!sameComponent([a], [z])) {
+      if (!sameComponent(this.startAttachments, this.endAttachments)) {
+        this.failed = true
+        if (this.softMemoLease) this.softMemoLease.active = false
+        return
+      }
+      forceAlternativeAttachments = true
     }
     this.scratchLease = acquireGridScratch(
       scene.input,
@@ -754,7 +825,13 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.parent[a.id] = -1
     if (this.travel) this.travel[a.id] = length(a.path)
     this.heap.push(a.id, 0, this.heuristic(start))
-    if (grid?.allTerminalAttachments) this.retryAttachments()
+    if (
+      forceAlternativeAttachments ||
+      grid?.allTerminalAttachments ||
+      grid?.starts ||
+      grid?.ends
+    )
+      this.retryAttachments()
   }
   private retryAttachments() {
     if (
@@ -858,8 +935,18 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     return true
   }
   private heuristic(point: Point) {
-    const dx = Math.abs(point.x - this.end.x) / this.stepSize
-    const dy = Math.abs(point.y - this.end.y) / this.stepSize
+    const dx =
+      Math.max(
+        this.goalBounds.minX - point.x,
+        point.x - this.goalBounds.maxX,
+        0,
+      ) / this.stepSize
+    const dy =
+      Math.max(
+        this.goalBounds.minY - point.y,
+        point.y - this.goalBounds.maxY,
+        0,
+      ) / this.stepSize
     return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)
   }
   /** Stop an abandoned search before handing its memo to the next search.

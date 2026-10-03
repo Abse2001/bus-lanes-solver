@@ -124,3 +124,48 @@ test("opposite travel and curve chords cannot be reconstructed as parallel offse
     ),
   ).toBeNull()
 })
+
+test("collinear splits do not shorten the available shared tuning interval", () => {
+  const rails = [
+    rail(
+      "p",
+      [
+        [-1, -1],
+        [0, 0],
+        [0, 10],
+        [1, 11],
+      ],
+      [1, 2],
+    ),
+    {
+      ...rail(
+        "n",
+        [
+          [0.22, 1],
+          [0.22, 3],
+          [0.22, 5],
+          [0.22, 9],
+          [2.22, 11],
+          [3.22, 11.5],
+        ],
+        [0, 3],
+      ),
+      curvedSegments: [5],
+    },
+  ]
+  const before = structuredClone(rails)
+  const result = sharedStraightSection(rails, 0.22)!
+  expect(rails).toEqual(before)
+  for (const [index, t] of result.entries()) {
+    const [s, e] = t.coupledSection!
+    expect(t.route[s]).toMatchObject({ x: index * 0.22, y: 1 })
+    expect(t.route[e]).toMatchObject({ x: index * 0.22, y: 9 })
+    expect(length(t.route)).toBeCloseTo(length(rails[index].route), 10)
+    expect(t.route[0]).toEqual(rails[index].route[0])
+    expect(t.route.at(-1)).toEqual(rails[index].route.at(-1))
+  }
+  const arc = result[1].curvedSegments![0]
+  expect(result[1].route.slice(arc - 1, arc + 1)).toEqual(
+    rails[1].route.slice(4, 6),
+  )
+})

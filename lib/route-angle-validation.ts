@@ -1,27 +1,36 @@
 import { distance } from "./geometry"
-import type { Trace } from "./types"
+import type { Trace, Wire } from "./types"
 
 /** Smooth routes turn by at most 45 degrees at an ordinary corner or sampled
- * curve point. Curve annotations never excuse a sharp handoff. */
+ * curve point. Repeated points cannot conceal a sharp handoff. */
 export function routeAnglesAreConventional(traces: Trace[]): boolean {
   return traces.every((trace) => {
-    for (let i = 1; i + 1 < trace.route.length; i++) {
-      const [a, b, c] = trace.route.slice(i - 1, i + 2)
-      if (
-        a.route_type !== "wire" ||
-        b.route_type !== "wire" ||
-        c.route_type !== "wire" ||
-        a.layer !== b.layer ||
-        b.layer !== c.layer
-      )
+    let previous: Wire | undefined
+    let direction: { x: number; y: number } | undefined
+    for (const point of trace.route) {
+      if (point.route_type !== "wire") {
+        previous = direction = undefined
         continue
-      const before = distance(a, b),
-        after = distance(b, c)
-      if (before < 1e-8 || after < 1e-8) continue
-      const cosine =
-        ((b.x - a.x) * (c.x - b.x) + (b.y - a.y) * (c.y - b.y)) /
-        (before * after)
-      if (cosine < Math.cos((45.2 * Math.PI) / 180)) return false
+      }
+      if (!previous || previous.layer !== point.layer) {
+        previous = point
+        direction = undefined
+        continue
+      }
+      const span = distance(previous, point)
+      if (span < 1e-8) continue
+      const next = {
+        x: (point.x - previous.x) / span,
+        y: (point.y - previous.y) / span,
+      }
+      if (
+        direction &&
+        direction.x * next.x + direction.y * next.y <
+          Math.cos((45.2 * Math.PI) / 180)
+      )
+        return false
+      previous = point
+      direction = next
     }
     return true
   })
