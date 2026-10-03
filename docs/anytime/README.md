@@ -53,7 +53,7 @@ Inner-above's mean layer envelope falls **31.61%**, mean lane envelope **25.89%*
 
 All 42 native-gated routed PNGs were visually inspected. The browser report was exercised across all 14 samples, 42 effort selections, and 82 available layer views without runtime exceptions. Exact gzip outputs, embedded report geometry, inputs, seeds, and frozen source are hash-checked. The measured source fingerprint is `b62e85919bfe8488075a6db9f0f2c17f2e7c94ec55635a30a3d6d910a0b6d814`.
 
-The report reused pristine, hash-checked initial routes computed independently earlier in this session. It records their original routing cost, new optimization cost, and independent validation overhead separately. Runtimes depend on machine load; the final exporter ran four independent sample workers. No iteration-zero, partial, failed, or provisional routes are review artifacts.
+The report reused pristine, hash-checked initial routes computed independently earlier in this session. It records the original routing cost and new optimization cost separately. Total checkpoint elapsed time also includes native validation, physical measurement, and result-copy overhead; the export does not expose a validation-only timer. Runtimes depend on machine load; the final exporter ran four independent sample workers. No iteration-zero, partial, failed, or provisional routes are review artifacts.
 
 ## Original placement benchmark
 
