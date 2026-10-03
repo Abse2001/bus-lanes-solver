@@ -100,7 +100,7 @@ interface CopperEntry extends PreparedCopper {
 type Attachment = { id: number; path: Point[] }
 
 interface HardGrid {
-  components: GridComponents
+  components?: GridComponents
   attachments: Map<string, Attachment[]>
   blocked: Uint8Array
   edgeKnown: Uint8Array
@@ -382,6 +382,8 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       maxLength?: number
       allTerminalAttachments?: boolean
       nearestTerminalAttachments?: boolean
+      /** Advance attachment retries only when explicitly negotiating sites. */
+      checkReachability?: boolean
       starts?: Point[]
       ends?: Point[]
       bounds?: SimpleRouteJson["bounds"]
@@ -536,9 +538,11 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           markBox(p.x - r, p.x + r, p.y - r, p.y + r, entry)
         }
       }
-      componentIndex = new GridComponents(this.blocked, this.nx)
+      componentIndex = grid?.checkReachability
+        ? new GridComponents(this.blocked, this.nx)
+        : undefined
       const bytes =
-        componentIndex.storageBytes +
+        (componentIndex?.storageBytes ?? 0) +
         n * 3 +
         this.copperBuckets.storageBytes +
         gridKey.length * 2 +
@@ -567,6 +571,24 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           components: componentIndex,
         }
         grids.set(gridKey, cachedGrid)
+      }
+    }
+    // A cached raster may have been created by an ordinary single-terminal
+    // search. Build this optional index lazily and include it in the cache cap.
+    if (grid?.checkReachability && !componentIndex) {
+      componentIndex = new GridComponents(this.blocked, this.nx)
+      if (cachedGrid) {
+        cachedGrid.components = componentIndex
+        cachedGrid.bytes += componentIndex.storageBytes
+        let retained = [...grids.values()].reduce(
+          (sum, value) => sum + value.bytes,
+          0,
+        )
+        while (retained > maxHardGridBytes && grids.size) {
+          const oldest = grids.keys().next().value!
+          retained -= grids.get(oldest)!.bytes
+          grids.delete(oldest)
+        }
       }
     }
     if (this.hasSoftCopper) {
@@ -799,7 +821,10 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         ),
       )
     let forceAlternativeAttachments = false
-    if (!sameComponent([a], [z])) {
+    // Early retries can change which candidate fits a caller's search budget.
+    // Keep ordinary routing's established attachment order; site negotiation
+    // explicitly opts into this broader search over alternate attachments.
+    if (grid?.checkReachability && !sameComponent([a], [z])) {
       if (!sameComponent(this.startAttachments, this.endAttachments)) {
         this.failed = true
         if (this.softMemoLease) this.softMemoLease.active = false

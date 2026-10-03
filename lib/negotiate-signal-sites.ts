@@ -146,6 +146,10 @@ export function* negotiateSignalSites(
             scene,
             local.pointsToConnect[0],
             local.pointsToConnect[1],
+            [],
+            0,
+            undefined,
+            { checkReachability: true },
           )
           try {
             let steps = 0
@@ -303,6 +307,7 @@ export function* negotiateSignalSites(
         soft,
         10 + iteration,
         histories.get(layer),
+        { checkReachability: true },
       )
       try {
         let steps = 0
