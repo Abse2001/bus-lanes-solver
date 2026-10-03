@@ -201,6 +201,8 @@ The current expanded benchmark completes **7/8 samples** on Linux x86_64 (AMD EP
 
 The unresolved above case exhausted the aggregate 2,400,000-iteration budget before the 900-second wall-clock deadline. Its input and all 161 fixed power dogbones remained unchanged.
 
+A separate diagnostic run with a 3,200,000-iteration ceiling also failed after 715.321 s and 2,447,946 iterations, exhausting all four allocation attempts. Extending the aggregate budget did not complete this case.
+
 Every passing sample preserves all 161 power dogbones and has zero separated pair length outside the native pad/fanout regions. The audit checks the actual copper, including tuning curves; it does not exempt a fixed approach length. Routing times include length matching. The total column also includes fixture and native DRC validation.
 
 For forward-facing packages, the pipeline can stage independent buses before
