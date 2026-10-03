@@ -1,0 +1,73 @@
+{
+  "baselineCommit": "e3725b4",
+  "measurement": "Sum of four signal-copper XY bounding-box areas, including wire/via radii; fixed power dogbones measured separately. Middle envelopes sum the per-layer regions between packages; vacancy is clearance-aware grid sampling.",
+  "beforeCombinedSignalAreaMm2": 4981.891250000001,
+  "afterCombinedSignalAreaMm2": 3516.3841599499146,
+  "combinedReductionPercent": 29.41668166783219,
+  "placements": [
+    {
+      "sample": "inner-layers",
+      "before": {
+        "signalBoundsAreaMm2": 474.6624999999999,
+        "middleEnvelopeAreaMm2": 365.9500373,
+        "middleUnoccupiedAreaMm2": 81.57661371597729,
+        "middleMaxCenterOffsetMm": 8.249999999999998
+      },
+      "after": {
+        "signalBoundsAreaMm2": 468.3125,
+        "middleEnvelopeAreaMm2": 363.34541070000006,
+        "middleUnoccupiedAreaMm2": 84.21949672925635,
+        "middleMaxCenterOffsetMm": 8.249999999999998
+      },
+      "signalAreaReductionPercent": 1.3377926421404451
+    },
+    {
+      "sample": "inner-layers-right",
+      "before": {
+        "signalBoundsAreaMm2": 908.3150000000003,
+        "middleEnvelopeAreaMm2": 678.813108294985,
+        "middleUnoccupiedAreaMm2": 309.08199508282894,
+        "middleMaxCenterOffsetMm": 14.049965188079163
+      },
+      "after": {
+        "signalBoundsAreaMm2": 880.4250000000003,
+        "middleEnvelopeAreaMm2": 667.7369421627799,
+        "middleUnoccupiedAreaMm2": 310.7866190196092,
+        "middleMaxCenterOffsetMm": 13.449965188072529
+      },
+      "signalAreaReductionPercent": 3.070520689408407
+    },
+    {
+      "sample": "inner-layers-left",
+      "before": {
+        "signalBoundsAreaMm2": 1381.3937500000002,
+        "middleEnvelopeAreaMm2": 977.1620057829194,
+        "middleUnoccupiedAreaMm2": 382.22442291275627,
+        "middleMaxCenterOffsetMm": 19.549963259154655
+      },
+      "after": {
+        "signalBoundsAreaMm2": 983.2889942640521,
+        "middleEnvelopeAreaMm2": 688.0288869588584,
+        "middleUnoccupiedAreaMm2": 242.94135725618145,
+        "middleMaxCenterOffsetMm": 12.994285640213544
+      },
+      "signalAreaReductionPercent": 28.81906449453301
+    },
+    {
+      "sample": "inner-layers-above",
+      "before": {
+        "signalBoundsAreaMm2": 2217.52,
+        "middleEnvelopeAreaMm2": 1217.313614525,
+        "middleUnoccupiedAreaMm2": 517.1417475117936,
+        "middleMaxCenterOffsetMm": 27.624999999999996
+      },
+      "after": {
+        "signalBoundsAreaMm2": 1184.357665685862,
+        "middleEnvelopeAreaMm2": 680.4081841267067,
+        "middleUnoccupiedAreaMm2": 230.55864978069798,
+        "middleMaxCenterOffsetMm": 14.750000000000007
+      },
+      "signalAreaReductionPercent": 46.59089137027571
+    }
+  ]
+}

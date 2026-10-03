@@ -1,3 +1,4 @@
+import { highDemandPairedLanes } from "./tuning-bank-demands"
 import { staggeredBankEntries } from "./staggered-bank-entries"
 import { remapCurvedSegments } from "./remap-curved-segments"
 import { alignCoupledSectionBoundaries } from "./align-coupled-section-boundaries"
@@ -71,11 +72,15 @@ export function spreadCoupledTuningLanes(
   traces: Trace[],
   pitch: number,
   style: "dogleg" | "diagonal" | "interior" = "dogleg",
+  packUnconstrained = false,
 ): Trace[] | null {
   let result = alignCoupledSectionBoundaries(input, structuredClone(traces))
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
   const busNames = new Set(input.buses?.flatMap((bus) => bus.connectionNames))
+  const highDemandPairs = packUnconstrained
+    ? highDemandPairedLanes(input, traces)
+    : new Set<string>()
   const layers = new Set(
     result
       .filter((trace) => busNames.has(trace.connection_name!))
@@ -250,15 +255,37 @@ export function spreadCoupledTuningLanes(
           [-1, cuts.slice(0, split).toReversed()],
           [1, cuts.slice(split)],
         ] as const) {
+          // A tuning lane owns the free strip toward the center. Signals
+          // without a bus target need only their physical copper clearance.
+          // Pairs with substantial shared deficits reserve both adjacent strips
+          // for balanced curves, rather than separating the two rails.
+          const distances = group.map((_, i) => (group.length - 1 - i) * pitch)
+          for (let i = group.length - 2; i >= 0; i--) {
+            const inner = group[i].channel,
+              outer = group[i + 1].channel
+            const tuning = outer.traces.some((t) =>
+              busNames.has(t.connection_name!),
+            )
+            const paired = [inner, outer].some((c) =>
+              c.traces.some((t) => highDemandPairs.has(t.connection_name!)),
+            )
+            const gap = packUnconstrained
+              ? Math.max(
+                  (inner.width + outer.width) / 2 + clearance + width * 0.2,
+                  paired ? pitch * 2 : tuning ? pitch : 0,
+                )
+              : pitch
+            if (packUnconstrained) distances[i] = distances[i + 1] + gap
+          }
           const sideExtent = Math.max(
-            extent,
+            packUnconstrained ? distances[0] + pitch : extent,
             ...group.map(
               (c, i) =>
                 Math.max(
                   side * (c.a!.point.y - center),
                   side * (c.b!.point.y - center),
                 ) +
-                (group.length - 1 - i) * pitch +
+                distances[i] +
                 width * 2,
             ),
           )
@@ -277,7 +304,7 @@ export function spreadCoupledTuningLanes(
             const v =
               style !== "dogleg"
                 ? center + (ordinal - (cuts.length - 1) / 2) * pitch
-                : center + side * (sideExtent - (group.length - 1 - i) * pitch)
+                : center + side * (sideExtent - distances[i])
             const lead = Math.abs(v - c.a!.point.y),
               tail = Math.abs(v - c.b!.point.y)
             // Move inner banks in lane order: upward-moving lanes peel off
