@@ -632,6 +632,8 @@ export class BusLanesSolver extends BaseSolver {
               this.options.smoothTuning &&
               candidate.some((t) => t.coupledSection)
                 ? tuneCoupledLengths(input, candidate, {
+                    // Narrow banks need more curve period/offset combinations.
+                    // Keep that extra bounded work local to packed candidates.
                     maxCandidates:
                       corridor === original
                         ? 512

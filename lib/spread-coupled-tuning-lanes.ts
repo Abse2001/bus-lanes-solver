@@ -259,7 +259,7 @@ export function spreadCoupledTuningLanes(
           // without a bus target need only their physical copper clearance.
           // Pairs with substantial shared deficits reserve both adjacent strips
           // for balanced curves, rather than separating the two rails.
-          const distances = group.map(() => 0)
+          const distances = group.map((_, i) => (group.length - 1 - i) * pitch)
           for (let i = group.length - 2; i >= 0; i--) {
             const inner = group[i].channel,
               outer = group[i + 1].channel
@@ -275,7 +275,7 @@ export function spreadCoupledTuningLanes(
                   paired ? pitch * 2 : tuning ? pitch : 0,
                 )
               : pitch
-            distances[i] = distances[i + 1] + gap
+            if (packUnconstrained) distances[i] = distances[i + 1] + gap
           }
           const sideExtent = Math.max(
             packUnconstrained ? distances[0] + pitch : extent,
