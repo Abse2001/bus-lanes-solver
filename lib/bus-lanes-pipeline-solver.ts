@@ -1,3 +1,4 @@
+import { compactUnconstrainedLanes } from "./compact-unconstrained-lanes"
 import { routeFreshSharedBuses } from "./route-fresh-shared-buses"
 import { routeSharedLayerBuses } from "./route-shared-layer-buses"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
@@ -616,6 +617,27 @@ export class BusLanesPipelineSolver extends BaseSolver {
         }
         if (this.options.smoothTuning)
           refined = simplifyMatchedTraces(
+            {
+              ...this.input,
+              traces: [...(this.input.traces ?? []), ...this.escapes],
+              connections: this.input.connections.map((c) => {
+                const t = refined.find((t) => t.connection_name === c.name)!
+                return {
+                  ...c,
+                  pointsToConnect: [
+                    t.route[0],
+                    t.route.at(-1)!,
+                  ] as typeof c.pointsToConnect,
+                }
+              }),
+            },
+            refined,
+          )
+        if (
+          this.options.smoothTuning &&
+          (this.input.allowedLayers?.length ?? this.input.layerCount) === 2
+        )
+          refined = compactUnconstrainedLanes(
             {
               ...this.input,
               traces: [...(this.input.traces ?? []), ...this.escapes],

@@ -479,6 +479,7 @@ export class BusLanesSolver extends BaseSolver {
     const original = this.traces
     const fixed = this.fixed
     const compactCorridors = new WeakSet<Trace[]>()
+    const demandPackedCorridors = new WeakSet<Trace[]>()
     const narrowCorridors = new WeakSet<Trace[]>()
     const packBanks =
       this.options.smoothTuning && original.some((t) => t.coupledSection)
@@ -489,10 +490,13 @@ export class BusLanesSolver extends BaseSolver {
       yield original
       if (packBanks) {
         const busNames = new Set(input.buses?.flatMap((b) => b.connectionNames))
-        if (original.some((t) => !busNames.has(t.connection_name!))) {
+        if (
+          (input.allowedLayers?.length ?? input.layerCount) === 2 &&
+          original.some((t) => !busNames.has(t.connection_name!))
+        ) {
           const highDemand = highDemandPairedLanes(input, original).size > 0
           for (const multiplier of highDemand
-            ? [16, 12, 14, 10, 8]
+            ? [12, 14, 16, 10, 8]
             : [10, 8, 12, 14, 16]) {
             const spread = spreadCoupledTuningLanes(
               input,
@@ -503,6 +507,7 @@ export class BusLanesSolver extends BaseSolver {
             )
             if (spread) {
               compactCorridors.add(spread)
+              demandPackedCorridors.add(spread)
               yield spread
             }
           }
@@ -627,7 +632,12 @@ export class BusLanesSolver extends BaseSolver {
               this.options.smoothTuning &&
               candidate.some((t) => t.coupledSection)
                 ? tuneCoupledLengths(input, candidate, {
-                    maxCandidates: corridor === original ? 512 : 16384,
+                    maxCandidates:
+                      corridor === original
+                        ? 512
+                        : demandPackedCorridors.has(corridor)
+                          ? 65536
+                          : 16384,
                     packMeanders:
                       quickOriginal || compactCorridors.has(corridor),
                   })
