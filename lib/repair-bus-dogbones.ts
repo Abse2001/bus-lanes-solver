@@ -62,6 +62,11 @@ export function* repairBusDogbones(
   laneInput: SimpleRouteJson,
   current: Trace[],
   generatedEscapes: Trace[],
+  limits: {
+    pairSteps?: number
+    negotiationSteps?: number
+    closureSteps?: number
+  } = {},
 ): Generator<void, RepairedBusDogbones | null> {
   let input = structuredClone(laneInput)
   let traces = current
@@ -147,7 +152,7 @@ export function* repairBusDogbones(
             penalty: 0,
             variant,
           }),
-          6000,
+          limits.pairSteps ?? 6000,
         )
         if (!paired) continue
         const generator = negotiateLanes(
@@ -166,7 +171,7 @@ export function* repairBusDogbones(
         let best = 0
         let completed: Trace[] | null = null
         try {
-          while (!state.done && steps++ < 10000) {
+          while (!state.done && steps++ < (limits.negotiationSteps ?? 10000)) {
             if (state.value.length > best) {
               best = state.value.length
               if (best >= local.connections.length - 1) {
@@ -181,7 +186,7 @@ export function* repairBusDogbones(
                     new Map(),
                     { maxSearches: 200 },
                   ),
-                  20000,
+                  limits.closureSteps ?? 20000,
                 )
                 if (closed) {
                   completed = [...paired, ...closed]

@@ -1,4 +1,9 @@
+import { routeSharedLayerNetwork } from "./route-shared-layer-network"
 import { simplifyMatchedTraces } from "./simplify-matched-traces"
+import { repairPairApproaches } from "./repair-pair-approaches"
+import { repairBusDogbones } from "./repair-bus-dogbones"
+import { repairGridJogs } from "./repair-grid-jogs"
+import { fixedCopper } from "./vector-scene"
 import { routeBackwardPackageBuses } from "./route-backward-package-buses"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
@@ -29,7 +34,10 @@ export class BusLanesPipelineSolver extends BaseSolver {
   phase = "resolve_layers"
   traces: Trace[] = []
   failureCode: string | null = null
+  private sharedNetwork?: Generator<void, RepairedBusDogbones | null>
   private backwardPackages?: Generator<void, RepairedBusDogbones | null>
+  private busRepair?: Generator<void, RepairedBusDogbones | null>
+  private busRepairMissingCount = Infinity
   private child?: BusLanesSolver
   private escapes: Trace[] = []
   private attempt = 0
@@ -44,7 +52,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
     this.input = structuredClone(input)
     this.options = { smoothTuning: true, denseSearch: true, ...options }
     this.MAX_ITERATIONS =
-      (options.maxSearchIterations ?? 200000) * Math.max(1, input.layerCount)
+      (options.maxSearchIterations ?? 600000) * Math.max(1, input.layerCount)
   }
   getConstructorParams() {
     return [this.input, this.options]
@@ -58,8 +66,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
   tryFinalAcceptance() {
+    this.sharedNetwork?.return(null)
+    this.sharedNetwork = undefined
     this.backwardPackages?.return(null)
     this.backwardPackages = undefined
+    this.busRepair?.return(null)
+    this.busRepair = undefined
     this.packageCoupling?.return([])
     this.packageCoupling = undefined
     this.siteRematch?.return({ connections: [], escapes: [] })
@@ -79,8 +91,42 @@ export class BusLanesPipelineSolver extends BaseSolver {
       // old per-layer cutoff discards compatible computed alternatives just
       // before they converge. Unconstrained controls retain a work reserve.
       maxSearchIterations:
-        this.options.maxSearchIterations ?? Math.max(1, remaining - reserve),
+        this.options.maxSearchIterations ??
+        (this.completedLanes.length
+          ? Math.min(200000, remaining)
+          : Math.min(600000, Math.max(1, remaining - reserve))),
     }
+  }
+  private *repairIncompleteBuses(): Generator<
+    void,
+    RepairedBusDogbones | null
+  > {
+    const repaired = yield* repairBusDogbones(
+      {
+        ...this.input,
+        traces: [...(this.input.traces ?? []), ...this.completedLanes],
+      },
+      this.child!.input,
+      this.child!.traces,
+      this.escapes,
+      this.busRepairMissingCount === 1
+        ? { pairSteps: 30000, negotiationSteps: 50000, closureSteps: 100000 }
+        : {},
+    )
+    if (!repaired) return null
+    // Raster repairs defer self-clearance until the complete lane set exists.
+    // Clean those jogs before length matching reserves shared tuning space.
+    // Preserve the original child routes if cleanup cannot finish.
+    const traces = structuredClone(repaired.traces)
+    if (
+      !(yield* repairGridJogs(
+        repaired.input,
+        traces,
+        fixedCopper(repaired.input),
+      ))
+    )
+      return null
+    return { ...repaired, traces }
   }
   private *finishPackageCoupling(
     input: SimpleRouteJson,
@@ -94,11 +140,36 @@ export class BusLanesPipelineSolver extends BaseSolver {
       shortenPairApproaches(input, refined),
       { preserveMatching: false },
     )
+    refined = yield* repairPairApproaches(
+      input,
+      refined,
+      this.terminalLayers,
+      this.childOptions(),
+    )
+    input = {
+      ...input,
+      connections: input.connections.map((connection) => {
+        const trace = refined.find(
+          (trace) => trace.connection_name === connection.name,
+        )!
+        const first = trace.route[0]
+        return {
+          ...connection,
+          pointsToConnect: connection.pointsToConnect.map((point) => ({
+            ...point,
+            layer: first.route_type === "wire" ? first.layer : point.layer,
+          })),
+        }
+      }),
+    }
     if (exteriorPairSpacingReports(input, refined).some((r) => !r.matched))
       throw Error(
         "Pair approaches still separate outside native package fanouts",
       )
-    const matcher = BusLanesSolver.forRefinement(input, refined, this.options)
+    const matcher = BusLanesSolver.forRefinement(input, refined, {
+      ...this.options,
+      packageOnlyPairTuning: true,
+    })
     try {
       while (!matcher.solved && !matcher.failed) {
         matcher.step()
@@ -273,6 +344,14 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.input.minTraceWidth,
     )
     // The shared site matcher uses a conservative width while reserving sites.
+    const sharedBackward =
+      layers.length === 2 &&
+      backwardFacingPackageTerminals({
+        ...this.input,
+        connections: this.input.connections.filter((c) =>
+          this.input.buses?.some((b) => b.connectionNames.includes(c.name)),
+        ),
+      })
     const result = routeAlternateSignalDogbones(
       this.input,
       {
@@ -288,7 +367,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
         holeToHoleClearance: this.input.minViaHoleEdgeToViaHoleEdgeClearance,
         allowBlindAndBuriedVias: this.input.allowBlindAndBuriedVias ?? false,
       },
-      this.attempt,
+      this.attempt + (sharedBackward ? 2 : 0),
     )
     this.escapes = result.traces.map((t) => ({
       ...t,
@@ -337,6 +416,16 @@ export class BusLanesPipelineSolver extends BaseSolver {
       connections: result.connections as SimpleRouteJson["connections"],
       traces: [...(this.input.traces ?? []), ...this.escapes],
     }
+    if (sharedBackward) {
+      this.sharedNetwork = routeSharedLayerNetwork(
+        this.input,
+        laneInput,
+        this.escapes,
+        this.terminalLayers,
+        this.childOptions(),
+      )
+      return
+    }
     const busNames = new Set(laneInput.buses?.flatMap((b) => b.connectionNames))
     const pairsPerLayer = new Map<string, number>()
     for (const pair of laneInput.differentialPairs ?? []) {
@@ -379,6 +468,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       )
     if (
       this.attempt === 0 &&
+      !deferStandalonePairs &&
       this.options.smoothTuning &&
       this.options.denseSearch &&
       Math.abs(direction.y) >= Math.abs(direction.x) &&
@@ -403,6 +493,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       return
     }
     const joint =
+      !deferStandalonePairs &&
       (this.attempt > 0 || Math.abs(direction.x) > Math.abs(direction.y)) &&
       backwardFacingPackageTerminals({
         ...this.input,
@@ -417,7 +508,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
           p.connectionNames.every((n) => !constrained.has(n)),
         ),
       }
-      if (deferStandalonePairs) {
+      if (
+        deferStandalonePairs &&
+        this.attempt === 0 &&
+        Math.abs(direction.y) >= Math.abs(direction.x)
+      ) {
         const standaloneNames = new Set(
           this.remainingInput.differentialPairs?.flatMap(
             (p) => p.connectionNames,
@@ -457,6 +552,34 @@ export class BusLanesPipelineSolver extends BaseSolver {
   }
   _step() {
     try {
+      if (this.sharedNetwork) {
+        const step = this.sharedNetwork.next()
+        this.phase = "route_shared_layer_network"
+        if (!step.done) return
+        this.sharedNetwork = undefined
+        if (!step.value)
+          throw Error("Shared carrier network exhausted its search budget")
+        this.escapes = step.value.escapes
+        this.child = BusLanesSolver.forRefinement(
+          step.value.input,
+          step.value.traces,
+          this.childOptions(),
+        )
+      }
+      if (this.busRepair) {
+        const step = this.busRepair.next()
+        this.phase = "repair_bus_dogbones"
+        if (!step.done) return
+        this.busRepair = undefined
+        if (step.value) {
+          this.escapes = step.value.escapes
+          this.child = BusLanesSolver.forRefinement(
+            step.value.input,
+            step.value.traces,
+            this.childOptions(true),
+          )
+        }
+      }
       if (this.siteRematch) {
         const step = this.siteRematch.next()
         this.phase = "resolve_control_sites"
@@ -494,7 +617,43 @@ export class BusLanesPipelineSolver extends BaseSolver {
           this.childOptions(),
         )
       }
+      if (this.sharedNetwork) return
       this.child!.step()
+      if (
+        this.remainingInput &&
+        this.child!.input.buses?.length &&
+        this.child!.input.connections.every((connection) =>
+          this.child!.input.buses!.some((bus) =>
+            bus.connectionNames.includes(connection.name),
+          ),
+        ) &&
+        this.child!.iterations > 50000 &&
+        !this.child!.solved &&
+        !this.child!.failed &&
+        this.escapes.length === this.input.connections.length * 2
+      ) {
+        const missing = this.child!.input.connections.filter(
+          (connection) =>
+            !this.child!.traces.some(
+              (trace) => trace.connection_name === connection.name,
+            ),
+        )
+        if (
+          missing.length > 0 &&
+          missing.length <= 3 &&
+          missing.length < this.busRepairMissingCount &&
+          missing.every(
+            (connection) =>
+              !this.child!.input.differentialPairs?.some((pair) =>
+                pair.connectionNames.includes(connection.name),
+              ),
+          )
+        ) {
+          this.busRepairMissingCount = missing.length
+          this.busRepair = this.repairIncompleteBuses()
+          return
+        }
+      }
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
         ...this.child!.stats,
@@ -628,6 +787,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.phase = "solved"
       }
     } catch (error) {
+      this.sharedNetwork?.return(null)
+      this.sharedNetwork = undefined
+      this.busRepair?.return(null)
+      this.busRepair = undefined
+      this.busRepairMissingCount = Infinity
       this.backwardPackages?.return(null)
       this.backwardPackages = undefined
       this.packageCoupling?.return([])

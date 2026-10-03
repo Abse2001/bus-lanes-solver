@@ -70,7 +70,11 @@ test("AM3352 snapshot export requires exactly the declared benchmark samples", a
     validateAm3352SnapshotCandidates(all.slice(0, 3)),
   ).rejects.toThrow("exactly the declared benchmark samples")
   await expect(
-    validateAm3352SnapshotCandidates([all[0], all[0], all[2], all[3]]),
+    validateAm3352SnapshotCandidates(
+      all.map((candidate, index) =>
+        index === all.length - 1 ? all[0] : candidate,
+      ),
+    ),
   ).rejects.toThrow("exactly the declared benchmark samples")
 })
 

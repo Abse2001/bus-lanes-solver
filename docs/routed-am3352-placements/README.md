@@ -1,4 +1,8 @@
-# Space-filling tuning pockets for powered AM3352 routing
+# AM3352 placement artifacts
+
+The current benchmark declares eight samples, including all four RAM placements restricted to inner1 and inner2. See the [current report](../../benchmark-results.json) and [timing table](../../README.md#am3352-placement-benchmark). 7/8 currently pass; no new expanded snapshot set has been exported because the exporter requires every declared sample to pass. The images and measurements below are historical results from the earlier four-case revision.
+
+## Previous four-placement snapshot run
 
 This update starts from merged PR #18 (`e50b499`), including its native-pad and package-local pair-tuning fixes. Bank entrances now reserve longitudinal space only for lanes they cross, including full differential-channel width. That opens longer central runs and allows narrower banks. A new rounded folded serpentine can fill a short, taller pocket by running back and forth across it. It preserves radius, tangency, emitted copper length, and offset pair geometry.
 

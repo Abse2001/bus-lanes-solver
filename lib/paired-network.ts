@@ -42,11 +42,29 @@ export function* preparePairedNetwork(
     ...(input.buses ?? []).flatMap((b) => b.connectionNames),
     ...(input.differentialPairs ?? []).flatMap((p) => p.connectionNames),
   ])
-  const groups = independentBusGroups({
+  const independent = independentBusGroups({
     ...input,
     connections: input.connections.filter((c) => constrained.has(c.name)),
   })
-  if (!groups || groups.some((g) => g.differentialPairs?.length !== 1))
+  if (!independent && (input.differentialPairs?.length ?? 0) < 2) return null
+  const groups =
+    independent ??
+    (input.differentialPairs ?? []).map((pair) => {
+      const buses = (input.buses ?? []).filter((bus) =>
+        pair.connectionNames.some((name) => bus.connectionNames.includes(name)),
+      )
+      const names = new Set([
+        ...pair.connectionNames,
+        ...buses.flatMap((bus) => bus.connectionNames),
+      ])
+      return {
+        ...input,
+        connections: input.connections.filter((c) => names.has(c.name)),
+        buses,
+        differentialPairs: [pair],
+      }
+    })
+  if (!groups.length || groups.some((g) => g.differentialPairs?.length !== 1))
     return null
   const fixed = fixedCopper(input),
     transforms: PairedNetworkTransform[] = [],

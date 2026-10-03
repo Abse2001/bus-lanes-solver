@@ -12,7 +12,11 @@ import type { SimpleRouteJson, Trace, Point, Wire } from "./types"
 export function tuneCoupledLengths(
   input: SimpleRouteJson,
   traces: Trace[],
-  options: { maxCandidates?: number; packMeanders?: boolean } = {},
+  options: {
+    maxCandidates?: number
+    packMeanders?: boolean
+    packageOnlyPairTuning?: boolean
+  } = {},
 ): Trace[] {
   // First fix pair skew without allowing the individual tuner into the corridor.
   const pairedInput = { ...input, buses: [] }

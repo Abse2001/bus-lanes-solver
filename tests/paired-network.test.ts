@@ -159,3 +159,42 @@ test("native bus width overrides are retained by the virtual network", () => {
       trace.route.every((p) => p.route_type === "wire" && p.width === 0.16),
     ).toBe(true)
 })
+
+test("bus and standalone pairs sharing a carrier remain distinct wide demands", () => {
+  const input = fixture()
+  input.allowedLayers = ["inner1", "inner2"]
+  for (const c of input.connections)
+    if (c.pointsToConnect[0].layer === "bottom")
+      for (const p of c.pointsToConnect) {
+        p.layer = "inner1"
+        if (c.name !== "control") p.y += 2
+      }
+  const before = structuredClone(input)
+  const generator = routePairedNetwork(input, new Map())
+  let state = generator.next(),
+    steps = 0
+  while (!state.done && steps++ < 10000) state = generator.next()
+  expect(state.done).toBe(true)
+  expect(state.value).toHaveLength(7)
+  const copper = [...fixedCopper(input), ...state.value!.flatMap(routeCopper)]
+  for (const trace of state.value!) {
+    expect(
+      trace.route.every(
+        (p) =>
+          p.route_type === "wire" && input.allowedLayers!.includes(p.layer),
+      ),
+    ).toBe(true)
+    expect(
+      new VectorScene(
+        input,
+        input.connections.find((c) => c.name === trace.connection_name)!,
+        0.12,
+        copper,
+      ).pathVisible(trace.route),
+    ).toBe(true)
+  }
+  expect(
+    sharedPairSpacingReports(input, state.value!).every((r) => r.matched),
+  ).toBe(true)
+  expect(input).toEqual(before)
+})

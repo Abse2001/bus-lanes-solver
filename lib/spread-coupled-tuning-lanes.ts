@@ -100,7 +100,9 @@ export function spreadCoupledTuningLanes(
       const pair = input.differentialPairs?.find(
         (p) =>
           p.connectionNames.includes(trace.connection_name!) &&
-          p.connectionNames.every((n) => bus.connectionNames.includes(n)),
+          p.connectionNames.every((n) =>
+            members.some((member) => member.connection_name === n),
+          ),
       )
       let rails = pair?.connectionNames.map(
         (n) => members.find((t) => t.connection_name === n)!,

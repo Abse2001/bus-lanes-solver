@@ -1,4 +1,5 @@
 import { exteriorPairSpacingReports } from "../lib/exterior-pair-spacing"
+import { repairPairApproaches } from "../lib/repair-pair-approaches"
 import { expect, test } from "bun:test"
 import { extendPackageCoupling } from "../lib/extend-package-coupling"
 import { packageApproachRegions } from "../lib/package-approach-regions"
@@ -329,4 +330,109 @@ test("an approach can join its local fanout via outside the native pad field", (
     expect(result[i].route.at(-1)).toEqual(traces[i].route.at(-1))
   }
   expect({ input, traces }).toEqual(before)
+})
+
+test("a standalone pair can be recomputed without moving other completed copper", () => {
+  const { input, traces } = fixture()
+  input.buses = []
+  input.obstacles.push(
+    ...input.obstacles.map((pad) => ({
+      ...pad,
+      componentId: "cpu",
+      center: { ...pad.center, x: 0 },
+    })),
+  )
+  const other: Trace = {
+    type: "pcb_trace",
+    pcb_trace_id: "unrelated",
+    connection_name: "unrelated",
+    route: [wire(0, 1), wire(10, 1)],
+  }
+  input.connections.push({
+    name: "unrelated",
+    pointsToConnect: [other.route[0], other.route[1]] as Wire[],
+  })
+  const original = [...traces, other]
+  const before = structuredClone({ input, original })
+  expect(
+    exteriorPairSpacingReports(input, original).some(
+      (report) => !report.matched,
+    ),
+  ).toBe(true)
+  const generator = repairPairApproaches(input, original, new Map(), {
+    smoothTuning: true,
+    denseSearch: true,
+  })
+  let state = generator.next()
+  let steps = 0
+  while (!state.done && steps++ < 100000) state = generator.next()
+  expect(state.done).toBe(true)
+  if (!state.done) {
+    generator.return(original)
+    return
+  }
+  const result = state.value
+  expect(
+    exteriorPairSpacingReports(input, result).every((report) => report.matched),
+  ).toBe(true)
+  expect(
+    pairLengthReports(input, result).every((report) => report.matched),
+  ).toBe(true)
+  expect(result.find((trace) => trace.connection_name === "unrelated")).toBe(
+    other,
+  )
+  expect({ input, original }).toEqual(before)
+})
+
+test("already matched bus pairs are left untouched", () => {
+  const { input, traces: original } = fixture()
+  const traces = run(input, original)
+  const generator = repairPairApproaches(input, traces, new Map(), {
+    smoothTuning: true,
+  })
+  expect(generator.next()).toEqual({ done: true, value: traces })
+})
+
+test("both offset rails must enter the package before extension stops", () => {
+  const { input } = fixture()
+  input.obstacles[1].center.y = 0.22
+  const offset = 0.22 / Math.sqrt(2)
+  const traces: Trace[] = [
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "P",
+      connection_name: "P",
+      coupledSection: [0, 1],
+      route: [wire(8, -1.6), wire(9.6, 0), wire(10, 0)],
+    },
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "N",
+      connection_name: "N",
+      coupledSection: [0, 1],
+      curvedSegments: [2],
+      route: [
+        wire(8 - offset, -1.6 + offset),
+        wire(9.6 - offset, offset),
+        wire(9.8, 0.45),
+        wire(10, 0.22),
+      ],
+    },
+  ]
+  input.connections = traces.map((t) => ({
+    name: t.connection_name!,
+    pointsToConnect: [t.route[0], t.route.at(-1)!] as Wire[],
+  }))
+  const region = packageApproachRegions(input, 0.26)[0].copper
+  expect(traces[0].route[1].x).toBeGreaterThan(region.minX)
+  expect(traces[1].route[1].x).toBeLessThan(region.minX)
+  const result = run(input, traces)
+  for (const trace of result)
+    expect(trace.route[trace.coupledSection![1]].x).toBeGreaterThanOrEqual(
+      region.minX - 1e-8,
+    )
+  expect(sharedPairSpacingReports(input, result).every((r) => r.matched)).toBe(
+    true,
+  )
+  expect(routeAnglesAreConventional(result)).toBe(true)
 })

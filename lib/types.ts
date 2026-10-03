@@ -89,6 +89,8 @@ export interface SimpleRouteJson {
 }
 export interface SolverOptions {
   smoothTuning?: boolean
+  /** Keep individual pair skew compensation inside native package fanouts. */
+  packageOnlyPairTuning?: boolean
   denseSearch?: boolean
   maxLaneIterations?: number
   maxSearchIterations?: number

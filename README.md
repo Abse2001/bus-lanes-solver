@@ -129,7 +129,7 @@ The repository follows the [handbook bootstrapping guide](https://github.com/tsc
 
 ## AM3352 placement benchmark
 
-`./benchmark.sh` runs five AM3352/RAM samples. The AM3352 stays at
+`./benchmark.sh` runs eight AM3352/RAM samples. The AM3352 stays at
 (0, 0) mm, and only the RAM is translated; both chips retain their orientation.
 Board coordinates use +X right and +Y up.
 
@@ -139,10 +139,14 @@ Board coordinates use +X right and +Y up.
 | Right | (27, 0) | Automatic |
 | Left | (-27, 0) | Automatic |
 | Above | (0, 27) | Automatic |
-| Inner layers only | (0, -27) | inner1, inner2 |
+| Inner layers below | (0, -27) | inner1, inner2 |
+| Inner layers right | (27, 0) | inner1, inner2 |
+| Inner layers left | (-27, 0) | inner1, inner2 |
+| Inner layers above | (0, 27) | inner1, inner2 |
 
-The inner-layer sample sets `input.allowedLayers = ["inner1", "inner2"]` on the
-same below-RAM geometry as control. This restricts all signal carriers, including
+The four inner-layer samples set `input.allowedLayers = ["inner1", "inner2"]`
+on the same below, right, left, and above RAM geometries as their automatic-layer
+counterparts. This restricts all signal carriers, including
 clock and control signals, during allocation and congestion retries. The board
 still has four physical copper layers: top-pad dogbones and through-via barrels
 remain physical obstacles; all 161 supplied power dogbones stay immutable.
@@ -173,54 +177,45 @@ between each trace's two terminal vias, combined-copper DRC, byte-bus skew
 within 0.635 mm, and differential-pair skew within 0.127 mm. Matching measures
 full pad-to-pad planar copper, including signal dogbones.
 
-Each sample runs in a fresh process, serially, with a 180-second routing budget.
-Override it with `./benchmark.sh --timeout-seconds 60`. All five cases are always
+Each sample runs in a fresh process, serially, with a 900-second routing budget.
+Override it with `./benchmark.sh --timeout-seconds 60`. All eight cases are always
 attempted and their results written to `benchmark-results.json`. Failed searches
 and timeouts are failures in the completion score. By default the command records
 these measured outcomes and exits nonzero for invalid fixtures, worker crashes,
 or invalid completed copper. Use `./benchmark.sh --require-all-solved` for a
 strict gate that also exits nonzero when any sample remains unrouted. CI runs the
-same five-case measurement and uploads the result JSON.
+same eight-case measurement with an explicit 900-second budget and uploads the result JSON.
 
-The powered benchmark completes **5/5 samples under 30 seconds each** on
-macOS arm64 with Bun 1.3.2. Run the same strict check with
-`./benchmark.sh --timeout-seconds 30 --require-all-solved`.
+The current expanded benchmark completes **7/8 samples** on Linux x86_64 (AMD EPYC 9V74, Bun 1.4.0), using `./benchmark.sh --timeout-seconds 900 --require-all-solved`. The strict command fails because Inner layers above remains unresolved. An incomplete route is not counted as a DRC or matching pass. The [full report](benchmark-results.json) records each result and failure.
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| Control | 12.004 s | 13.491 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| Right | 12.575 s | 16.133 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| Left | 17.381 s | 22.141 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.029 / 0.127 / 0.105 mm |
-| Above | 21.965 s | 25.918 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| Inner layers only | 27.817 s | 29.367 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| Control | 58.018 s | 59.738 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| Right | 20.458 s | 22.296 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.122 / 0.103 mm |
+| Left | 31.728 s | 35.804 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| Above | 39.382 s | 44.106 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| Inner layers below | 83.780 s | 85.626 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| Inner layers right | 66.757 s | 68.767 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.122 / 0.127 mm |
+| Inner layers left | 138.314 s | 142.475 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.054 / 0.127 mm |
+| Inner layers above | 663.713 s | 663.798 s | 0/47 | Not evaluated | — | — |
 
-All five preserve the 161 power dogbones and have zero separated pair length
-outside the native pad/fanout regions. The exterior audit checks both rails along
-their actual copper, including meanders; it does not exempt a fixed approach
-length. Ordinary bends are octilinear, and tuning uses smooth curves. Runtime
-varies by machine; these timings include routing and length matching, with
-native DRC and fixture validation reported separately in the total column.
+The unresolved above case exhausted the aggregate 2,400,000-iteration budget before the 900-second wall-clock deadline. Its input and all 161 fixed power dogbones remained unchanged.
 
-When a standalone pair shares a carrier layer with a matched bus, the pipeline
-matches the independent buses first, places the standalone pair as coupled rails,
-then checks control-site reachability against that completed copper. The inner
-layer sample routes 24 signals on inner1 and 23 on inner2, with no signal carriers
-on top or bottom. Its byte skews are 0.635 mm and pair skews stay below 0.127 mm.
+Every passing sample preserves all 161 power dogbones and has zero separated pair length outside the native pad/fanout regions. The audit checks the actual copper, including tuning curves; it does not exempt a fixed approach length. Routing times include length matching. The total column also includes fixture and native DRC validation.
 
-For backward-facing packages, the pipeline routes shared pair corridors and
-repairs a nearly complete bus together with its newly generated local signal
-sites. Native supplied copper remains hard throughout. Package coupling is
-extended while preserving already matched internal compensation, then the bus
-and pair lengths are revalidated without raising the bus length target.
+For forward-facing packages, the pipeline can stage independent buses before
+the clock and control signals. The inner-layer below sample routes 24 signals on
+inner1 and 23 on inner2. Its byte skews are 0.635 mm and pair skews stay below
+0.127 mm.
 
-Generate the five completed review images with
-`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 30`.
-The exporter validates all five before writing any images:
-[control](docs/routed-am3352-placements/control-solved.png),
-[right](docs/routed-am3352-placements/right-solved.png),
-[left](docs/routed-am3352-placements/left-solved.png),
-[above](docs/routed-am3352-placements/above-solved.png), and
-[inner layers only](docs/routed-am3352-placements/inner-layers-solved.png).
+For backward-facing packages whose paired groups share carriers, the pipeline
+negotiates the signals together with movable pair approaches. A bus repair can
+reconsider its generated terminal sites; supplied copper remains fixed.
+Standalone-pair repairs can displace ordinary lanes. Package coupling and local
+skew compensation are repaired before full bus and pair lengths are revalidated,
+without raising the bus length target.
+
+Generate review images with `bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 900`. The exporter requires all eight samples to pass connectivity, DRC and matching before writing any artifact. The expanded set is not ready for export while a sample remains unresolved; existing images are retained from earlier completed runs.
 
 The router checks continuous copper clearance while searching octilinear paths.
 Clear channels use analytic connectors. Dense inputs use a grid search with turn
@@ -234,7 +229,7 @@ See the [visual iteration audit](./docs/vector-routing.md) for inspected baselin
 and replacement snapshots. Cosmos includes a staggered obstacle channel in
 addition to all four real AM62L captures.
 
-Future changes must be submitted through pull requests with reviewed visual snapshots for all four DDR samples. See [AGENTS.md](./AGENTS.md).
+Future changes must be submitted through pull requests with reviewed visual snapshots for every declared AM3352 sample. See [AGENTS.md](./AGENTS.md).
 
 ### Meander geometry
 
@@ -245,7 +240,7 @@ This spends available longitudinal space on more cells, reducing transverse
 excursion without tightening bend radii or separating pairs. Existing fanouts
 remain fixed, and wider candidates remain available when compact packing fails.
 
-Across the four powered AM3352 placements, this reduces signal bounding area by
+In the PR #20 measurements, across the four powered AM3352 placements this reduced signal bounding area by
 **32–39%** versus PR #12, overall copper bounds by **31–39%**, and total
 copper length by **12–15%**. See the
 [footprint comparison](docs/routed-am3352-placements/README.md) for per-placement
@@ -274,10 +269,9 @@ fanout copper. Ordinary-run cleanup minimizes turns without increasing length.
 The strict `BusLanesSolver` export remains available for callers that already
 supply fanout handoffs.
 
-The AM3352/RAM integration regression passes without saved geometry or a custom
-algorithm. The four powered AM3352 placements complete in 15–27 seconds on the
-measured machine; bounded search still reports failure when no acceptable route
-set is found.
+The AM3352/RAM integration regression computes fresh routes without saved geometry.
+See the eight-case benchmark above for current timings and unresolved cases.
+Bounded search reports failure when it cannot find an acceptable route set.
 
 ### Routed PR artifacts
 

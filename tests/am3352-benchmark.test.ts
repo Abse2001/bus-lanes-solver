@@ -17,6 +17,9 @@ const placements = [
   { sample: "left", ram: { x: -27, y: 0 } },
   { sample: "above", ram: { x: 0, y: 27 } },
   { sample: "inner-layers", ram: { x: 0, y: -27 } },
+  { sample: "inner-layers-right", ram: { x: 27, y: 0 } },
+  { sample: "inner-layers-left", ram: { x: -27, y: 0 } },
+  { sample: "inner-layers-above", ram: { x: 0, y: 27 } },
 ]
 
 interface Report {
@@ -125,13 +128,13 @@ async function invokeBenchmark(options: {
 }
 
 function expectManifest(reports: Report[]) {
-  expect(reports).toHaveLength(5)
+  expect(reports).toHaveLength(8)
   expect(reports.map(({ sample, ram }) => ({ sample, ram }))).toEqual(
     placements,
   )
   for (const report of reports) {
     expect(report.allowedLayers).toEqual(
-      report.sample === "inner-layers" ? ["inner1", "inner2"] : null,
+      report.sample.startsWith("inner-layers") ? ["inner1", "inner2"] : null,
     )
     expect(report.carrierLayerCounts).toEqual({})
     expect(report.cpu).toEqual({ x: 0, y: 0 })
@@ -142,11 +145,11 @@ function expectManifest(reports: Report[]) {
 }
 
 for (const strict of [false, true])
-  test(`${strict ? "strict" : "measurement"} benchmark retains all five timed-out AM3352 placements`, async () => {
+  test(`${strict ? "strict" : "measurement"} benchmark retains all eight timed-out AM3352 placements`, async () => {
     const result = await invokeBenchmark({ strict })
     expect(result.exitCode).toBe(strict ? 1 : 0)
     expectManifest(result.reports)
-    expect(result.stdout).toContain("AM3352 placements completed: 0/5")
+    expect(result.stdout).toContain("AM3352 placements completed: 0/8")
     const powerCount = result.reports[0].fixedPowerDogbones
     expect(powerCount).toBeGreaterThan(0)
     for (const report of result.reports) {
