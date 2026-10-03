@@ -207,33 +207,39 @@ function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
       anchorSide: "bottom_left",
     })
   }
+  const totalWidth = signalLayers.length * width + (signalLayers.length - 1) * 3
+  const title = `${metadata.name} · AM3352 (0, 0) · RAM (${metadata.placement.ram.x}, ${metadata.placement.ram.y}) mm`
+  const status = "47/47 routed · 161 fixed power dogbones · DRC passed"
+  const skew = "Byte skew ≤0.635 mm · pair skew ≤0.127 mm"
+  const fitFont = (text: string, maximum: number) =>
+    Math.min(maximum, totalWidth / (text.length * 1.05))
   graphics.texts!.push({
     x: bounds.minX,
     y: bounds.maxY + 4,
-    text: `${metadata.name} · AM3352 (0, 0) · RAM (${metadata.placement.ram.x}, ${metadata.placement.ram.y}) mm`,
-    fontSize: 1.4,
+    text: title,
+    fontSize: fitFont(title, 1.4),
     color: "#ffffff",
     anchorSide: "bottom_left",
   })
   graphics.texts!.push({
     x: bounds.minX,
     y: bounds.minY - 1.5,
-    text: "47/47 routed · 161 fixed power dogbones · DRC passed",
-    fontSize: 1.1,
+    text: status,
+    fontSize: fitFont(status, 1.1),
     color: "#cbd5e1",
     anchorSide: "top_left",
   })
   graphics.texts!.push({
     x: bounds.minX,
     y: bounds.minY - 3,
-    text: "Byte skew ≤0.635 mm · pair skew ≤0.127 mm",
-    fontSize: 1.1,
+    text: skew,
+    fontSize: fitFont(skew, 1.1),
     color: "#cbd5e1",
     anchorSide: "top_left",
   })
   return {
     graphics,
-    width: signalLayers.length * width + (signalLayers.length - 1) * 3,
+    width: totalWidth,
     height: height + 10.5,
   }
 }

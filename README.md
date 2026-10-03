@@ -185,36 +185,34 @@ or invalid completed copper. Use `./benchmark.sh --require-all-solved` for a
 strict gate that also exits nonzero when any sample remains unrouted. CI runs the
 same eight-case measurement and uploads the result JSON.
 
-The current eight-case run on macOS arm64 with Bun 1.3.2 completes **6/8**
-with a 60-second routing limit per sample. Restricted right completes all 47
-signals; restricted left and above still time out. This is not yet a passing
-all-placement regression. Flexible-terminal searches skip repairs that hold
-all lanes on their current plane, spending that budget on layer negotiation.
-All six completed cases retain passing DRC, length matching, and pair coupling.
-Two-sided rounded meanders reduce the above-placement trace bounds from
-810.6 to 638.4 mm² and its maximum detour from 1.79× to 1.59×. Redundant
-collinear vertices no longer shorten the paired region available for tuning.
+The current eight-case run on macOS arm64 with Bun 1.3.2 completes **8/8**
+within the 60-second routing limit per sample. Fresh two-layer routing jointly
+chooses local dogbone sites and carrier layers, preserving supplied fanouts.
+Pair corridors reserve package exit space before ordinary signals negotiate
+crossings; remaining conflicts release a bounded set of carrier and via sites.
+Full length matching and exterior pair coupling run before final acceptance.
+No component names, fixture coordinates, or saved signal geometry select routes.
+
 Reproduce the strict check with
 `./benchmark.sh --timeout-seconds 60 --require-all-solved`.
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| control | 11.906 s | 13.896 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| right | 11.350 s | 13.708 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| left | 15.624 s | 21.091 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
-| above | 20.252 s | 24.464 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| inner-layers | 21.317 s | 23.454 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
-| inner-layers-right | 26.973 s | 29.135 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
-| inner-layers-left | 60.000 s | 60.045 s | 0/47 | Timed out | — | — |
-| inner-layers-above | 60.000 s | 60.046 s | 0/47 | Timed out | — | — |
+| control | 11.293 s | 13.271 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 11.109 s | 13.465 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 15.366 s | 20.820 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 19.436 s | 23.556 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 20.424 s | 22.543 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 26.309 s | 28.496 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 38.595 s | 44.321 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.105 mm |
+| inner-layers-above | 56.388 s | 59.221 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
 
-All six completed cases preserve the 161 power dogbones and have zero separated
-pair length outside the native pad/fanout regions. The exterior audit checks both
-rails along their actual copper, including meanders; it does not exempt a fixed
-approach length. Ordinary bends are octilinear, and tuning uses smooth curves.
-Runtime varies by machine; routing includes length matching, with native DRC and
-fixture validation reported separately in the total column. Failed cases have no
-accepted routes or routed snapshot artifacts.
+All eight completed cases preserve the 161 power dogbones and pass exterior
+pair-spacing checks along the actual copper, including meanders. Ordinary bends
+are octilinear, and tuning uses smooth curves. Runtime varies by machine;
+routing includes length matching, with native DRC and fixture validation
+reported separately in the total column. Routed review artifacts and the full
+measurements are in [the placement report](docs/routed-am3352-placements).
 
 When jointly planned pair corridors share a layer, the pipeline first tries
 control routing at the existing dogbone sites. It rematches fresh sites only

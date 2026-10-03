@@ -4,14 +4,13 @@ Describe the problem and resulting behavior.
 
 ## Validation
 
-- Benchmark result, runtime, DRC, and maximum total copper skew:
+- Benchmark completion, runtime, native DRC, and full pad-to-pad copper skew:
 - Tests:
 
-## Sample snapshots
+## Routed sample snapshots
 
-Include iteration-zero, intermediate, and completed images for every sample:
+For routing changes, include and inspect only successfully completed routes for
+all declared benchmark samples. Do not attach intermediate or unrouted images.
 
-- DDR left:
-- DDR right:
-- DDR top:
-- DDR bottom:
+- Original control, right, left, above:
+- Inner-layer-only below, right, left, above:
