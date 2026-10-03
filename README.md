@@ -193,13 +193,13 @@ all-placement regression. Reproduce the strict check with
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
-| control | 12.613 s | 14.632 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
-| right | 12.049 s | 14.647 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
-| left | 17.838 s | 23.590 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
-| above | 26.670 s | 32.263 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
-| inner-layers | 31.442 s | 33.680 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
-| inner-layers-right | 36.140 s | 38.595 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
-| inner-layers-left | 60.000 s | 60.049 s | 0/47 | Timed out | — | — |
+| control | 12.614 s | 14.736 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.073 mm |
+| right | 11.801 s | 14.317 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.096 / 0.122 / 0.103 mm |
+| left | 17.260 s | 22.918 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.011 / 0.127 / 0.105 mm |
+| above | 27.435 s | 33.064 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.127 / 0.127 / 0.127 mm |
+| inner-layers | 30.767 s | 32.992 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.078 / 0.127 / 0.127 mm |
+| inner-layers-right | 33.113 s | 35.535 s | 47/47 | Pass | 0.635 / 0.635 mm | 0.124 / 0.127 / 0.127 mm |
+| inner-layers-left | 60.000 s | 60.051 s | 0/47 | Timed out | — | — |
 | inner-layers-above | 60.000 s | 60.049 s | 0/47 | Timed out | — | — |
 
 All six completed cases preserve the 161 power dogbones and have zero separated
@@ -209,6 +209,10 @@ approach length. Ordinary bends are octilinear, and tuning uses smooth curves.
 Runtime varies by machine; routing includes length matching, with native DRC and
 fixture validation reported separately in the total column. Failed cases have no
 accepted routes or routed snapshot artifacts.
+
+When jointly planned pair corridors share a layer, the pipeline first tries
+control routing at the existing dogbone sites. It rematches fresh sites only
+after a failed routing attempt, retaining the complete validation checks.
 
 When a standalone pair shares a carrier layer with a matched bus, the pipeline
 matches the independent buses first, places the standalone pair as coupled rails,
