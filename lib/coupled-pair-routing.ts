@@ -47,6 +47,7 @@ export function* routeCoupledPair(
     penalty: number
     history?: Float32Array
     variant?: number
+    handoffOffsets?: readonly [number, number]
   },
 ): Generator<void, Trace[] | null> {
   const members = pair.connectionNames.map(
@@ -177,6 +178,50 @@ export function* routeCoupledPair(
       { x: p.x, y: top },
     ]
   })
+  const sharingBuses = (input.buses ?? []).filter((bus) =>
+    input.connections.some(
+      (c) =>
+        bus.connectionNames.includes(c.name) &&
+        c.pointsToConnect[0].layer === layer,
+    ),
+  )
+  // A standalone pair sharing a bus layer needs alternatives outside the lane
+  // bank, otherwise a locally short package approach can seal the whole bus.
+  if (!pairInBus && sharingBuses.length) {
+    const field = input.obstacles.filter((o) => o.componentId)
+    if (field.length) {
+      const reserve =
+        Math.max(...sharingBuses.map((bus) => bus.connectionNames.length)) *
+        (width + clearance)
+      const extent = (o: (typeof field)[number]) => {
+        const angle = ((o.ccwRotationDegrees ?? 0) * Math.PI) / 180
+        return (
+          (vertical
+            ? Math.abs(Math.cos(angle)) * o.width +
+              Math.abs(Math.sin(angle)) * o.height
+            : Math.abs(Math.sin(angle)) * o.width +
+              Math.abs(Math.cos(angle)) * o.height) / 2
+        )
+      }
+      const low =
+        Math.min(...field.map((o) => o.center[crossAxis] - extent(o))) -
+        reserve -
+        width -
+        gap -
+        clearance
+      const high =
+        Math.max(...field.map((o) => o.center[crossAxis] + extent(o))) +
+        reserve +
+        width +
+        gap +
+        clearance
+      for (let end = 0; end < 2; end++)
+        handoffChoices[end].push(
+          { ...centers[end], [crossAxis]: low },
+          { ...centers[end], [crossAxis]: high },
+        )
+    }
+  }
   // Keep a coupled corridor outside its bus envelope so it does not cut
   // through the remaining lanes' package approaches. Derive the reserve from
   // bus membership and trace pitch, never from board-specific coordinates.
@@ -236,7 +281,7 @@ export function* routeCoupledPair(
   // handoffs can otherwise leave a blocked source escape unchanged for many
   // stagnant bus passes. This diagonal traversal still visits every pairing.
   const sourceOffset = variant % handoffChoices[0].length
-  const offsets = [
+  const offsets = negotiation?.handoffOffsets ?? [
     sourceOffset,
     sourceOffset + Math.floor(variant / handoffChoices[0].length),
   ]

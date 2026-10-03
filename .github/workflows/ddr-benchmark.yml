@@ -10,9 +10,9 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun install
-      # Require all five powered AM3352 samples to complete and pass native
+      # Require all eight powered AM3352 samples to complete and pass native
       # DRC plus full pad-to-pad length matching.
-      - run: ./benchmark.sh --require-all-solved
+      - run: ./benchmark.sh --timeout-seconds 60 --require-all-solved
       - uses: actions/upload-artifact@v4
         if: always()
         with:

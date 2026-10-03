@@ -281,7 +281,7 @@ export async function exportAm3352RoutedSnapshots(
 if (import.meta.main) {
   const args = process.argv.slice(2)
   const directory = args[0] ?? "docs/routed-am3352-placements"
-  const timeoutSeconds = Number(args[1] ?? 180)
+  const timeoutSeconds = Number(args[1] ?? 60)
   if (
     args.length > 2 ||
     !Number.isFinite(timeoutSeconds) ||

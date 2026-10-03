@@ -107,6 +107,16 @@ export class BusLanesSolver extends BaseSolver {
     solver.phase = "match"
     return solver
   }
+  /** Accept already matched candidates through the ordinary output validator. */
+  static forValidation(
+    input: SimpleRouteJson,
+    traces: Trace[],
+    options: SolverOptions = {},
+  ) {
+    const solver = BusLanesSolver.forRefinement(input, traces, options)
+    if (!solver.failed) solver.phase = "validate_output"
+    return solver
+  }
   getConstructorParams() {
     return [this.input, this.options]
   }
@@ -621,6 +631,8 @@ export class BusLanesSolver extends BaseSolver {
     return
   }
   private validateOutput() {
+    if (this.options.smoothTuning && !routeAnglesAreConventional(this.traces))
+      throw Error("Final route has a nonconventional corner")
     for (const c of this.input.connections) {
       const t = this.traces.find((t) => t.connection_name === c.name)
       if (!t) throw Error("Missing lane")
@@ -636,6 +648,13 @@ export class BusLanesSolver extends BaseSolver {
         )
       )
         throw Error("Invalid lane geometry")
+      if (
+        t.route.some(
+          (p) =>
+            p.route_type !== "wire" || p.layer !== c.pointsToConnect[0].layer,
+        )
+      )
+        throw Error("Carrier layer does not match its terminals")
       const scene = this.scene(c)
       if (
         !tuningPathIsSelfClear(

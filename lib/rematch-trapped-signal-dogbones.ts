@@ -174,6 +174,7 @@ export function* rematchTrappedSignalDogbones(
   completed: Trace[],
   escapes: Trace[],
   terminalLayers: ReadonlyMap<string, string[]>,
+  reachableLayersByConnection?: Map<string, string[]>,
 ): Generator<void, RematchedSignalDogbones> {
   const result = {
     connections: structuredClone(pending.connections),
@@ -220,6 +221,10 @@ export function* rematchTrappedSignalDogbones(
         reachableLayers++
       else blockedLayers.push(layer)
     }
+    reachableLayersByConnection?.set(
+      connection.name,
+      layers.filter((layer) => !blockedLayers.includes(layer)),
+    )
     if (reachableLayers >= Math.min(2, layers.length)) continue
     let shared = false
     const trapped = yield* trappedEndpoints(
@@ -325,6 +330,7 @@ export function* rematchTrappedSignalDogbones(
       }
       const candidateFixed = fixedCopper(candidateInput)
       let candidateReachableLayers = 0
+      const candidateLayers: string[] = []
       for (const layer of layers) {
         if (
           yield* reachable(
@@ -334,11 +340,14 @@ export function* rematchTrappedSignalDogbones(
             width,
             layer,
           )
-        )
+        ) {
           candidateReachableLayers++
+          candidateLayers.push(layer)
+        }
       }
       shared = candidateReachableLayers > reachableLayers
       if (shared) {
+        reachableLayersByConnection?.set(connection.name, candidateLayers)
         result.connections[index] = replacement
         result.escapes = [
           ...result.escapes.filter(
