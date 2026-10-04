@@ -1,0 +1,6 @@
+{
+  "smoothTuning": true,
+  "denseSearch": true,
+  "maxSearchIterations": 200000,
+  "maxLaneIterations": 15000
+}
