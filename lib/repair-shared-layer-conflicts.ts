@@ -1,7 +1,8 @@
+import { chamferOrdinaryCorners } from "./chamfer-ordinary-corners"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { GridVisibilitySearch } from "./grid-visibility"
 import { fixedCopper, routeCopper, VectorScene } from "./vector-scene"
-import { maximumCarrierLength } from "./route-lengths"
+import { maximumCarrierLength, fixedRouteLength } from "./route-lengths"
 import { RouteConflictIndex } from "./route-conflict-index"
 import { length } from "./geometry"
 import { signalWidth } from "./repair-bus-dogbones"
@@ -23,7 +24,9 @@ export function* repairSharedLayerConflicts(
   initial: Trace[],
   layers: ReadonlyMap<string, string[]>,
   options: {
+    onBlockedConnection?: (name: string) => void
     maxNodes?: number
+    onBestCandidate?: (traces: Trace[], collisions: [string, string][]) => void
     lengthTargets?: ReadonlyMap<string, number>
     onProgress?: (p: {
       nodes: number
@@ -79,7 +82,11 @@ export function* repairSharedLayerConflicts(
         10,
         undefined,
         {
-          maxLength: maximumCarrierLength(input, c.name),
+          maxLength: Math.min(
+            maximumCarrierLength(input, c.name),
+            (options.lengthTargets?.get(c.name) ?? Infinity) -
+              fixedRouteLength(input, c.name),
+          ),
           paretoLength: true,
           checkReachability: true,
         },
@@ -116,7 +123,12 @@ export function* repairSharedLayerConflicts(
                     buses: [],
                     differentialPairs: [],
                   },
-                  [trace],
+                  chamferOrdinaryCorners(
+                    { ...input, connections: [connection] },
+                    [trace],
+                    [...fixed, ...blocked.flatMap(routeCopper)],
+                    1.5,
+                  ),
                   new Map([[c.name, target]]),
                   { maxCandidates: 65536, packMeanders: true },
                 )[0],
@@ -131,7 +143,24 @@ export function* repairSharedLayerConflicts(
   }
   const routes = initial.filter((t) => {
     const c = connections.find((c) => c.name === t.connection_name)
-    if (!c) return false
+    if (!c || length(t.route) > maximumCarrierLength(input, c.name) + 1e-7)
+      return false
+    const target = options.lengthTargets?.get(c.name)
+    if (
+      target !== undefined &&
+      Math.abs(length(t.route) + fixedRouteLength(input, c.name) - target) >
+        1e-7
+    )
+      return false
+    if (
+      c.pointsToConnect.some(
+        (p) =>
+          ![t.route[0], t.route.at(-1)!].some(
+            (q) => Math.hypot(p.x - q.x, p.y - q.y) < 1e-7,
+          ),
+      )
+    )
+      return false
     const layer = (t.route[0] as Wire).layer
     const projected = {
       ...c,
@@ -148,7 +177,10 @@ export function* repairSharedLayerConflicts(
     (c) => !routes.some((t) => t.connection_name === c.name),
   )) {
     const choices = yield* route(c, [], routes)
-    if (!choices.length) return null
+    if (!choices.length) {
+      options.onBlockedConnection?.(c.name)
+      return null
+    }
     choices.sort(
       (a, b) =>
         clashes([...routes, a]).length - clashes([...routes, b]).length ||
@@ -190,6 +222,14 @@ export function* repairSharedLayerConflicts(
     const node = queue.shift()!
     if (!node.collisions.length) return node.routes
     if (node.collisions.length < best || nodes % 20 === 0) {
+      if (node.collisions.length < best)
+        options.onBestCandidate?.(
+          node.routes,
+          node.collisions.map(([a, b]) => [
+            node.routes[a].connection_name!,
+            node.routes[b].connection_name!,
+          ]),
+        )
       best = Math.min(best, node.collisions.length)
       options.onProgress?.({
         nodes,

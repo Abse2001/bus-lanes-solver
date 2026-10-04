@@ -1,4 +1,4 @@
-import { routeBoundedBusGroups } from "./route-bounded-bus-groups"
+import { repairSharedLayerConflicts } from "./repair-shared-layer-conflicts"
 import { BusLanesSolver } from "./bus-lanes-solver"
 import { planSharedPairCorridors } from "./plan-shared-pair-corridors"
 import { reachableSignalDogbones } from "./reachable-signal-dogbones"
@@ -133,43 +133,6 @@ export function* routeFreshSharedBuses(
       differentialPairs: [],
       traces: [...(native.traces ?? []), ...escapes, ...paired],
     }
-    if (native.buses?.some((bus) => bus.maxLength !== undefined)) {
-      const stagedInput: SimpleRouteJson = {
-        ...native,
-        traces: [...(native.traces ?? []), ...escapes],
-        connections: native.connections.map(
-          (c) =>
-            generated.connections.find((g) => g.name === c.name) ?? {
-              ...c,
-              pointsToConnect: [
-                paired.find((t) => t.connection_name === c.name)!.route[0],
-                paired.find((t) => t.connection_name === c.name)!.route.at(-1)!,
-              ] as Wire[],
-            },
-        ),
-      }
-      const staged = yield* routeBoundedBusGroups(
-        stagedInput,
-        paired,
-        layers,
-        options,
-      )
-      if (staged)
-        return {
-          input: {
-            ...stagedInput,
-            connections: stagedInput.connections.map((c) => {
-              const t = staged.find((t) => t.connection_name === c.name)!
-              return {
-                ...c,
-                pointsToConnect: [t.route[0], t.route.at(-1)!] as Wire[],
-              }
-            }),
-          },
-          traces: staged,
-          escapes,
-        }
-    }
     const widths = new Map(
       pending.connections.map((c) => [c.name, signalWidth(native, c)]),
     )
@@ -201,7 +164,12 @@ export function* routeFreshSharedBuses(
           break
 
         if (
-          step.value.length >= Math.max(1, pending.connections.length - 2) &&
+          step.value.length >=
+            Math.max(
+              1,
+              pending.connections.length -
+                (native.buses?.some((b) => b.maxLength !== undefined) ? 4 : 2),
+            ) &&
           (!state || step.value.length > state.traces.length)
         ) {
           // A nearly complete assignment is a fallback, not a reason to stop
@@ -223,7 +191,14 @@ export function* routeFreshSharedBuses(
         if (step.value.length === pending.connections.length) break
         // Bound a stalled topology while retaining its best pocket-repair
         // candidate. Do not let later layer choices mutate that saved input.
-        if (state && iterations - lastImprovement >= 60000) break
+        if (
+          state &&
+          iterations - lastImprovement >=
+            (native.buses?.some((b) => b.maxLength !== undefined)
+              ? 12000
+              : 60000)
+        )
+          break
         yield
         step = route.next()
       }
@@ -239,6 +214,18 @@ export function* routeFreshSharedBuses(
       route.return(null)
     }
     if (!state) continue
+    if (
+      native.buses?.some((b) => b.maxLength !== undefined) &&
+      state.traces.length < state.pending.connections.length
+    ) {
+      const repaired = yield* repairSharedLayerConflicts(
+        state.pending,
+        state.traces,
+        layers,
+        { maxNodes: 256 },
+      )
+      if (repaired) state = { ...state, traces: repaired }
+    }
     if (
       state.retained.length + state.traces.length <
       native.connections.length

@@ -9,6 +9,17 @@ import { distance, length, simplify, segmentDistance } from "./geometry"
 import { VectorScene, fixedCopper, routeCopper } from "./vector-scene"
 import type { SimpleRouteJson, Trace, Point, Wire } from "./types"
 
+/** A feasible partial tuning state is diagnostic input for a joint reroute,
+ * never an accepted solution. */
+export class IncompleteLengthTuningError extends Error {
+  constructor(
+    readonly traces: Trace[],
+    readonly unfinished: string[],
+  ) {
+    super(`Insufficient tuning clearance for ${unfinished.join(", ")}`)
+  }
+}
+
 /** Generate continuous octilinear tuning patterns while preserving every other
  * lane as hard copper. Revisit blocked lanes after neighboring tuning frees space. */
 export function tuneSmoothLengths(
@@ -312,8 +323,9 @@ export function tuneSmoothLengths(
     }
   }
   if (pending.size)
-    throw Error(
-      `Insufficient tuning clearance for ${[...pending].map((i) => traces[i].connection_name).join(", ")}`,
+    throw new IncompleteLengthTuningError(
+      result,
+      [...pending].map((i) => traces[i].connection_name!),
     )
   return result
 }
