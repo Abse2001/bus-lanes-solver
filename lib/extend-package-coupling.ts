@@ -283,7 +283,12 @@ export function* extendPackageCoupling(
                 [
                   ...busLengthReports(input, refined),
                   ...pairLengthReports(input, refined),
-                ].some((r) => r.toleranceMm !== null && !r.matched)) ||
+                ].some(
+                  (r) =>
+                    !r.withinLengthLimit ||
+                    !r.aboveMinimumLength ||
+                    (r.toleranceMm !== null && !r.matched),
+                )) ||
               sharedPairSpacingReports(input, refined).some((r) => !r.matched)
             )
               continue

@@ -41,6 +41,7 @@ import { VectorVisibilitySearch } from "./vector-visibility"
 import { length, distance } from "./geometry"
 import { windingOrders } from "./winding-orders"
 import {
+  assertLengthTargets,
   lengthConstraints,
   minimumLengthTargets,
   pairLengthReports,
@@ -191,6 +192,20 @@ export class BusLanesSolver extends BaseSolver {
         c.nominalTraceWidth ?? c.width ?? input.minTraceWidth,
       )
     }
+    for (const bus of input.buses ?? [])
+      if (
+        bus.maxLength !== undefined &&
+        (!Number.isFinite(bus.maxLength) || bus.maxLength < 0)
+      )
+        throw Error("Invalid maximum bus length")
+    for (const bus of input.buses ?? [])
+      if (
+        bus.minLength !== undefined &&
+        (!Number.isFinite(bus.minLength) ||
+          bus.minLength < 0 ||
+          bus.minLength > (bus.maxLength ?? Infinity))
+      )
+        throw Error("Invalid minimum bus length")
     for (const b of input.buses ?? [])
       if (
         b.maxLengthSkew !== undefined &&
@@ -630,8 +645,9 @@ export class BusLanesSolver extends BaseSolver {
             error = Error("Pair approach refinement separated the shared rails")
             continue
           }
-          const targets = minimumLengthTargets(input, candidate)
           try {
+            const targets = minimumLengthTargets(input, candidate)
+            assertLengthTargets(input, targets)
             this.traces =
               this.options.smoothTuning &&
               candidate.some((t) => t.coupledSection)
@@ -640,7 +656,11 @@ export class BusLanesSolver extends BaseSolver {
                     // Keep that extra bounded work local to packed candidates.
                     maxCandidates:
                       corridor === original
-                        ? 512
+                        ? input.buses?.some(
+                            (bus) => bus.maxLength !== undefined,
+                          )
+                          ? 65536
+                          : 512
                         : demandPackedCorridors.has(corridor)
                           ? 65536
                           : 16384,
@@ -742,6 +762,12 @@ export class BusLanesSolver extends BaseSolver {
       ].some((b) => b.toleranceMm !== null && !b.matched)
     )
       throw Error("Final bus length skew violation")
+    if (
+      busLengthReports(this.input, this.traces).some(
+        (b) => !b.withinLengthLimit || !b.aboveMinimumLength,
+      )
+    )
+      throw Error("Final absolute bus length violation")
     if (pairCouplingReports(this.input, this.traces).some((p) => !p.matched))
       throw Error("Final pair spacing or uncoupled length violation")
     this.phase = "solved"

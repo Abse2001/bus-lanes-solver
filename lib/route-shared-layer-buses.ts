@@ -1,3 +1,5 @@
+import { signalLayers } from "./flexible-signal-state"
+import { maximumCarrierLength } from "./route-lengths"
 import { BusLanesSolver } from "./bus-lanes-solver"
 import { negotiateLanes } from "./negotiate-lanes"
 import { planSharedPairCorridors } from "./plan-shared-pair-corridors"
@@ -29,7 +31,11 @@ export function* routeSharedLayerBuses(
   const identities = new WeakMap<Trace, number>()
   let serial = 0
   const fixed = fixedCopper(allocation)
-  const plans = planSharedPairCorridors(allocation, terminalLayers)
+  const bounded = allocation.buses?.some((bus) => bus.maxLength !== undefined)
+  const availableLayers = bounded
+    ? new Map(native.connections.map((c) => [c.name, signalLayers(native, c)]))
+    : terminalLayers
+  const plans = planSharedPairCorridors(allocation, availableLayers)
   for (const paired of plans) {
     if (!paired) {
       yield
@@ -49,45 +55,69 @@ export function* routeSharedLayerBuses(
     const ordinary = busInput.connections.filter((c) => !pairNames.has(c.name))
     let accessible = true
     const pairedCopper = paired.flatMap(routeCopper)
+    const reachableLayers = new Map<string, string[]>()
     for (const connection of ordinary) {
-      const layer = connection.pointsToConnect[0].layer
-      const key = JSON.stringify([
-        connection.name,
-        paired
-          .filter((t) => (t.route[0] as Wire).layer === layer)
-          .map((t) => {
-            if (!identities.has(t)) identities.set(t, serial++)
-            return identities.get(t)
-          }),
-      ])
-      let reachable = access.get(key)
-      if (reachable === undefined) {
-        const search = new GridVisibilitySearch(
-          new VectorScene(busInput, connection, widths.get(connection.name)!, [
-            ...fixed,
-            ...pairedCopper,
-          ]),
-          connection.pointsToConnect[0],
-          connection.pointsToConnect[1],
-        )
-        try {
-          let steps = 0
-          while (!search.solved && !search.failed && steps++ < 4000) {
-            search.step()
-            yield
+      const reachableForConnection: string[] = []
+      for (const layer of bounded
+        ? availableLayers.get(connection.name)!
+        : [connection.pointsToConnect[0].layer]) {
+        const key = JSON.stringify([
+          connection.name,
+          layer,
+          paired
+            .filter((t) => (t.route[0] as Wire).layer === layer)
+            .map((t) => {
+              if (!identities.has(t)) identities.set(t, serial++)
+              return identities.get(t)
+            }),
+        ])
+        let reachable = access.get(key)
+        if (reachable === undefined) {
+          const candidate = {
+            ...connection,
+            pointsToConnect: connection.pointsToConnect.map((p) => ({
+              ...p,
+              layer,
+            })),
           }
-          if (search.solved || search.failed) {
-            reachable = search.solved
-            access.set(key, reachable)
+          const search = new GridVisibilitySearch(
+            new VectorScene(busInput, candidate, widths.get(connection.name)!, [
+              ...fixed,
+              ...pairedCopper,
+            ]),
+            candidate.pointsToConnect[0],
+            candidate.pointsToConnect[1],
+            [],
+            0,
+            undefined,
+            bounded
+              ? {
+                  checkReachability: true,
+                  maxLength: maximumCarrierLength(busInput, connection.name),
+                }
+              : undefined,
+          )
+          try {
+            let steps = 0
+            while (!search.solved && !search.failed && steps++ < 4000) {
+              search.step()
+              yield
+            }
+            if (search.solved || search.failed) {
+              reachable = search.solved
+              access.set(key, reachable)
+            }
+          } finally {
+            search.cancel()
           }
-        } finally {
-          search.cancel()
         }
+        if (reachable !== false) reachableForConnection.push(layer)
       }
-      if (reachable === false) {
+      if (!reachableForConnection.length) {
         accessible = false
         break
       }
+      reachableLayers.set(connection.name, reachableForConnection)
     }
     if (!accessible) continue
     const route = negotiateLanes(
@@ -97,14 +127,14 @@ export function* routeSharedLayerBuses(
       paired,
       widths,
       undefined,
-      new Map(),
-      () => true,
+      bounded ? reachableLayers : new Map(),
+      () => !bounded,
       true,
     )
     let state = route.next(),
       steps = 0
     try {
-      while (!state.done && steps++ < 16000) {
+      while (!state.done && steps++ < (bounded ? 300000 : 16000)) {
         yield
         state = route.next()
       }
@@ -114,7 +144,23 @@ export function* routeSharedLayerBuses(
     if (!state.done || !state.value) continue
     let matched = state.value
     let valid = true
-    for (const bus of local.buses ?? []) {
+    let jointMatched = false
+    if (bounded) {
+      const matcher = BusLanesSolver.forRefinement(busInput, matched, options)
+      try {
+        while (!matcher.solved && !matcher.failed) {
+          matcher.step()
+          yield
+        }
+        if (matcher.solved) {
+          matched = matcher.traces
+          jointMatched = true
+        }
+      } finally {
+        if (!matcher.solved && !matcher.failed) matcher.tryFinalAcceptance()
+      }
+    }
+    for (const bus of jointMatched ? [] : (local.buses ?? [])) {
       const names = new Set(bus.connectionNames)
       const group = {
         ...local,

@@ -6,6 +6,7 @@ import type { Point, SimpleRouteJson, Trace, Wire } from "./types"
 export function createTerminalViaClearanceChecker(
   input: SimpleRouteJson,
   trace: Trace,
+  options: { preserveExistingApproach?: boolean } = {},
 ) {
   const width = (trace.route[0] as Wire).width
   const vias = (input.traces ?? [])
@@ -45,7 +46,9 @@ export function createTerminalViaClearanceChecker(
         const i = atStart ? step : path.length - step
         const a = path[atStart ? i - 1 : i]
         const b = path[atStart ? i : i - 1]
-        const unchanged = atStart ? i < prefix : i >= path.length - suffix + 1
+        const unchanged =
+          options.preserveExistingApproach !== false &&
+          (atStart ? i < prefix : i >= path.length - suffix + 1)
         if (
           !unchanged &&
           along > reach + 1e-9 &&

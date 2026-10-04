@@ -6,7 +6,7 @@ import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { minimumLengthTargets } from "./route-lengths"
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { extendCoupledSectionEnds } from "./extend-coupled-section"
-import { fixedRouteLength } from "./route-lengths"
+import { fixedRouteLength, maximumCarrierLength } from "./route-lengths"
 import { coupledPairCache } from "./coupled-pair-cache"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { tuningPathIsSelfClear } from "./length-tuning"
@@ -642,6 +642,14 @@ export function* routeCoupledPair(
                 !routeAnglesAreConventional(shaped) ||
                 sharedPairSpacingReports(pairInput, shaped).some(
                   (p) => !p.matched,
+                )
+              )
+                continue
+              if (
+                shaped.some(
+                  (trace) =>
+                    length(trace.route) >
+                    maximumCarrierLength(input, trace.connection_name!) + 1e-7,
                 )
               )
                 continue

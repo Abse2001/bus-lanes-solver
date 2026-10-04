@@ -1,0 +1,602 @@
+{
+  "sample": "rotated-sbc",
+  "allowanceMm": 4.9,
+  "solved": true,
+  "error": "",
+  "elapsedMs": 77894.937525,
+  "phase": "solved",
+  "iterations": 43243,
+  "signalCount": 47,
+  "trialPassed": true,
+  "strictGeometryPassed": false,
+  "validation": {
+    "valid": true,
+    "complete": true,
+    "selfShorts": [],
+    "routing": true,
+    "copper": {
+      "valid": true,
+      "checkedTraceCount": 208,
+      "checkedSegmentCount": 29325,
+      "checkedViaCount": 255,
+      "issues": []
+    },
+    "pairs": [
+      {
+        "busId": "pair_0",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.12226497234209432,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_15",
+            "carrierLengthMm": 44.79676712103152,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 44.79676712103152
+          },
+          {
+            "name": "source_trace_16",
+            "carrierLengthMm": 44.919032093373616,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 44.919032093373616
+          }
+        ]
+      },
+      {
+        "busId": "pair_1",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.12699999999999534,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_27",
+            "carrierLengthMm": 39.44786378893572,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 39.44786378893572
+          },
+          {
+            "name": "source_trace_26",
+            "carrierLengthMm": 39.574863788935716,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 39.574863788935716
+          }
+        ]
+      },
+      {
+        "busId": "pair_2",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.06072583002030285,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_32",
+            "carrierLengthMm": 48.07716100000002,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 48.07716100000002
+          },
+          {
+            "name": "source_trace_33",
+            "carrierLengthMm": 48.016435169979715,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 48.016435169979715
+          }
+        ]
+      }
+    ],
+    "fixedPowerPreserved": true,
+    "quality": {
+      "signalCount": 47,
+      "footprint": {
+        "bounds": {
+          "minX": -17.376123999999997,
+          "maxX": 5.837689691700006,
+          "minY": -36.349816,
+          "maxY": -3.45,
+          "widthMm": 23.213813691700004,
+          "heightMm": 32.899815999999994,
+          "areaMm2": 763.7301991152107
+        },
+        "allCopperBounds": {
+          "minX": -17.376123999999997,
+          "maxX": 7.401000000000001,
+          "minY": -36.349816,
+          "maxY": 7.401000000000001,
+          "widthMm": 24.777123999999997,
+          "heightMm": 43.750816,
+          "areaMm2": 1084.019393133184
+        },
+        "layers": [
+          {
+            "layer": "top",
+            "minX": -16.050115,
+            "maxX": 4.150000000000001,
+            "minY": -35.75,
+            "maxY": -3.5500000000000003,
+            "widthMm": 20.200115000000004,
+            "heightMm": 32.2,
+            "areaMm2": 650.4437030000001
+          },
+          {
+            "layer": "inner1",
+            "minX": -17.275,
+            "maxX": 5.837689691700006,
+            "minY": -35.75,
+            "maxY": -3.45,
+            "widthMm": 23.112689691700005,
+            "heightMm": 32.3,
+            "areaMm2": 746.5398770419101
+          },
+          {
+            "layer": "inner2",
+            "minX": -17.376123999999997,
+            "maxX": 5.837689691700004,
+            "minY": -36.349816,
+            "maxY": -3.649999999999996,
+            "widthMm": 23.2138136917,
+            "heightMm": 32.699816,
+            "areaMm2": 759.0874363768708
+          },
+          {
+            "layer": "bottom",
+            "minX": -15.75,
+            "maxX": 4.150000000000001,
+            "minY": -35.75,
+            "maxY": -3.8499999999999996,
+            "widthMm": 19.900000000000002,
+            "heightMm": 31.9,
+            "areaMm2": 634.8100000000001
+          }
+        ],
+        "middleRegionMaxCenterOffsetMm": 13.684920795178723,
+        "middleRegionVacancy": {
+          "layers": [
+            {
+              "layer": "inner1",
+              "envelopeAreaMm2": 486.7749865375887,
+              "unoccupiedAreaMm2": 187.02144610972383,
+              "unoccupiedFraction": 0.3842051282051282,
+              "largestFreeRectangleMm2": 12.980666307669033,
+              "gridResolutionMm": 0.1
+            },
+            {
+              "layer": "inner2",
+              "envelopeAreaMm2": 511.9370681700521,
+              "unoccupiedAreaMm2": 207.11066179959522,
+              "unoccupiedFraction": 0.40456273764258555,
+              "largestFreeRectangleMm2": 16.77009407284172,
+              "gridResolutionMm": 0.1
+            }
+          ],
+          "envelopeAreaMm2": 998.7120547076408,
+          "unoccupiedAreaMm2": 394.1321079093191
+        }
+      },
+      "totalPlanarLengthMm": 2137.69840721285,
+      "maxDetourRatio": 2.1077290211599458,
+      "meanDetourRatio": 1.6432899883912413,
+      "ordinaryTurns": 531,
+      "shortJogs": 63,
+      "acuteCorners": 0,
+      "sharpCurveCorners": 0,
+      "illegalOrdinaryCorners": 0,
+      "nonOctilinearOrdinarySegments": 0,
+      "pairGaps": [
+        {
+          "connectionNames": ["source_trace_15", "source_trace_16"],
+          "requestedGapMm": 0.12,
+          "sharedSectionPresent": true,
+          "minEdgeGapMm": 0.11979060874800516,
+          "maxEdgeGapMm": 0.13774753309378052,
+          "maxSamplingErrorMm": 0.001,
+          "sharedCopperMm": [36.85789809811873, 37.04015206556289],
+          "maxAllowedEdgeGapMm": 0.14012628406432667,
+          "matched": true
+        },
+        {
+          "connectionNames": ["source_trace_27", "source_trace_26"],
+          "requestedGapMm": 0.12,
+          "sharedSectionPresent": true,
+          "minEdgeGapMm": 0.11028787677828393,
+          "maxEdgeGapMm": 0.1377494994833096,
+          "maxSamplingErrorMm": 0.001,
+          "sharedCopperMm": [30.963052246169184, 30.96305224616919],
+          "maxAllowedEdgeGapMm": 0.14012628406432667,
+          "matched": true
+        },
+        {
+          "connectionNames": ["source_trace_32", "source_trace_33"],
+          "requestedGapMm": 0.12,
+          "sharedSectionPresent": true,
+          "minEdgeGapMm": 0.11979060874800455,
+          "maxEdgeGapMm": 0.13774635336446855,
+          "maxSamplingErrorMm": 0.0009999999999999998,
+          "sharedCopperMm": [39.713921443713694, 39.71392144371369],
+          "maxAllowedEdgeGapMm": 0.14012628406432667,
+          "matched": true
+        }
+      ],
+      "exteriorPairGaps": [
+        {
+          "connectionNames": ["source_trace_15", "source_trace_16"],
+          "applicable": true,
+          "matched": true,
+          "maxExteriorEdgeGapMm": 0.13774753309378052,
+          "maxSamplingErrorMm": 0.001,
+          "separatedExteriorLengthMm": 0
+        },
+        {
+          "connectionNames": ["source_trace_27", "source_trace_26"],
+          "applicable": true,
+          "matched": true,
+          "maxExteriorEdgeGapMm": 0.1377494994833096,
+          "maxSamplingErrorMm": 0.001,
+          "separatedExteriorLengthMm": 0
+        },
+        {
+          "connectionNames": ["source_trace_32", "source_trace_33"],
+          "applicable": true,
+          "matched": true,
+          "maxExteriorEdgeGapMm": 0.13774635336446855,
+          "maxSamplingErrorMm": 0.0009999999999999998,
+          "separatedExteriorLengthMm": 0
+        }
+      ],
+      "issues": []
+    }
+  },
+  "coupling": [
+    {
+      "connectionNames": ["source_trace_15", "source_trace_16"],
+      "applicable": true,
+      "matched": true,
+      "maxExteriorEdgeGapMm": 0.13774753309378052,
+      "maxSamplingErrorMm": 0.001,
+      "separatedExteriorLengthMm": 0
+    },
+    {
+      "connectionNames": ["source_trace_27", "source_trace_26"],
+      "applicable": true,
+      "matched": true,
+      "maxExteriorEdgeGapMm": 0.1377494994833096,
+      "maxSamplingErrorMm": 0.001,
+      "separatedExteriorLengthMm": 0
+    },
+    {
+      "connectionNames": ["source_trace_32", "source_trace_33"],
+      "applicable": true,
+      "matched": true,
+      "maxExteriorEdgeGapMm": 0.13774635336446855,
+      "maxSamplingErrorMm": 0.0009999999999999998,
+      "separatedExteriorLengthMm": 0
+    }
+  ],
+  "strictLengths": [
+    {
+      "busId": "DDR_BYTE0",
+      "minLengthMm": 0,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 42.40012300000001,
+      "withinLengthLimit": false,
+      "toleranceMm": 0.635,
+      "skewMm": 0.6350000000756211,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_14",
+          "carrierLengthMm": 44.79538265011799,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011799
+        },
+        {
+          "name": "source_trace_30",
+          "carrierLengthMm": 44.795382650111534,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650111534
+        },
+        {
+          "name": "source_trace_3",
+          "carrierLengthMm": 44.79538265011802,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011802
+        },
+        {
+          "name": "source_trace_40",
+          "carrierLengthMm": 44.79538265011795,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011795
+        },
+        {
+          "name": "source_trace_17",
+          "carrierLengthMm": 44.795382650117965,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650117965
+        },
+        {
+          "name": "source_trace_41",
+          "carrierLengthMm": 45.430382650187155,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 45.430382650187155
+        },
+        {
+          "name": "source_trace_4",
+          "carrierLengthMm": 44.79538265011796,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011796
+        },
+        {
+          "name": "source_trace_31",
+          "carrierLengthMm": 44.795382650191215,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650191215
+        },
+        {
+          "name": "source_trace_29",
+          "carrierLengthMm": 44.795382650117965,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650117965
+        },
+        {
+          "name": "source_trace_15",
+          "carrierLengthMm": 44.79676712103152,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79676712103152
+        },
+        {
+          "name": "source_trace_16",
+          "carrierLengthMm": 44.919032093373616,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.919032093373616
+        }
+      ]
+    },
+    {
+      "busId": "DDR_BYTE1",
+      "minLengthMm": 0,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 36.000285000000005,
+      "withinLengthLimit": false,
+      "toleranceMm": 0.635,
+      "skewMm": 0.6350000000594136,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_28",
+          "carrierLengthMm": 40.082863788935704,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 40.082863788935704
+        },
+        {
+          "name": "source_trace_12",
+          "carrierLengthMm": 39.447863788935784,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.447863788935784
+        },
+        {
+          "name": "source_trace_39",
+          "carrierLengthMm": 39.44786378893571,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893571
+        },
+        {
+          "name": "source_trace_2",
+          "carrierLengthMm": 39.44786378893575,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893575
+        },
+        {
+          "name": "source_trace_25",
+          "carrierLengthMm": 39.83196906057594,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.83196906057594
+        },
+        {
+          "name": "source_trace_1",
+          "carrierLengthMm": 39.447863788935756,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.447863788935756
+        },
+        {
+          "name": "source_trace_38",
+          "carrierLengthMm": 39.44786378887629,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378887629
+        },
+        {
+          "name": "source_trace_11",
+          "carrierLengthMm": 39.44786378893577,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893577
+        },
+        {
+          "name": "source_trace_13",
+          "carrierLengthMm": 39.44786378893574,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893574
+        },
+        {
+          "name": "source_trace_27",
+          "carrierLengthMm": 39.44786378893572,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893572
+        },
+        {
+          "name": "source_trace_26",
+          "carrierLengthMm": 39.574863788935716,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.574863788935716
+        }
+      ]
+    },
+    {
+      "busId": "DDR_ADDR_CTRL_CK",
+      "minLengthMm": 47.95016100000001,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 50.49016100000001,
+      "withinLengthLimit": true,
+      "toleranceMm": 0.635,
+      "skewMm": 0.2830486072703948,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_0",
+          "carrierLengthMm": 47.950161000000065,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000065
+        },
+        {
+          "name": "source_trace_5",
+          "carrierLengthMm": 47.950161000000165,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000165
+        },
+        {
+          "name": "source_trace_6",
+          "carrierLengthMm": 47.95016100000022,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000022
+        },
+        {
+          "name": "source_trace_7",
+          "carrierLengthMm": 47.95016100000007,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000007
+        },
+        {
+          "name": "source_trace_8",
+          "carrierLengthMm": 47.95016100000009,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000009
+        },
+        {
+          "name": "source_trace_9",
+          "carrierLengthMm": 47.950161000000115,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000115
+        },
+        {
+          "name": "source_trace_18",
+          "carrierLengthMm": 47.950161000000115,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000115
+        },
+        {
+          "name": "source_trace_19",
+          "carrierLengthMm": 47.95016100000012,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000012
+        },
+        {
+          "name": "source_trace_20",
+          "carrierLengthMm": 47.95016100000019,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000019
+        },
+        {
+          "name": "source_trace_21",
+          "carrierLengthMm": 47.950161000000136,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000136
+        },
+        {
+          "name": "source_trace_22",
+          "carrierLengthMm": 47.95016100000013,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000013
+        },
+        {
+          "name": "source_trace_23",
+          "carrierLengthMm": 47.95016100000026,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000026
+        },
+        {
+          "name": "source_trace_24",
+          "carrierLengthMm": 47.950161000000136,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000136
+        },
+        {
+          "name": "source_trace_32",
+          "carrierLengthMm": 48.07716100000002,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 48.07716100000002
+        },
+        {
+          "name": "source_trace_33",
+          "carrierLengthMm": 48.016435169979715,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 48.016435169979715
+        },
+        {
+          "name": "source_trace_34",
+          "carrierLengthMm": 47.95016100003433,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100003433
+        },
+        {
+          "name": "source_trace_35",
+          "carrierLengthMm": 47.95016100000004,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000004
+        },
+        {
+          "name": "source_trace_36",
+          "carrierLengthMm": 48.23320960723517,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 48.23320960723517
+        },
+        {
+          "name": "source_trace_37",
+          "carrierLengthMm": 47.95016100000011,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000011
+        },
+        {
+          "name": "source_trace_42",
+          "carrierLengthMm": 47.950161000000044,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000044
+        },
+        {
+          "name": "source_trace_43",
+          "carrierLengthMm": 47.9501610000025,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.9501610000025
+        },
+        {
+          "name": "source_trace_44",
+          "carrierLengthMm": 47.95016099996477,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016099996477
+        },
+        {
+          "name": "source_trace_45",
+          "carrierLengthMm": 47.95016099997994,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016099997994
+        },
+        {
+          "name": "source_trace_46",
+          "carrierLengthMm": 47.950161000000094,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000094
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Controlled impedance, stackup, reference continuity and electrical SI are separate checks."
+  ]
+}

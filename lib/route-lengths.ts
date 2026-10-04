@@ -34,6 +34,16 @@ export function busLengthReports(input: SimpleRouteJson, traces: Trace[]) {
         : null
     return {
       busId: bus.busId,
+      minLengthMm: bus.minLength ?? null,
+      aboveMinimumLength:
+        bus.minLength === undefined
+          ? true
+          : complete && values.every((value) => value >= bus.minLength! - 1e-7),
+      maxLengthMm: bus.maxLength ?? null,
+      withinLengthLimit:
+        bus.maxLength === undefined
+          ? true
+          : complete && values.every((value) => value <= bus.maxLength! + 1e-7),
       toleranceMm: bus.maxLengthSkew ?? null,
       skewMm,
       matched:
@@ -70,6 +80,11 @@ export function minimumLengthTargets(input: SimpleRouteJson, traces: Trace[]) {
       length(t.route) + fixedRouteLength(input, t.connection_name!),
     ]),
   )
+  for (const bus of input.buses ?? [])
+    if (bus.minLength !== undefined)
+      for (const name of bus.connectionNames)
+        if (targets.has(name))
+          targets.set(name, Math.max(targets.get(name)!, bus.minLength))
   const constraints = lengthConstraints(input)
   for (let pass = 0; pass < targets.size; pass++) {
     let changed = false
@@ -98,4 +113,33 @@ export function pairLengthReports(input: SimpleRouteJson, traces: Trace[]) {
     },
     traces,
   )
+}
+
+/** Remaining carrier budget after immutable copper and generated escapes. */
+export function maximumCarrierLength(input: SimpleRouteJson, name: string) {
+  return Math.min(
+    Infinity,
+    ...(input.buses ?? [])
+      .filter(
+        (bus) =>
+          bus.connectionNames.includes(name) && bus.maxLength !== undefined,
+      )
+      .map((bus) => bus.maxLength! - fixedRouteLength(input, name)),
+  )
+}
+
+export function assertLengthTargets(
+  input: SimpleRouteJson,
+  targets: ReadonlyMap<string, number>,
+) {
+  for (const bus of input.buses ?? [])
+    if (
+      bus.maxLength !== undefined &&
+      bus.connectionNames.some(
+        (name) => (targets.get(name) ?? Infinity) > bus.maxLength! + 1e-7,
+      )
+    )
+      throw Error(
+        `${bus.busId}: matching would exceed maximum length ${bus.maxLength} mm`,
+      )
 }

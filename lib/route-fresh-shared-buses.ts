@@ -1,3 +1,4 @@
+import { repairSharedLayerConflicts } from "./repair-shared-layer-conflicts"
 import { BusLanesSolver } from "./bus-lanes-solver"
 import { planSharedPairCorridors } from "./plan-shared-pair-corridors"
 import { reachableSignalDogbones } from "./reachable-signal-dogbones"
@@ -74,7 +75,9 @@ export function* routeFreshSharedBuses(
   const nearestAttachments = Math.abs(direction.x) > Math.abs(direction.y)
   for (const paired of planSharedPairCorridors(
     allocation,
-    terminalLayers,
+    native.buses?.some((bus) => bus.maxLength !== undefined)
+      ? layers
+      : terminalLayers,
     true,
   )) {
     if (!paired) {
@@ -117,7 +120,16 @@ export function* routeFreshSharedBuses(
     const pending: SimpleRouteJson = {
       ...native,
       connections: generated.connections,
-      buses: [],
+      buses: native.buses?.some((bus) => bus.maxLength !== undefined)
+        ? native.buses
+            .map((bus) => ({
+              ...bus,
+              connectionNames: bus.connectionNames.filter((name) =>
+                generated.connections.some((c) => c.name === name),
+              ),
+            }))
+            .filter((bus) => bus.connectionNames.length)
+        : [],
       differentialPairs: [],
       traces: [...(native.traces ?? []), ...escapes, ...paired],
     }
@@ -140,10 +152,24 @@ export function* routeFreshSharedBuses(
     try {
       let step = route.next(),
         iterations = 0,
-        lastImprovement = 0
+        lastImprovement = 0,
+        bestCount = 0
       while (!step.done && iterations++ < 300000) {
+        bestCount = Math.max(bestCount, step.value.length)
         if (
-          step.value.length >= Math.max(1, pending.connections.length - 2) &&
+          native.buses?.some((b) => b.maxLength !== undefined) &&
+          iterations > 60000 &&
+          bestCount < pending.connections.length - 3
+        )
+          break
+
+        if (
+          step.value.length >=
+            Math.max(
+              1,
+              pending.connections.length -
+                (native.buses?.some((b) => b.maxLength !== undefined) ? 4 : 2),
+            ) &&
           (!state || step.value.length > state.traces.length)
         ) {
           // A nearly complete assignment is a fallback, not a reason to stop
@@ -165,7 +191,14 @@ export function* routeFreshSharedBuses(
         if (step.value.length === pending.connections.length) break
         // Bound a stalled topology while retaining its best pocket-repair
         // candidate. Do not let later layer choices mutate that saved input.
-        if (state && iterations - lastImprovement >= 60000) break
+        if (
+          state &&
+          iterations - lastImprovement >=
+            (native.buses?.some((b) => b.maxLength !== undefined)
+              ? 12000
+              : 60000)
+        )
+          break
         yield
         step = route.next()
       }
@@ -181,6 +214,18 @@ export function* routeFreshSharedBuses(
       route.return(null)
     }
     if (!state) continue
+    if (
+      native.buses?.some((b) => b.maxLength !== undefined) &&
+      state.traces.length < state.pending.connections.length
+    ) {
+      const repaired = yield* repairSharedLayerConflicts(
+        state.pending,
+        state.traces,
+        layers,
+        { maxNodes: 256 },
+      )
+      if (repaired) state = { ...state, traces: repaired }
+    }
     if (
       state.retained.length + state.traces.length <
       native.connections.length

@@ -1,3 +1,4 @@
+import { maximumCarrierLength } from "./route-lengths"
 import { reserveBusPackageExits } from "./reserve-bus-package-exits"
 import { routeCoupledPair } from "./coupled-pair-routing"
 import { length } from "./geometry"
@@ -21,6 +22,7 @@ export function* planSharedPairCorridors(
   freshDogbones = false,
 ): Generator<Trace[] | undefined> {
   const pairs = input.differentialPairs ?? []
+  const bounded = input.buses?.some((bus) => bus.maxLength !== undefined)
   const domains: Choice[][] = pairs.map(() => [])
   const geometry = pairs.map(() => new Set<string>())
   const tried = new Set<string>()
@@ -103,6 +105,15 @@ export function* planSharedPairCorridors(
           if (!state.done) search.return(null)
         }
         if (!state.value) continue
+        if (
+          bounded &&
+          state.value.some(
+            (trace) =>
+              length(trace.route) >
+              maximumCarrierLength(input, trace.connection_name!) + 1e-7,
+          )
+        )
+          continue
         const key = JSON.stringify(state.value.map((t) => t.route))
         if (geometry[index].has(key)) continue
         geometry[index].add(key)
@@ -114,6 +125,8 @@ export function* planSharedPairCorridors(
         })
       }
     }
+    if (bounded)
+      for (const choices of domains) choices.sort((a, b) => a.length - b.length)
     const plans: Choice[][] = []
     const visit = (selected: Choice[], index: number) => {
       if (plans.length >= 256) return

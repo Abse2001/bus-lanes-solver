@@ -1,3 +1,7 @@
+import {
+  LengthSearchFrontier,
+  type LengthSearchLabel,
+} from "./length-search-frontier"
 import { GridComponents } from "./grid-components"
 import type { Point, SimpleRouteJson } from "./types"
 import type { GridHeap } from "./grid-heap"
@@ -330,6 +334,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
   solved = false
   result: Point[] = []
   private heap!: GridHeap
+  private lengthFrontier?: LengthSearchFrontier
   private scratchLease?: GridScratchLease
   private neighbors: Array<{
     dx: number
@@ -380,6 +385,8 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     grid?: {
       step?: number
       maxLength?: number
+      /** Preserve cost/length alternatives for hard length budgets. */
+      paretoLength?: boolean
       allTerminalAttachments?: boolean
       nearestTerminalAttachments?: boolean
       /** Advance attachment retries only when explicitly negotiating sites. */
@@ -458,6 +465,8 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.hardEdgeBlocked = cachedGrid?.edgeBlocked ?? new Uint8Array(n)
     if (cachedGrid) this.copperBuckets = cachedGrid.buckets
     this.maxLength = grid?.maxLength ?? Infinity
+    if (grid?.paretoLength && Number.isFinite(this.maxLength))
+      this.lengthFrontier = new LengthSearchFrontier()
     let componentIndex = cachedGrid?.components
     if (!cachedGrid) {
       // Adjacent samples of a long segment overlap. Test each cell at most
@@ -849,7 +858,16 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     // Every discovered cell writes its parent; only the root needs a sentinel.
     this.parent[a.id] = -1
     if (this.travel) this.travel[a.id] = length(a.path)
-    this.heap.push(a.id, 0, this.heuristic(start))
+    if (this.lengthFrontier)
+      this.lengthFrontier.add(
+        a.id,
+        0,
+        length(a.path),
+        this.heuristic(start),
+        undefined,
+        a.path,
+      )
+    else this.heap.push(a.id, 0, this.heuristic(start))
     if (
       forceAlternativeAttachments ||
       grid?.allTerminalAttachments ||
@@ -868,6 +886,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     // The search keeps its active scratch and cache leases. Reset only its own
     // numeric search state, with no occupancy rebuild or new grid allocation.
     this.heap.clear()
+    this.lengthFrontier?.clear()
     this.best.fill(Infinity)
     for (const attachment of this.startAttachments) {
       const travelled = length(attachment.path)
@@ -877,17 +896,44 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       this.parent[attachment.id] = -1
       if (this.travel) this.travel[attachment.id] = travelled
       this.rootPaths.set(attachment.id, attachment.path)
-      this.heap.push(
-        attachment.id,
-        cost,
-        cost + this.heuristic(this.point(attachment.id)),
-      )
+      if (this.lengthFrontier)
+        this.lengthFrontier.add(
+          attachment.id,
+          cost,
+          travelled,
+          this.heuristic(this.point(attachment.id)),
+          undefined,
+          attachment.path,
+        )
+      else
+        this.heap.push(
+          attachment.id,
+          cost,
+          cost + this.heuristic(this.point(attachment.id)),
+        )
     }
     for (const attachment of this.endAttachments)
       this.goalPaths.set(attachment.id, attachment.path.toReversed())
     return true
   }
-  private pathTo(id: number, endPath: Point[]) {
+  private pathTo(id: number, endPath: Point[], label?: LengthSearchLabel) {
+    if (label) {
+      const path: Point[] = []
+      let root = label
+      for (
+        let current: LengthSearchLabel | undefined = label;
+        current;
+        current = current.parent
+      ) {
+        root = current
+        path.push(this.point(current.node))
+      }
+      return simplify([
+        ...root.rootPath!,
+        ...path.reverse().slice(1),
+        ...endPath.slice(1),
+      ])
+    }
     const path: Point[] = []
     let root = id
     for (let current = id; current >= 0; current = this.parent[current]) {
@@ -907,6 +953,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     this.solved = true
     if (this.softMemoLease) this.softMemoLease.active = false
     this.scratchLease?.release()
+    this.lengthFrontier?.clear()
   }
   private edgeClear(
     fromX: number,
@@ -980,10 +1027,12 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     if (!this.solved) this.failed = true
     if (this.softMemoLease) this.softMemoLease.active = false
     this.scratchLease?.release()
+    this.lengthFrontier?.clear()
   }
   step() {
     const {
       heap,
+      lengthFrontier,
       best,
       parent,
       blocked,
@@ -1015,7 +1064,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     const minY = bounds.minY + edge,
       maxY = bounds.maxY - edge
     for (let batch = 0; batch < 500 && !this.failed && !this.solved; batch++) {
-      if (!heap.length) {
+      if (!(lengthFrontier?.length ?? heap.length)) {
         if (this.attachmentResult) {
           this.finish(this.attachmentResult.path)
           return
@@ -1024,12 +1073,15 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         this.failed = true
         if (this.softMemoLease) this.softMemoLease.active = false
         this.scratchLease?.release()
+        this.lengthFrontier?.clear()
         return
       }
-      heap.pop()
-      const curId = heap.id,
-        curG = heap.g
-      if (curG !== best[curId]) continue
+      const currentLabel = lengthFrontier?.pop()
+      if (lengthFrontier && !currentLabel) continue
+      if (!lengthFrontier) heap.pop()
+      const curId = currentLabel?.node ?? heap.id,
+        curG = currentLabel?.cost ?? heap.g
+      if (!lengthFrontier && curG !== best[curId]) continue
       this.expanded++
       if (
         this.attachmentResult &&
@@ -1044,16 +1096,17 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           ? this.endPath
           : undefined
       if (endPath) {
-        const result = this.pathTo(curId, endPath)
+        const result = this.pathTo(curId, endPath, currentLabel)
         if (
           length(result) > maxLength + 1e-8 ||
           !this.scene.pathVisible(result)
         ) {
-          if (!this.alternateAttachments) {
+          if (!this.alternateAttachments && !lengthFrontier) {
             if (this.retryAttachments()) continue
             this.failed = true
             if (this.softMemoLease) this.softMemoLease.active = false
             this.scratchLease?.release()
+            this.lengthFrontier?.clear()
             return
           }
         } else if (this.alternateAttachments) {
@@ -1078,13 +1131,21 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         // An edge that cannot improve the route needs no geometry checks.
         // Keep the addition order used by g below to preserve tie decisions.
         const minimumG = curG + cost + 0 + (history?.[id] ?? 0)
-        if (penalty >= 0 && minimumG >= best[id] - 1e-10) continue
+        if (!lengthFrontier && penalty >= 0 && minimumG >= best[id] - 1e-10)
+          continue
         const goalDx = hx[x + dx],
           goalDy = hy[y + dy]
         const heuristic =
           Math.max(goalDx, goalDy) + (Math.SQRT2 - 1) * Math.min(goalDx, goalDy)
-        const travelled = (travel?.[curId] ?? 0) + cost * stepSize
+        const travelled =
+          (currentLabel?.travelled ?? travel?.[curId] ?? 0) + cost * stepSize
         if (travel && travelled + heuristic * stepSize > maxLength + 1e-8)
+          continue
+        if (
+          lengthFrontier &&
+          penalty >= 0 &&
+          lengthFrontier.dominated(id, minimumG, travelled)
+        )
           continue
         const px = xs[x + dx],
           py = ys[y + dy]
@@ -1107,7 +1168,12 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           softCost = softEdgeBlocked[curId] & bit ? penalty : 0
         }
         const g = curG + cost + softCost + (history?.[id] ?? 0)
-        if (g >= best[id] - 1e-10) continue
+        if (
+          lengthFrontier
+            ? lengthFrontier.dominated(id, g, travelled)
+            : g >= best[id] - 1e-10
+        )
+          continue
         if (!(hardEdgeKnown[curId] & bit)) {
           hardEdgeKnown[curId] |= bit
           hardEdgeKnown[id] |= reverse
@@ -1117,10 +1183,14 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           }
         }
         if (hardEdgeBlocked[curId] & bit) continue
-        best[id] = g
-        if (travel) travel[id] = travelled
-        parent[id] = curId
-        heap.push(id, g, g + heuristic)
+        if (lengthFrontier)
+          lengthFrontier.add(id, g, travelled, heuristic, currentLabel)
+        else {
+          best[id] = g
+          if (travel) travel[id] = travelled
+          parent[id] = curId
+          heap.push(id, g, g + heuristic)
+        }
       }
     }
   }

@@ -1,3 +1,4 @@
+import { maximumCarrierLength } from "./route-lengths"
 import { CopperConflictIndex } from "./copper-conflict-index"
 import { length } from "./geometry"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
@@ -28,6 +29,7 @@ interface SiteOption {
   scene: VectorScene
   layer: string
   length: number
+  maxLength: number
 }
 interface Candidate extends SiteOption {
   id: number
@@ -131,6 +133,10 @@ export function* negotiateSignalSites(
             )
           )
             continue
+          const maxLength = maximumCarrierLength(
+            { ...native, traces: [...(native.traces ?? []), ...escapes] },
+            connection.name,
+          )
           const escapeCopper = fixedCopper({
             ...base,
             obstacles: [],
@@ -149,7 +155,7 @@ export function* negotiateSignalSites(
             [],
             0,
             undefined,
-            { checkReachability: true },
+            { checkReachability: true, maxLength },
           )
           try {
             let steps = 0
@@ -165,6 +171,7 @@ export function* negotiateSignalSites(
                 scene,
                 layer,
                 length: length(search.result),
+                maxLength,
               })
           } finally {
             search.cancel()
@@ -307,7 +314,11 @@ export function* negotiateSignalSites(
         soft,
         10 + iteration,
         histories.get(layer),
-        { checkReachability: true },
+        {
+          checkReachability: true,
+          maxLength: option.maxLength,
+          paretoLength: Number.isFinite(option.maxLength),
+        },
       )
       try {
         let steps = 0
