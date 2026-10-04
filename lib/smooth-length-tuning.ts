@@ -1,3 +1,4 @@
+import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
 import { routeAnglesAreConventional } from "./route-angle-validation"
 import { foldedTuningLobes } from "./folded-tuning"
 import { packageApproachRegions, pointInBox } from "./package-approach-regions"
@@ -32,6 +33,11 @@ export function tuneSmoothLengths(
     const connection = input.connections.find(
       (c) => c.name === t.connection_name,
     )!
+    // Keep the existing coupled-pair correction path unchanged. Independent
+    // lane tuning must not spend additional copper length in its via land.
+    const terminalViaCopperIsClear = t.coupledSection
+      ? (_path: Point[]) => true
+      : createTerminalViaClearanceChecker(input, t)
     const width = (t.route[0] as Wire).width
     const fixedLength = fixedRouteLength(input, connection.name)
     const currentLength = length(t.route) + fixedLength
@@ -194,7 +200,11 @@ export function tuneSmoothLengths(
                 1e-6
               )
                 continue
-              if (!tuningPathIsSelfClear(next, returnSpacing)) continue
+              if (
+                !terminalViaCopperIsClear(next) ||
+                !tuningPathIsSelfClear(next, returnSpacing)
+              )
+                continue
               const candidate: Trace = {
                 ...t,
                 coupledSection: t.coupledSection
