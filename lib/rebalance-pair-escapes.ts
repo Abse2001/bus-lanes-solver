@@ -1,4 +1,5 @@
 import { GridVisibilitySearch } from "./grid-visibility"
+import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
 import { VectorScene, fixedCopper, routeCopper } from "./vector-scene"
 import { distance, length } from "./geometry"
 import { fixedRouteLength, minimumLengthTargets } from "./route-lengths"
@@ -260,6 +261,15 @@ export function* rebalancePairEscapes(
                     packMeanders: true,
                     packageOnlyPairTuning: true,
                   })
+                  if (
+                    tuned.some(
+                      (t) =>
+                        !createTerminalViaClearanceChecker(local, t, {
+                          preserveExistingApproach: false,
+                        })(t.route),
+                    )
+                  )
+                    continue
                   const validator = BusLanesSolver.forValidation(
                     local,
                     tuned,

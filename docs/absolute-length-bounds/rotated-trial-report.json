@@ -1,574 +1,287 @@
 {
-  "x": -10,
-  "y": -32,
-  "rotation": 270,
-  "solverVersion": "0.0.18-candidate",
+  "sample": "rotated-sbc",
+  "allowanceMm": 4.9,
   "solved": true,
-  "failed": false,
-  "error": null,
+  "error": "",
+  "elapsedMs": 77894.937525,
   "phase": "solved",
-  "routeCount": 47,
-  "elapsedMs": 68289,
-  "maximumPinDifferenceMm": 3.66205343881779e-15,
-  "audit": {
-    "pass": false,
-    "failures": [
-      "DDR_BYTE0: lengths 44.7954–45.4304 mm outside 0.0000–42.4001 mm",
-      "DDR_BYTE1: lengths 39.4479–40.0829 mm outside 0.0000–36.0003 mm"
-    ],
-    "groups": [
-      {
-        "name": "DDR_BYTE0",
-        "memberCount": 11,
-        "minLengthMm": 44.795382650111534,
-        "maxLengthMm": 45.430382650187155,
-        "skewMm": 0.6350000000756211,
-        "maxSkewMm": 0.635,
-        "nominalMm": 42.40012300000001,
-        "minimumMm": 0,
-        "maximumMm": 42.40012300000001,
-        "skewPass": true,
-        "absoluteLengthPass": false,
-        "routingPass": true,
-        "pass": false
-      },
-      {
-        "name": "DDR_BYTE1",
-        "memberCount": 11,
-        "minLengthMm": 39.44786378887629,
-        "maxLengthMm": 40.082863788935704,
-        "skewMm": 0.6350000000594136,
-        "maxSkewMm": 0.635,
-        "nominalMm": 36.000285000000005,
-        "minimumMm": 0,
-        "maximumMm": 36.000285000000005,
-        "skewPass": true,
-        "absoluteLengthPass": false,
-        "routingPass": true,
-        "pass": false
-      },
-      {
-        "name": "DDR_ADDR_CTRL_CK",
-        "memberCount": 24,
-        "minLengthMm": 47.95016099996477,
-        "maxLengthMm": 48.23320960723517,
-        "skewMm": 0.2830486072703948,
-        "maxSkewMm": 0.635,
-        "nominalMm": 49.220161000000004,
-        "minimumMm": 47.950161,
-        "maximumMm": 50.49016100000001,
-        "skewPass": true,
-        "absoluteLengthPass": true,
-        "routingPass": true,
-        "pass": true
-      }
-    ],
+  "iterations": 43243,
+  "signalCount": 47,
+  "trialPassed": true,
+  "strictGeometryPassed": false,
+  "validation": {
+    "valid": true,
+    "complete": true,
+    "selfShorts": [],
+    "routing": true,
+    "copper": {
+      "valid": true,
+      "checkedTraceCount": 208,
+      "checkedSegmentCount": 29325,
+      "checkedViaCount": 255,
+      "issues": []
+    },
     "pairs": [
       {
-        "name": "DDR_DQS_PAIR0",
-        "skewMm": 0.12700000000000955,
-        "sameLayer": true,
-        "pass": true
+        "busId": "pair_0",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.12226497234209432,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_15",
+            "carrierLengthMm": 44.79676712103152,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 44.79676712103152
+          },
+          {
+            "name": "source_trace_16",
+            "carrierLengthMm": 44.919032093373616,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 44.919032093373616
+          }
+        ]
       },
       {
-        "name": "DDR_DQS_PAIR1",
+        "busId": "pair_1",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
         "skewMm": 0.12699999999999534,
-        "sameLayer": true,
-        "pass": true
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_27",
+            "carrierLengthMm": 39.44786378893572,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 39.44786378893572
+          },
+          {
+            "name": "source_trace_26",
+            "carrierLengthMm": 39.574863788935716,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 39.574863788935716
+          }
+        ]
       },
       {
-        "name": "DDR_CK_PAIR",
-        "skewMm": 0.06072583002028864,
-        "sameLayer": true,
-        "pass": true
+        "busId": "pair_2",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.06072583002030285,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_32",
+            "carrierLengthMm": 48.07716100000002,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 48.07716100000002
+          },
+          {
+            "name": "source_trace_33",
+            "carrierLengthMm": 48.016435169979715,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 48.016435169979715
+          }
+        ]
       }
     ],
-    "measurements": [
-      {
-        "name": "DDR_ODT",
-        "connectionName": "source_trace_0",
-        "lengthMm": 47.95016100000012,
-        "padManhattanMm": 31.200131000000003,
-        "innerLayers": [
-          "inner2"
+    "fixedPowerPreserved": true,
+    "quality": {
+      "signalCount": 47,
+      "footprint": {
+        "bounds": {
+          "minX": -17.376123999999997,
+          "maxX": 5.837689691700006,
+          "minY": -36.349816,
+          "maxY": -3.45,
+          "widthMm": 23.213813691700004,
+          "heightMm": 32.899815999999994,
+          "areaMm2": 763.7301991152107
+        },
+        "allCopperBounds": {
+          "minX": -17.376123999999997,
+          "maxX": 7.401000000000001,
+          "minY": -36.349816,
+          "maxY": 7.401000000000001,
+          "widthMm": 24.777123999999997,
+          "heightMm": 43.750816,
+          "areaMm2": 1084.019393133184
+        },
+        "layers": [
+          {
+            "layer": "top",
+            "minX": -16.050115,
+            "maxX": 4.150000000000001,
+            "minY": -35.75,
+            "maxY": -3.5500000000000003,
+            "widthMm": 20.200115000000004,
+            "heightMm": 32.2,
+            "areaMm2": 650.4437030000001
+          },
+          {
+            "layer": "inner1",
+            "minX": -17.275,
+            "maxX": 5.837689691700006,
+            "minY": -35.75,
+            "maxY": -3.45,
+            "widthMm": 23.112689691700005,
+            "heightMm": 32.3,
+            "areaMm2": 746.5398770419101
+          },
+          {
+            "layer": "inner2",
+            "minX": -17.376123999999997,
+            "maxX": 5.837689691700004,
+            "minY": -36.349816,
+            "maxY": -3.649999999999996,
+            "widthMm": 23.2138136917,
+            "heightMm": 32.699816,
+            "areaMm2": 759.0874363768708
+          },
+          {
+            "layer": "bottom",
+            "minX": -15.75,
+            "maxX": 4.150000000000001,
+            "minY": -35.75,
+            "maxY": -3.8499999999999996,
+            "widthMm": 19.900000000000002,
+            "heightMm": 31.9,
+            "areaMm2": 634.8100000000001
+          }
         ],
-        "routePass": true
+        "middleRegionMaxCenterOffsetMm": 13.684920795178723,
+        "middleRegionVacancy": {
+          "layers": [
+            {
+              "layer": "inner1",
+              "envelopeAreaMm2": 486.7749865375887,
+              "unoccupiedAreaMm2": 187.02144610972383,
+              "unoccupiedFraction": 0.3842051282051282,
+              "largestFreeRectangleMm2": 12.980666307669033,
+              "gridResolutionMm": 0.1
+            },
+            {
+              "layer": "inner2",
+              "envelopeAreaMm2": 511.9370681700521,
+              "unoccupiedAreaMm2": 207.11066179959522,
+              "unoccupiedFraction": 0.40456273764258555,
+              "largestFreeRectangleMm2": 16.77009407284172,
+              "gridResolutionMm": 0.1
+            }
+          ],
+          "envelopeAreaMm2": 998.7120547076408,
+          "unoccupiedAreaMm2": 394.1321079093191
+        }
       },
-      {
-        "name": "DDR_D13",
-        "connectionName": "source_trace_1",
-        "lengthMm": 39.447863788935756,
-        "padManhattanMm": 29.600093,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D11",
-        "connectionName": "source_trace_2",
-        "lengthMm": 39.44786378893575,
-        "padManhattanMm": 30.400039,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D2",
-        "connectionName": "source_trace_3",
-        "lengthMm": 44.79538265011802,
-        "padManhattanMm": 33.600085,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D6",
-        "connectionName": "source_trace_4",
-        "lengthMm": 44.79538265011796,
-        "padManhattanMm": 36.800185,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_CSn0",
-        "connectionName": "source_trace_5",
-        "lengthMm": 47.950161000000165,
-        "padManhattanMm": 34.400076999999996,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_BA0",
-        "connectionName": "source_trace_6",
-        "lengthMm": 47.950161000000165,
-        "padManhattanMm": 32.800177,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A3",
-        "connectionName": "source_trace_7",
-        "lengthMm": 47.9501610000001,
-        "padManhattanMm": 32.800023,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A5",
-        "connectionName": "source_trace_8",
-        "lengthMm": 47.95016100000009,
-        "padManhattanMm": 31.200122999999998,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A7",
-        "connectionName": "source_trace_9",
-        "lengthMm": 47.9501610000001,
-        "padManhattanMm": 35.199969,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_RESETn_SIGNAL",
-        "connectionName": "source_trace_10",
-        "lengthMm": 57.83637042017408,
-        "padManhattanMm": 37.600069000000005,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D15",
-        "connectionName": "source_trace_11",
-        "lengthMm": 39.44786378893577,
-        "padManhattanMm": 29.600193,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D9",
-        "connectionName": "source_trace_12",
-        "lengthMm": 39.447863788935784,
-        "padManhattanMm": 29.600139,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_DQM1",
-        "connectionName": "source_trace_13",
-        "lengthMm": 39.44786378893574,
-        "padManhattanMm": 30.400239,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D0",
-        "connectionName": "source_trace_14",
-        "lengthMm": 44.79538265011799,
-        "padManhattanMm": 34.400085000000004,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_DQS0",
-        "connectionName": "source_trace_15",
-        "lengthMm": 44.79538265011789,
-        "padManhattanMm": 35.200185,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_DQSn0",
-        "connectionName": "source_trace_16",
-        "lengthMm": 44.922382650117896,
-        "padManhattanMm": 36.800285,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D4",
-        "connectionName": "source_trace_17",
-        "lengthMm": 44.795382650117965,
-        "padManhattanMm": 37.600131000000005,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_RASn",
-        "connectionName": "source_trace_18",
-        "lengthMm": 47.950161000000115,
-        "padManhattanMm": 34.400231,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_CASn",
-        "connectionName": "source_trace_19",
-        "lengthMm": 47.950161000000136,
-        "padManhattanMm": 32.000077000000005,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_WEn",
-        "connectionName": "source_trace_20",
-        "lengthMm": 47.95016100000008,
-        "padManhattanMm": 30.400177,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_BA2",
-        "connectionName": "source_trace_21",
-        "lengthMm": 47.95016100000012,
-        "padManhattanMm": 32.000277,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A0",
-        "connectionName": "source_trace_22",
-        "lengthMm": 47.95016100000016,
-        "padManhattanMm": 36.000123,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A2",
-        "connectionName": "source_trace_23",
-        "lengthMm": 47.95016100000017,
-        "padManhattanMm": 36.800222999999995,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A9",
-        "connectionName": "source_trace_24",
-        "lengthMm": 47.950161000000165,
-        "padManhattanMm": 33.600069000000005,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D12",
-        "connectionName": "source_trace_25",
-        "lengthMm": 39.83196906057594,
-        "padManhattanMm": 33.60008500000001,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_DQSn1",
-        "connectionName": "source_trace_26",
-        "lengthMm": 39.574863788935716,
-        "padManhattanMm": 33.600185,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_DQS1",
-        "connectionName": "source_trace_27",
-        "lengthMm": 39.44786378893572,
-        "padManhattanMm": 33.600031,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D8",
-        "connectionName": "source_trace_28",
-        "lengthMm": 40.082863788935704,
-        "padManhattanMm": 32.800131,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_DQM0",
-        "connectionName": "source_trace_29",
-        "lengthMm": 44.795382650117965,
-        "padManhattanMm": 36.799977,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D1",
-        "connectionName": "source_trace_30",
-        "lengthMm": 44.795382650111534,
-        "padManhattanMm": 39.20007700000001,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D7",
-        "connectionName": "source_trace_31",
-        "lengthMm": 44.795382650191215,
-        "padManhattanMm": 42.400023000000004,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_CK",
-        "connectionName": "source_trace_32",
-        "lengthMm": 48.07716100000003,
-        "padManhattanMm": 33.600123,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_CKn",
-        "connectionName": "source_trace_33",
-        "lengthMm": 48.016435169979744,
-        "padManhattanMm": 33.599969,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A10",
-        "connectionName": "source_trace_34",
-        "lengthMm": 47.95016100003427,
-        "padManhattanMm": 38.400069,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A12",
-        "connectionName": "source_trace_35",
-        "lengthMm": 47.95016100000006,
-        "padManhattanMm": 38.400015,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A1",
-        "connectionName": "source_trace_36",
-        "lengthMm": 48.23320960723517,
-        "padManhattanMm": 40.000115,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A11",
-        "connectionName": "source_trace_37",
-        "lengthMm": 47.950161000000094,
-        "padManhattanMm": 39.999961,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D14",
-        "connectionName": "source_trace_38",
-        "lengthMm": 39.44786378887629,
-        "padManhattanMm": 36.000285000000005,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D10",
-        "connectionName": "source_trace_39",
-        "lengthMm": 39.44786378893571,
-        "padManhattanMm": 34.400131,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D3",
-        "connectionName": "source_trace_40",
-        "lengthMm": 44.79538265011795,
-        "padManhattanMm": 39.200177000000004,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_D5",
-        "connectionName": "source_trace_41",
-        "lengthMm": 45.430382650187155,
-        "padManhattanMm": 42.40012300000001,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_BA1",
-        "connectionName": "source_trace_42",
-        "lengthMm": 47.950161000000044,
-        "padManhattanMm": 37.600115,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A4",
-        "connectionName": "source_trace_43",
-        "lengthMm": 47.9501610000025,
-        "padManhattanMm": 37.600215000000006,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A6",
-        "connectionName": "source_trace_44",
-        "lengthMm": 47.95016099996477,
-        "padManhattanMm": 41.600061000000004,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_A8",
-        "connectionName": "source_trace_45",
-        "lengthMm": 47.95016099997996,
-        "padManhattanMm": 41.60016100000001,
-        "innerLayers": [
-          "inner2"
-        ],
-        "routePass": true
-      },
-      {
-        "name": "DDR_CKE",
-        "connectionName": "source_trace_46",
-        "lengthMm": 47.950161000000065,
-        "padManhattanMm": 39.199915000000004,
-        "innerLayers": [
-          "inner1"
-        ],
-        "routePass": true
-      }
-    ],
-    "notVerified": [
-      "Fabricator stackup and controlled impedance",
-      "Reference-plane continuity and return-current stitching",
-      "Spacing/coupling geometry and native copper DRC",
-      "Package/via flight times and unterminated CA/CK signal integrity"
-    ],
-    "fabricationReady": false
-  },
-  "copper": {
-    "valid": true,
-    "checkedTraceCount": 208,
-    "checkedSegmentCount": 29680,
-    "checkedViaCount": 255,
-    "issues": []
+      "totalPlanarLengthMm": 2137.69840721285,
+      "maxDetourRatio": 2.1077290211599458,
+      "meanDetourRatio": 1.6432899883912413,
+      "ordinaryTurns": 531,
+      "shortJogs": 63,
+      "acuteCorners": 0,
+      "sharpCurveCorners": 0,
+      "illegalOrdinaryCorners": 0,
+      "nonOctilinearOrdinarySegments": 0,
+      "pairGaps": [
+        {
+          "connectionNames": [
+            "source_trace_15",
+            "source_trace_16"
+          ],
+          "requestedGapMm": 0.12,
+          "sharedSectionPresent": true,
+          "minEdgeGapMm": 0.11979060874800516,
+          "maxEdgeGapMm": 0.13774753309378052,
+          "maxSamplingErrorMm": 0.001,
+          "sharedCopperMm": [
+            36.85789809811873,
+            37.04015206556289
+          ],
+          "maxAllowedEdgeGapMm": 0.14012628406432667,
+          "matched": true
+        },
+        {
+          "connectionNames": [
+            "source_trace_27",
+            "source_trace_26"
+          ],
+          "requestedGapMm": 0.12,
+          "sharedSectionPresent": true,
+          "minEdgeGapMm": 0.11028787677828393,
+          "maxEdgeGapMm": 0.1377494994833096,
+          "maxSamplingErrorMm": 0.001,
+          "sharedCopperMm": [
+            30.963052246169184,
+            30.96305224616919
+          ],
+          "maxAllowedEdgeGapMm": 0.14012628406432667,
+          "matched": true
+        },
+        {
+          "connectionNames": [
+            "source_trace_32",
+            "source_trace_33"
+          ],
+          "requestedGapMm": 0.12,
+          "sharedSectionPresent": true,
+          "minEdgeGapMm": 0.11979060874800455,
+          "maxEdgeGapMm": 0.13774635336446855,
+          "maxSamplingErrorMm": 0.0009999999999999998,
+          "sharedCopperMm": [
+            39.713921443713694,
+            39.71392144371369
+          ],
+          "maxAllowedEdgeGapMm": 0.14012628406432667,
+          "matched": true
+        }
+      ],
+      "exteriorPairGaps": [
+        {
+          "connectionNames": [
+            "source_trace_15",
+            "source_trace_16"
+          ],
+          "applicable": true,
+          "matched": true,
+          "maxExteriorEdgeGapMm": 0.13774753309378052,
+          "maxSamplingErrorMm": 0.001,
+          "separatedExteriorLengthMm": 0
+        },
+        {
+          "connectionNames": [
+            "source_trace_27",
+            "source_trace_26"
+          ],
+          "applicable": true,
+          "matched": true,
+          "maxExteriorEdgeGapMm": 0.1377494994833096,
+          "maxSamplingErrorMm": 0.001,
+          "separatedExteriorLengthMm": 0
+        },
+        {
+          "connectionNames": [
+            "source_trace_32",
+            "source_trace_33"
+          ],
+          "applicable": true,
+          "matched": true,
+          "maxExteriorEdgeGapMm": 0.13774635336446855,
+          "maxSamplingErrorMm": 0.0009999999999999998,
+          "separatedExteriorLengthMm": 0
+        }
+      ],
+      "issues": []
+    }
   },
   "coupling": [
     {
@@ -579,7 +292,7 @@
       "applicable": true,
       "matched": true,
       "maxExteriorEdgeGapMm": 0.13774753309378052,
-      "maxSamplingErrorMm": 0.0009998828765407518,
+      "maxSamplingErrorMm": 0.001,
       "separatedExteriorLengthMm": 0
     },
     {
@@ -605,6 +318,321 @@
       "separatedExteriorLengthMm": 0
     }
   ],
-  "pass": false,
-  "requiresBoardPowerIntegration": true
+  "strictLengths": [
+    {
+      "busId": "DDR_BYTE0",
+      "minLengthMm": 0,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 42.40012300000001,
+      "withinLengthLimit": false,
+      "toleranceMm": 0.635,
+      "skewMm": 0.6350000000756211,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_14",
+          "carrierLengthMm": 44.79538265011799,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011799
+        },
+        {
+          "name": "source_trace_30",
+          "carrierLengthMm": 44.795382650111534,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650111534
+        },
+        {
+          "name": "source_trace_3",
+          "carrierLengthMm": 44.79538265011802,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011802
+        },
+        {
+          "name": "source_trace_40",
+          "carrierLengthMm": 44.79538265011795,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011795
+        },
+        {
+          "name": "source_trace_17",
+          "carrierLengthMm": 44.795382650117965,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650117965
+        },
+        {
+          "name": "source_trace_41",
+          "carrierLengthMm": 45.430382650187155,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 45.430382650187155
+        },
+        {
+          "name": "source_trace_4",
+          "carrierLengthMm": 44.79538265011796,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79538265011796
+        },
+        {
+          "name": "source_trace_31",
+          "carrierLengthMm": 44.795382650191215,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650191215
+        },
+        {
+          "name": "source_trace_29",
+          "carrierLengthMm": 44.795382650117965,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.795382650117965
+        },
+        {
+          "name": "source_trace_15",
+          "carrierLengthMm": 44.79676712103152,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.79676712103152
+        },
+        {
+          "name": "source_trace_16",
+          "carrierLengthMm": 44.919032093373616,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 44.919032093373616
+        }
+      ]
+    },
+    {
+      "busId": "DDR_BYTE1",
+      "minLengthMm": 0,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 36.000285000000005,
+      "withinLengthLimit": false,
+      "toleranceMm": 0.635,
+      "skewMm": 0.6350000000594136,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_28",
+          "carrierLengthMm": 40.082863788935704,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 40.082863788935704
+        },
+        {
+          "name": "source_trace_12",
+          "carrierLengthMm": 39.447863788935784,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.447863788935784
+        },
+        {
+          "name": "source_trace_39",
+          "carrierLengthMm": 39.44786378893571,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893571
+        },
+        {
+          "name": "source_trace_2",
+          "carrierLengthMm": 39.44786378893575,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893575
+        },
+        {
+          "name": "source_trace_25",
+          "carrierLengthMm": 39.83196906057594,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.83196906057594
+        },
+        {
+          "name": "source_trace_1",
+          "carrierLengthMm": 39.447863788935756,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.447863788935756
+        },
+        {
+          "name": "source_trace_38",
+          "carrierLengthMm": 39.44786378887629,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378887629
+        },
+        {
+          "name": "source_trace_11",
+          "carrierLengthMm": 39.44786378893577,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893577
+        },
+        {
+          "name": "source_trace_13",
+          "carrierLengthMm": 39.44786378893574,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893574
+        },
+        {
+          "name": "source_trace_27",
+          "carrierLengthMm": 39.44786378893572,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.44786378893572
+        },
+        {
+          "name": "source_trace_26",
+          "carrierLengthMm": 39.574863788935716,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 39.574863788935716
+        }
+      ]
+    },
+    {
+      "busId": "DDR_ADDR_CTRL_CK",
+      "minLengthMm": 47.95016100000001,
+      "aboveMinimumLength": true,
+      "maxLengthMm": 50.49016100000001,
+      "withinLengthLimit": true,
+      "toleranceMm": 0.635,
+      "skewMm": 0.2830486072703948,
+      "matched": true,
+      "lengths": [
+        {
+          "name": "source_trace_0",
+          "carrierLengthMm": 47.950161000000065,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000065
+        },
+        {
+          "name": "source_trace_5",
+          "carrierLengthMm": 47.950161000000165,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000165
+        },
+        {
+          "name": "source_trace_6",
+          "carrierLengthMm": 47.95016100000022,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000022
+        },
+        {
+          "name": "source_trace_7",
+          "carrierLengthMm": 47.95016100000007,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000007
+        },
+        {
+          "name": "source_trace_8",
+          "carrierLengthMm": 47.95016100000009,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000009
+        },
+        {
+          "name": "source_trace_9",
+          "carrierLengthMm": 47.950161000000115,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000115
+        },
+        {
+          "name": "source_trace_18",
+          "carrierLengthMm": 47.950161000000115,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000115
+        },
+        {
+          "name": "source_trace_19",
+          "carrierLengthMm": 47.95016100000012,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000012
+        },
+        {
+          "name": "source_trace_20",
+          "carrierLengthMm": 47.95016100000019,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000019
+        },
+        {
+          "name": "source_trace_21",
+          "carrierLengthMm": 47.950161000000136,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000136
+        },
+        {
+          "name": "source_trace_22",
+          "carrierLengthMm": 47.95016100000013,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000013
+        },
+        {
+          "name": "source_trace_23",
+          "carrierLengthMm": 47.95016100000026,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000026
+        },
+        {
+          "name": "source_trace_24",
+          "carrierLengthMm": 47.950161000000136,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000136
+        },
+        {
+          "name": "source_trace_32",
+          "carrierLengthMm": 48.07716100000002,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 48.07716100000002
+        },
+        {
+          "name": "source_trace_33",
+          "carrierLengthMm": 48.016435169979715,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 48.016435169979715
+        },
+        {
+          "name": "source_trace_34",
+          "carrierLengthMm": 47.95016100003433,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100003433
+        },
+        {
+          "name": "source_trace_35",
+          "carrierLengthMm": 47.95016100000004,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000004
+        },
+        {
+          "name": "source_trace_36",
+          "carrierLengthMm": 48.23320960723517,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 48.23320960723517
+        },
+        {
+          "name": "source_trace_37",
+          "carrierLengthMm": 47.95016100000011,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016100000011
+        },
+        {
+          "name": "source_trace_42",
+          "carrierLengthMm": 47.950161000000044,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000044
+        },
+        {
+          "name": "source_trace_43",
+          "carrierLengthMm": 47.9501610000025,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.9501610000025
+        },
+        {
+          "name": "source_trace_44",
+          "carrierLengthMm": 47.95016099996477,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016099996477
+        },
+        {
+          "name": "source_trace_45",
+          "carrierLengthMm": 47.95016099997994,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.95016099997994
+        },
+        {
+          "name": "source_trace_46",
+          "carrierLengthMm": 47.950161000000094,
+          "fixedLengthMm": 0,
+          "totalLengthMm": 47.950161000000094
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Controlled impedance, stackup, reference continuity and electrical SI are separate checks."
+  ]
 }

@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { terminalViaCopperIsClear } from "../lib/terminal-via-clearance"
+import {
+  terminalViaCopperIsClear,
+  createTerminalViaClearanceChecker,
+} from "../lib/terminal-via-clearance"
 import type { SimpleRouteJson, Trace } from "../lib"
 
 const trace: Trace = {
@@ -57,5 +60,46 @@ test("independent tuning cannot cut back through its own via land", () => {
       { x: 0.3, y: 0.3 },
       { x: -1, y: 1 },
     ]),
+  ).toBe(true)
+})
+
+test("a newly generated escape cannot grandfather a bend inside its own via land", () => {
+  const path = [
+    { x: 0, y: 0 },
+    { x: 0.049, y: 0.049 },
+    { x: 0.1193, y: 0.049 },
+    { x: 0.13248, y: 0.0492 },
+    { x: 0.14566, y: 0.0498 },
+    { x: 0.15884, y: 0.0508 },
+    { x: 0.17202, y: 0.0522 },
+    { x: 0.1852, y: 0.0539 },
+    { x: 1, y: 0.1 },
+  ]
+  const generated = {
+    ...trace,
+    route: path.map((p) => ({
+      ...p,
+      route_type: "wire" as const,
+      layer: "inner1",
+      width: 0.1,
+    })),
+  }
+  expect(
+    createTerminalViaClearanceChecker(input, generated)(generated.route),
+  ).toBe(true)
+  expect(
+    createTerminalViaClearanceChecker(input, generated, {
+      preserveExistingApproach: false,
+    })(generated.route),
+  ).toBe(false)
+  const straightExit = [
+    { x: 0, y: 0 },
+    { x: 0.3, y: 0 },
+    { x: 0.5, y: 0.2 },
+  ]
+  expect(
+    createTerminalViaClearanceChecker(input, generated, {
+      preserveExistingApproach: false,
+    })(straightExit),
   ).toBe(true)
 })

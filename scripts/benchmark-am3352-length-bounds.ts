@@ -1,3 +1,4 @@
+import { checkSignalSelfShorts } from "./check-signal-self-shorts"
 import { writeFile } from "node:fs/promises"
 import { BusLanesPipelineSolver } from "../lib"
 import { loadAm3352Sample } from "./am3352-samples"
@@ -149,8 +150,12 @@ const fixedPowerPreserved =
   solver.solved &&
   JSON.stringify(solver.getOutput().traces?.slice(0, input.traces!.length)) ===
     JSON.stringify(input.traces)
+const selfShorts = solver.solved
+  ? checkSignalSelfShorts(input, solver.traces)
+  : []
 const validation = {
   valid:
+    selfShorts.length === 0 &&
     complete &&
     routing &&
     !!copper?.valid &&
@@ -159,6 +164,7 @@ const validation = {
     fixedPowerPreserved &&
     quality?.issues.length === 0,
   complete,
+  selfShorts,
   routing,
   copper,
   pairs,
