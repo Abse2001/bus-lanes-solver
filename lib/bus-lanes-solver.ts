@@ -514,7 +514,11 @@ export class BusLanesSolver extends BaseSolver {
         }
         // Fold the banks into the unused center first. Ordered, staggered
         // entries preserve lane topology without pushing every run outward.
-        for (const multiplier of [5, 6, 8, 12]) {
+        // Dense shared layers may need wider interior banks for all timing
+        // groups, including a long address/control bus with its own clock.
+        for (const multiplier of (input.buses?.length ?? 0) > 1
+          ? [5, 6, 8, 12, 16, 20]
+          : [5, 6, 8, 12]) {
           const spread = spreadCoupledTuningLanes(
             input,
             original,

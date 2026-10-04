@@ -16,6 +16,7 @@ test("the AM3352 samples translate only RAM and retain every real power dogbone"
     "inner-layers-right",
     "inner-layers-left",
     "inner-layers-above",
+    "inner-layers-complete-ca",
   ])
   const control = await loadAm3352Sample("control")
   const ramComponentId = control.metadata.powerPadManifest.find(

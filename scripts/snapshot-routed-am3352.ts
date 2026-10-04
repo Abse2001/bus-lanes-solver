@@ -216,7 +216,9 @@ export function routedGraphics(
     `${metadata.name} · AM3352 (0, 0) · RAM (${metadata.placement.ram.x}, ${metadata.placement.ram.y}) mm`
   const status =
     labels?.status ?? "47/47 routed · 161 fixed power dogbones · DRC passed"
-  const skew = labels?.skew ?? "Byte skew ≤0.635 mm · pair skew ≤0.127 mm"
+  const skew =
+    labels?.skew ??
+    `${solver.input.buses?.length ?? 0} bus skews ≤0.635 mm · pair skew ≤0.127 mm`
   const fitFont = (text: string, maximum: number) =>
     Math.min(maximum, totalWidth / (text.length * 1.05))
   graphics.texts!.push({
