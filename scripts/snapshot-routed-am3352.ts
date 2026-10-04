@@ -91,7 +91,10 @@ const carrierLayer = (trace: Trace) => {
 
 /** Draw native wire and via primitives, never ratsnest or search geometry.
  * The signal-layer panels share one physical scale and viewport per board. */
-function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
+export function routedGraphics(
+  { solver, metadata }: Am3352SnapshotCandidate,
+  labels?: { title: string; status: string; skew: string },
+) {
   const allTraces = [...metadata.fixedFanoutTraces, ...solver.traces]
   const points = [
     ...allTraces.flatMap((t) => t.route),
@@ -208,9 +211,12 @@ function routedGraphics({ solver, metadata }: Am3352SnapshotCandidate) {
     })
   }
   const totalWidth = signalLayers.length * width + (signalLayers.length - 1) * 3
-  const title = `${metadata.name} · AM3352 (0, 0) · RAM (${metadata.placement.ram.x}, ${metadata.placement.ram.y}) mm`
-  const status = "47/47 routed · 161 fixed power dogbones · DRC passed"
-  const skew = "Byte skew ≤0.635 mm · pair skew ≤0.127 mm"
+  const title =
+    labels?.title ??
+    `${metadata.name} · AM3352 (0, 0) · RAM (${metadata.placement.ram.x}, ${metadata.placement.ram.y}) mm`
+  const status =
+    labels?.status ?? "47/47 routed · 161 fixed power dogbones · DRC passed"
+  const skew = labels?.skew ?? "Byte skew ≤0.635 mm · pair skew ≤0.127 mm"
   const fitFont = (text: string, maximum: number) =>
     Math.min(maximum, totalWidth / (text.length * 1.05))
   graphics.texts!.push({
@@ -311,7 +317,20 @@ if (import.meta.main) {
     }
     if (am3352Hash(input) !== before)
       throw Error(`${placement.name}: routing mutated its original input`)
-    candidates.push({ solver, metadata })
+    // Retain validated route data, not each search's caches, while solving the
+    // remaining samples. Otherwise the gallery accumulates eight solver heaps.
+    const output = solver.getOutput()
+    candidates.push({
+      solver: {
+        solved: solver.solved,
+        failed: solver.failed,
+        error: solver.error,
+        input: solver.input,
+        traces: solver.traces,
+        getOutput: () => output,
+      },
+      metadata,
+    })
   }
   await exportAm3352RoutedSnapshots(candidates, directory)
 }

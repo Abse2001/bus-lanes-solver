@@ -1,3 +1,4 @@
+import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
 import { fixedRouteLength } from "./route-lengths"
 import { distance, length, simplify, segmentDistance } from "./geometry"
 import { VectorScene, fixedCopper, routeCopper } from "./vector-scene"
@@ -15,6 +16,11 @@ export function tuneLengths(
     const connection = input.connections.find(
       (c) => c.name === t.connection_name,
     )!
+    // Keep the existing coupled-pair correction path unchanged. Independent
+    // lane tuning must not spend additional copper length in its via land.
+    const terminalViaCopperIsClear = t.coupledSection
+      ? (_path: Point[]) => true
+      : createTerminalViaClearanceChecker(input, t)
     const width = (t.route[0] as Wire).width
     const fixedLength = fixedRouteLength(input, connection.name)
     const delta = targets.get(connection.name)! - length(t.route) - fixedLength
@@ -97,7 +103,11 @@ export function tuneLengths(
                 ) > 1e-6
               )
                 continue
-              if (!tuningPathIsSelfClear(next, returnSpacing)) continue
+              if (
+                !terminalViaCopperIsClear(next) ||
+                !tuningPathIsSelfClear(next, returnSpacing)
+              )
+                continue
               yield {
                 ...t,
                 route: next.map((p) => ({
