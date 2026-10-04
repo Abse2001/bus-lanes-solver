@@ -20,6 +20,7 @@ const placements = [
   { sample: "inner-layers-right", ram: { x: 27, y: 0 } },
   { sample: "inner-layers-left", ram: { x: -27, y: 0 } },
   { sample: "inner-layers-above", ram: { x: 0, y: 27 } },
+  { sample: "inner-layers-complete-ca", ram: { x: 0, y: -27 } },
 ]
 
 interface Report {
@@ -54,6 +55,7 @@ async function invokeBenchmark(options: {
       for (const file of [
         "benchmark.ts",
         "am3352-samples.ts",
+        "am3352-ca-bus.ts",
         "validate-am3352-sample.ts",
         "measure-am3352-routing-quality.ts",
         "measure-routing-footprint.ts",
@@ -128,7 +130,7 @@ async function invokeBenchmark(options: {
 }
 
 function expectManifest(reports: Report[]) {
-  expect(reports).toHaveLength(8)
+  expect(reports).toHaveLength(9)
   expect(reports.map(({ sample, ram }) => ({ sample, ram }))).toEqual(
     placements,
   )
@@ -145,11 +147,11 @@ function expectManifest(reports: Report[]) {
 }
 
 for (const strict of [false, true])
-  test(`${strict ? "strict" : "measurement"} benchmark retains all eight timed-out AM3352 placements`, async () => {
+  test(`${strict ? "strict" : "measurement"} benchmark retains all nine timed-out AM3352 placements`, async () => {
     const result = await invokeBenchmark({ strict })
     expect(result.exitCode).toBe(strict ? 1 : 0)
     expectManifest(result.reports)
-    expect(result.stdout).toContain("AM3352 placements completed: 0/8")
+    expect(result.stdout).toContain("AM3352 placements completed: 0/9")
     const powerCount = result.reports[0].fixedPowerDogbones
     expect(powerCount).toBeGreaterThan(0)
     for (const report of result.reports) {

@@ -1,3 +1,4 @@
+import { withAm3352CaBus } from "./am3352-ca-bus"
 import { validateRoutedCopperDrc } from "@tscircuit/fanout-solver"
 import type { SimpleRouteJson, Trace, Terminal, Wire } from "../lib"
 import { distance } from "../lib/geometry"
@@ -65,7 +66,8 @@ export async function validateAm3352Sample(
     input.outline?.length ||
     input.connections.length !== 47 ||
     input.obstacles.length !== 420 ||
-    input.buses?.length !== 2 ||
+    input.buses?.length !==
+      (metadata.name === "inner-layers-complete-ca" ? 3 : 2) ||
     input.differentialPairs?.length !== 3 ||
     !metadata.fixedFanoutTraces.length
   )
@@ -99,7 +101,9 @@ export async function validateAm3352Sample(
     am3352Hash(metadata.componentTranslations.ram) !== am3352Hash(placement.ram)
   )
     fail("sample is not one of the declared component placements")
-  const native = await loadAm3352NativeInput()
+  let native = await loadAm3352NativeInput()
+  if (metadata.name === "inner-layers-complete-ca")
+    native = withAm3352CaBus(native, metadata.signalNames)
   if ("allowedLayers" in placement)
     native.allowedLayers = [...placement.allowedLayers]
   const rules = ({

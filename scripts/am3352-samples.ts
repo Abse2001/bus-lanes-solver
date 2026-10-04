@@ -1,3 +1,4 @@
+import { withAm3352CaBus } from "./am3352-ca-bus"
 import { createHash } from "node:crypto"
 import { dirname, resolve } from "node:path"
 import type {
@@ -15,6 +16,7 @@ export type Am3352SampleName =
   | "inner-layers-right"
   | "inner-layers-left"
   | "inner-layers-above"
+  | "inner-layers-complete-ca"
 export type Am3352Component = "soc" | "ram"
 export const am3352SamplePlacements = [
   { name: "control", ram: { x: 0, y: -27 } },
@@ -39,6 +41,11 @@ export const am3352SamplePlacements = [
   {
     name: "inner-layers-above",
     ram: { x: 0, y: 27 },
+    allowedLayers: ["inner1", "inner2"],
+  },
+  {
+    name: "inner-layers-complete-ca",
+    ram: { x: 0, y: -27 },
     allowedLayers: ["inner1", "inner2"],
   },
 ] as const
@@ -431,5 +438,11 @@ export async function loadAm3352Sample(name: Am3352SampleName) {
     powerPadManifest: translatedPads,
     provenance,
   }
-  return { input, metadata }
+  return {
+    input:
+      name === "inner-layers-complete-ca"
+        ? withAm3352CaBus(input, metadata.signalNames)
+        : input,
+    metadata,
+  }
 }

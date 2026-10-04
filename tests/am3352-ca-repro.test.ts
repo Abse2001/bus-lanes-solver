@@ -53,3 +53,24 @@ test("an unfinished CA reproduction cannot invoke its routed-artifact exporter",
   expect(report.passed).toBe(false)
   expect(exported).toBe(false)
 })
+
+test("declared complete-CA benchmark preserves all three exact timing buses", async () => {
+  const { validateAm3352Sample } = await import(
+    "../scripts/validate-am3352-sample"
+  )
+  const baseline = await loadAm3352Sample("inner-layers")
+  const sample = await loadAm3352Sample("inner-layers-complete-ca")
+  expect(sample.input).toEqual(
+    withAm3352CaBus(baseline.input, baseline.metadata.signalNames),
+  )
+  expect(
+    (await validateAm3352Sample(sample.input, sample.metadata)).valid,
+  ).toBe(true)
+  for (const change of ["missing", "skew", "membership"] as const) {
+    const input = structuredClone(sample.input)
+    if (change === "missing") input.buses!.pop()
+    if (change === "skew") input.buses![2].maxLengthSkew = 10
+    if (change === "membership") input.buses![2].connectionNames.pop()
+    await expect(validateAm3352Sample(input, sample.metadata)).rejects.toThrow()
+  }
+})

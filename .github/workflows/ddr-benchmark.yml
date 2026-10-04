@@ -10,16 +10,11 @@ jobs:
         with:
           bun-version: 1.3.14
       - run: bun install
-      # Require all eight powered AM3352 samples to complete and pass native
+      # Require all nine powered AM3352 samples to complete and pass native
       # DRC plus full pad-to-pad length matching.
-      - run: ./benchmark.sh --timeout-seconds 120 --require-all-solved
-      # The full CA/clock timing bus must pass the same native audits plus
-      # its own 24-member pad-to-pad skew check. Routing alone is insufficient.
-      - run: bun scripts/repro-am3352-ca-bus.ts --timeout-seconds 180 --output am3352-complete-ca-results.json
+      - run: ./benchmark.sh --timeout-seconds 180 --require-all-solved
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: am3352-placement-benchmark-results
-          path: |
-            benchmark-results.json
-            am3352-complete-ca-results.json
+          path: benchmark-results.json

@@ -15,7 +15,7 @@ const option = (name: string) => {
 }
 const workerName = option("--worker")
 const outputPath = option("--output") ?? "benchmark-results.json"
-const timeoutSeconds = Number(option("--timeout-seconds") ?? 60)
+const timeoutSeconds = Number(option("--timeout-seconds") ?? 180)
 if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
   throw Error("--timeout-seconds must be a positive finite number")
 for (let i = 0; i < args.length; i++) {
