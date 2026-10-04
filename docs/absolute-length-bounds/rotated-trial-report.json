@@ -194,63 +194,42 @@
       "nonOctilinearOrdinarySegments": 0,
       "pairGaps": [
         {
-          "connectionNames": [
-            "source_trace_15",
-            "source_trace_16"
-          ],
+          "connectionNames": ["source_trace_15", "source_trace_16"],
           "requestedGapMm": 0.12,
           "sharedSectionPresent": true,
           "minEdgeGapMm": 0.11979060874800516,
           "maxEdgeGapMm": 0.13774753309378052,
           "maxSamplingErrorMm": 0.001,
-          "sharedCopperMm": [
-            36.85789809811873,
-            37.04015206556289
-          ],
+          "sharedCopperMm": [36.85789809811873, 37.04015206556289],
           "maxAllowedEdgeGapMm": 0.14012628406432667,
           "matched": true
         },
         {
-          "connectionNames": [
-            "source_trace_27",
-            "source_trace_26"
-          ],
+          "connectionNames": ["source_trace_27", "source_trace_26"],
           "requestedGapMm": 0.12,
           "sharedSectionPresent": true,
           "minEdgeGapMm": 0.11028787677828393,
           "maxEdgeGapMm": 0.1377494994833096,
           "maxSamplingErrorMm": 0.001,
-          "sharedCopperMm": [
-            30.963052246169184,
-            30.96305224616919
-          ],
+          "sharedCopperMm": [30.963052246169184, 30.96305224616919],
           "maxAllowedEdgeGapMm": 0.14012628406432667,
           "matched": true
         },
         {
-          "connectionNames": [
-            "source_trace_32",
-            "source_trace_33"
-          ],
+          "connectionNames": ["source_trace_32", "source_trace_33"],
           "requestedGapMm": 0.12,
           "sharedSectionPresent": true,
           "minEdgeGapMm": 0.11979060874800455,
           "maxEdgeGapMm": 0.13774635336446855,
           "maxSamplingErrorMm": 0.0009999999999999998,
-          "sharedCopperMm": [
-            39.713921443713694,
-            39.71392144371369
-          ],
+          "sharedCopperMm": [39.713921443713694, 39.71392144371369],
           "maxAllowedEdgeGapMm": 0.14012628406432667,
           "matched": true
         }
       ],
       "exteriorPairGaps": [
         {
-          "connectionNames": [
-            "source_trace_15",
-            "source_trace_16"
-          ],
+          "connectionNames": ["source_trace_15", "source_trace_16"],
           "applicable": true,
           "matched": true,
           "maxExteriorEdgeGapMm": 0.13774753309378052,
@@ -258,10 +237,7 @@
           "separatedExteriorLengthMm": 0
         },
         {
-          "connectionNames": [
-            "source_trace_27",
-            "source_trace_26"
-          ],
+          "connectionNames": ["source_trace_27", "source_trace_26"],
           "applicable": true,
           "matched": true,
           "maxExteriorEdgeGapMm": 0.1377494994833096,
@@ -269,10 +245,7 @@
           "separatedExteriorLengthMm": 0
         },
         {
-          "connectionNames": [
-            "source_trace_32",
-            "source_trace_33"
-          ],
+          "connectionNames": ["source_trace_32", "source_trace_33"],
           "applicable": true,
           "matched": true,
           "maxExteriorEdgeGapMm": 0.13774635336446855,
@@ -285,10 +258,7 @@
   },
   "coupling": [
     {
-      "connectionNames": [
-        "source_trace_15",
-        "source_trace_16"
-      ],
+      "connectionNames": ["source_trace_15", "source_trace_16"],
       "applicable": true,
       "matched": true,
       "maxExteriorEdgeGapMm": 0.13774753309378052,
@@ -296,10 +266,7 @@
       "separatedExteriorLengthMm": 0
     },
     {
-      "connectionNames": [
-        "source_trace_27",
-        "source_trace_26"
-      ],
+      "connectionNames": ["source_trace_27", "source_trace_26"],
       "applicable": true,
       "matched": true,
       "maxExteriorEdgeGapMm": 0.1377494994833096,
@@ -307,10 +274,7 @@
       "separatedExteriorLengthMm": 0
     },
     {
-      "connectionNames": [
-        "source_trace_32",
-        "source_trace_33"
-      ],
+      "connectionNames": ["source_trace_32", "source_trace_33"],
       "applicable": true,
       "matched": true,
       "maxExteriorEdgeGapMm": 0.13774635336446855,

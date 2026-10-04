@@ -387,63 +387,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.1198120668452025,
             "maxEdgeGapMm": 0.137749499483309,
             "maxSamplingErrorMm": 0.0009999999999999998,
-            "sharedCopperMm": [
-              28.99196340802553,
-              29.356471342913842
-            ],
+            "sharedCopperMm": [28.99196340802553, 29.356471342913842],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520244,
             "maxEdgeGapMm": 0.13774759192858205,
             "maxSamplingErrorMm": 0.000999999999999999,
-            "sharedCopperMm": [
-              27.737455221221133,
-              27.55754500377697
-            ],
+            "sharedCopperMm": [27.737455221221133, 27.55754500377697],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999687,
             "maxEdgeGapMm": 0.13774550089621196,
             "maxSamplingErrorMm": 0.0009999518465479817,
-            "sharedCopperMm": [
-              14.733114233214458,
-              14.550860265770297
-            ],
+            "sharedCopperMm": [14.733114233214458, 14.550860265770297],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.137749499483309,
@@ -451,10 +430,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774759192858205,
@@ -462,10 +438,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774542516830407,
@@ -871,63 +844,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520256,
             "maxEdgeGapMm": 0.1377467448372296,
             "maxSamplingErrorMm": 0.000999922958397535,
-            "sharedCopperMm": [
-              28.572124351393835,
-              28.936632286282148
-            ],
+            "sharedCopperMm": [28.572124351393835, 28.936632286282148],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.119790608748007,
             "maxEdgeGapMm": 0.13774642407437426,
             "maxSamplingErrorMm": 0.001,
-            "sharedCopperMm": [
-              37.07657205259913,
-              36.71206411771081
-            ],
+            "sharedCopperMm": [37.07657205259913, 36.71206411771081],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999904,
             "maxEdgeGapMm": 0.1377465853954996,
             "maxSamplingErrorMm": 0.0009999871003939377,
-            "sharedCopperMm": [
-              30.063175580374356,
-              29.880921612930194
-            ],
+            "sharedCopperMm": [30.063175580374356, 29.880921612930194],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377467448372296,
@@ -935,10 +887,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774640520193043,
@@ -946,10 +895,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13775071632532215,
@@ -1355,63 +1301,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11994401434068057,
             "maxEdgeGapMm": 0.13775255617978255,
             "maxSamplingErrorMm": 0.0009999954904890305,
-            "sharedCopperMm": [
-              38.30700724341162,
-              36.993552322767755
-            ],
+            "sharedCopperMm": [38.30700724341162, 36.993552322767755],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999654,
             "maxEdgeGapMm": 0.13774631975933582,
             "maxSamplingErrorMm": 0.001,
-            "sharedCopperMm": [
-              45.94867350668035,
-              47.18712842732421
-            ],
+            "sharedCopperMm": [45.94867350668035, 47.18712842732421],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999654,
             "maxEdgeGapMm": 0.13774578744764432,
             "maxSamplingErrorMm": 0.0009999978339065307,
-            "sharedCopperMm": [
-              21.395723920333744,
-              21.03121598544542
-            ],
+            "sharedCopperMm": [21.395723920333744, 21.03121598544542],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13775255617978255,
@@ -1419,10 +1344,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774675600044106,
@@ -1430,10 +1352,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377476885484702,
@@ -1839,63 +1758,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11979060874800378,
             "maxEdgeGapMm": 0.13774884330447518,
             "maxSamplingErrorMm": 0.0009999797738577034,
-            "sharedCopperMm": [
-              29.086034315171457,
-              28.951343839589317
-            ],
+            "sharedCopperMm": [29.086034315171457, 28.951343839589317],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11990112695668835,
             "maxEdgeGapMm": 0.1377475330937794,
             "maxSamplingErrorMm": 0.0009999081448705343,
-            "sharedCopperMm": [
-              38.44585875166947,
-              38.08135081678115
-            ],
+            "sharedCopperMm": [38.44585875166947, 38.08135081678115],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999654,
             "maxEdgeGapMm": 0.13774658539549878,
             "maxSamplingErrorMm": 0.00099999282722334,
-            "sharedCopperMm": [
-              43.867941596043195,
-              44.59695746581985
-            ],
+            "sharedCopperMm": [43.867941596043195, 44.59695746581985],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774789892821854,
@@ -1903,10 +1801,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377475330937794,
@@ -1914,10 +1809,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13775071632532215,
@@ -1945,10 +1837,7 @@
       "x": 0,
       "y": -27
     },
-    "allowedLayers": [
-      "inner1",
-      "inner2"
-    ],
+    "allowedLayers": ["inner1", "inner2"],
     "carrierLayerCounts": {
       "inner2": 23,
       "inner1": 24
@@ -2317,63 +2206,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.1198120668452025,
             "maxEdgeGapMm": 0.137749499483309,
             "maxSamplingErrorMm": 0.0009999999999999998,
-            "sharedCopperMm": [
-              28.99196340802553,
-              29.356471342913842
-            ],
+            "sharedCopperMm": [28.99196340802553, 29.356471342913842],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520244,
             "maxEdgeGapMm": 0.13774759192858205,
             "maxSamplingErrorMm": 0.000999999999999999,
-            "sharedCopperMm": [
-              27.737455221221133,
-              27.55754500377697
-            ],
+            "sharedCopperMm": [27.737455221221133, 27.55754500377697],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999715,
             "maxEdgeGapMm": 0.13774661959331969,
             "maxSamplingErrorMm": 0.0009999855567224625,
-            "sharedCopperMm": [
-              23.670510856413113,
-              24.035018791301436
-            ],
+            "sharedCopperMm": [23.670510856413113, 24.035018791301436],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.137749499483309,
@@ -2381,10 +2249,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774759192858205,
@@ -2392,10 +2257,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774661959331969,
@@ -2423,10 +2285,7 @@
       "x": 27,
       "y": 0
     },
-    "allowedLayers": [
-      "inner1",
-      "inner2"
-    ],
+    "allowedLayers": ["inner1", "inner2"],
     "carrierLayerCounts": {
       "inner2": 25,
       "inner1": 22
@@ -2795,63 +2654,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520122,
             "maxEdgeGapMm": 0.13774949948330983,
             "maxSamplingErrorMm": 0.0009999999999999994,
-            "sharedCopperMm": [
-              35.712213250217566,
-              35.894467217661756
-            ],
+            "sharedCopperMm": [35.712213250217566, 35.894467217661756],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11028782883158904,
             "maxEdgeGapMm": 0.13774696981476736,
             "maxSamplingErrorMm": 0.000999741352893242,
-            "sharedCopperMm": [
-              29.62210171931617,
-              29.804355686760328
-            ],
+            "sharedCopperMm": [29.62210171931617, 29.804355686760328],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999654,
             "maxEdgeGapMm": 0.13774694054486897,
             "maxSamplingErrorMm": 0.0009999847892655934,
-            "sharedCopperMm": [
-              33.0043285351433,
-              32.45756663281082
-            ],
+            "sharedCopperMm": [33.0043285351433, 32.45756663281082],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774949948330983,
@@ -2859,10 +2697,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774615241299404,
@@ -2870,10 +2705,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774694054486897,
@@ -2901,10 +2733,7 @@
       "x": -27,
       "y": 0
     },
-    "allowedLayers": [
-      "inner1",
-      "inner2"
-    ],
+    "allowedLayers": ["inner1", "inner2"],
     "carrierLayerCounts": {
       "inner1": 28,
       "inner2": 19
@@ -3273,63 +3102,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520122,
             "maxEdgeGapMm": 0.13774631975933516,
             "maxSamplingErrorMm": 0.001,
-            "sharedCopperMm": [
-              54.04187202629461,
-              53.1306021890738
-            ],
+            "sharedCopperMm": [54.04187202629461, 53.1306021890738],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.1057678203609269,
             "maxEdgeGapMm": 0.13774631975933582,
             "maxSamplingErrorMm": 0.0009999999999999926,
-            "sharedCopperMm": [
-              47.77583740732671,
-              47.22907550499421
-            ],
+            "sharedCopperMm": [47.77583740732671, 47.22907550499421],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11999999999999704,
             "maxEdgeGapMm": 0.13776188133133993,
             "maxSamplingErrorMm": 0.0009999975682575353,
-            "sharedCopperMm": [
-              25.223326889130128,
-              24.858818954241812
-            ],
+            "sharedCopperMm": [25.223326889130128, 24.858818954241812],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774645821464815,
@@ -3337,10 +3145,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774684119078773,
@@ -3348,10 +3153,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13776188133133993,
@@ -3379,10 +3181,7 @@
       "x": 0,
       "y": 27
     },
-    "allowedLayers": [
-      "inner1",
-      "inner2"
-    ],
+    "allowedLayers": ["inner1", "inner2"],
     "carrierLayerCounts": {
       "inner1": 21,
       "inner2": 26
@@ -3751,63 +3550,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520239,
             "maxEdgeGapMm": 0.13774884330448262,
             "maxSamplingErrorMm": 0.0009998669591283421,
-            "sharedCopperMm": [
-              47.00024787754553,
-              46.865557401962505
-            ],
+            "sharedCopperMm": [47.00024787754553, 46.865557401962505],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11283894920607317,
             "maxEdgeGapMm": 0.13774631975933543,
             "maxSamplingErrorMm": 0.0009997285684677072,
-            "sharedCopperMm": [
-              46.74294788949936,
-              46.74294788949939
-            ],
+            "sharedCopperMm": [46.74294788949936, 46.74294788949939],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.10626766261895186,
             "maxEdgeGapMm": 0.13774859040415244,
             "maxSamplingErrorMm": 0.0009999999999999788,
-            "sharedCopperMm": [
-              37.86815500821436,
-              38.41491691054684
-            ],
+            "sharedCopperMm": [37.86815500821436, 38.41491691054684],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377464052019305,
@@ -3815,10 +3593,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774631975933543,
@@ -3826,10 +3601,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13774859040415244,
@@ -3857,10 +3629,7 @@
       "x": 0,
       "y": -27
     },
-    "allowedLayers": [
-      "inner1",
-      "inner2"
-    ],
+    "allowedLayers": ["inner1", "inner2"],
     "carrierLayerCounts": {
       "inner2": 28,
       "inner1": 19
@@ -4385,63 +4154,42 @@
         "nonOctilinearOrdinarySegments": 0,
         "pairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11981206684520072,
             "maxEdgeGapMm": 0.13774884330447296,
             "maxSamplingErrorMm": 0.0009999147920927065,
-            "sharedCopperMm": [
-              50.19846047930386,
-              50.927476349080486
-            ],
+            "sharedCopperMm": [50.19846047930386, 50.927476349080486],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11979060874800594,
             "maxEdgeGapMm": 0.1377463197593352,
             "maxSamplingErrorMm": 0.000999867654843833,
-            "sharedCopperMm": [
-              49.49634271688224,
-              49.49634271688225
-            ],
+            "sharedCopperMm": [49.49634271688224, 49.49634271688225],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "requestedGapMm": 0.12,
             "sharedSectionPresent": true,
             "minEdgeGapMm": 0.11979060874800389,
             "maxEdgeGapMm": 0.13774696981476675,
             "maxSamplingErrorMm": 0.0009999999999999994,
-            "sharedCopperMm": [
-              65.15892540989125,
-              64.97667144244706
-            ],
+            "sharedCopperMm": [65.15892540989125, 64.97667144244706],
             "maxAllowedEdgeGapMm": 0.14012628406432667,
             "matched": true
           }
         ],
         "exteriorPairGaps": [
           {
-            "connectionNames": [
-              "source_trace_15",
-              "source_trace_16"
-            ],
+            "connectionNames": ["source_trace_15", "source_trace_16"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.13775206974731397,
@@ -4449,10 +4197,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_27",
-              "source_trace_26"
-            ],
+            "connectionNames": ["source_trace_27", "source_trace_26"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377463197593352,
@@ -4460,10 +4205,7 @@
             "separatedExteriorLengthMm": 0
           },
           {
-            "connectionNames": [
-              "source_trace_32",
-              "source_trace_33"
-            ],
+            "connectionNames": ["source_trace_32", "source_trace_33"],
             "applicable": true,
             "matched": true,
             "maxExteriorEdgeGapMm": 0.1377464564962873,
