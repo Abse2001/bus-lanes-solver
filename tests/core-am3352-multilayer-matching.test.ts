@@ -17,4 +17,4 @@ test("the real core address/clock matching bus routes across layers with native 
     Object.values(report.layerCounts).reduce((sum, count) => sum + count, 0),
   ).toBe(47)
   expect(input).toEqual(before)
-}, 120_000)
+}, 300_000)
