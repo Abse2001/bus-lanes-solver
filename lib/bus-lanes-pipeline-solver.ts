@@ -1,6 +1,9 @@
 import { rebalancePairEscapes } from "./rebalance-pair-escapes"
 import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
-import { compactEnvelopeCandidate } from "./compact-envelope"
+import {
+  compactEnvelopeCandidate,
+  type CompactionMode,
+} from "./compact-envelope"
 import {
   carrierCompactionView,
   signalEnvelope,
@@ -55,82 +58,133 @@ export class BusLanesPipelineSolver extends BaseSolver {
         milliseconds: 0,
       },
     }
+    let protectVias = false
+    // Independent neighborhoods avoid trapping a flexible bank behind a small
+    // rigid-bank improvement. Only the best validated branch is published.
+    let anchor = this.acceptedTraces!
     try {
-      for (let pass = 0; pass < 2; pass++) {
-        const original = this.acceptedTraces!
-        const previousBounds = signalEnvelope(original)
-        const view = carrierCompactionView(this.input, original)
-        if (!view) return
-        const viaClearance = view.carriers.map((trace) =>
-          createTerminalViaClearanceChecker(view.input, trace),
+      for (const mode of [
+        "conservative",
+        "coordinated",
+        "flexible",
+        "guarded",
+      ] as CompactionMode[]) {
+        // Once a neighborhood gains 5%, avoid expensive alternative searches.
+        // This is a work limit, not an acceptance threshold or a per-board promise.
+        if (
+          mode !== "conservative" &&
+          signalEnvelope(this.acceptedTraces!).areaMm2 <=
+            signalEnvelope(anchor).areaMm2 * 0.95
         )
-        const candidate = yield* compactEnvelopeCandidate(
-          view.input,
-          view.carriers,
-        )
-        if (candidate === view.carriers) return
-        // A truncated cutting-plane search can retain a small collision. Back off
-        // the displacement toward the accepted geometry; all direction, curve and
-        // length equalities remain valid under this interpolation.
-        for (const fraction of [1, 0.999, 0.99, 0.95, 0.9, 0.75, 0.5]) {
-          const carriers = candidate.map((trace, i) => ({
-            ...trace,
-            route: trace.route.map((point, j) => ({
-              ...point,
-              x:
-                view.carriers[i].route[j].x +
-                (point.x - view.carriers[i].route[j].x) * fraction,
-              y:
-                view.carriers[i].route[j].y +
-                (point.y - view.carriers[i].route[j].y) * fraction,
-            })),
-          }))
-          if (carriers.some((trace, i) => !viaClearance[i](trace.route)))
-            continue
-          const complete = view.join(carriers)
-          const after = signalEnvelope(complete)
-          if (
-            !Number.isFinite(after.areaMm2) ||
-            after.areaMm2 >= previousBounds.areaMm2 - 1e-6 ||
-            after.minX < previousBounds.minX - 1e-8 ||
-            after.maxX > previousBounds.maxX + 1e-8 ||
-            after.minY < previousBounds.minY - 1e-8 ||
-            after.maxY > previousBounds.maxY + 1e-8
+          break
+        if (mode === "flexible" && protectVias) continue
+        if (mode === "guarded" && !protectVias) continue
+        let branch = mode === "conservative" ? this.acceptedTraces! : anchor
+        // The pinned fallback is a single bounded proposal; repeating it adds
+        // substantial work near fixed via lands for negligible additional area.
+        for (let pass = 0; pass < (mode === "guarded" ? 1 : 2); pass++) {
+          const original = branch
+          let viaRejected = false
+          let improvedBest = false
+          const previousBounds = signalEnvelope(original)
+          const view = carrierCompactionView(this.input, original)
+          if (!view) return
+          const viaClearance = view.carriers.map((trace) =>
+            createTerminalViaClearanceChecker(view.input, trace),
           )
-            continue
-          const validator = BusLanesSolver.forValidation(
+          const candidate = yield* compactEnvelopeCandidate(
             view.input,
-            carriers,
-            this.options,
+            view.carriers,
+            mode,
           )
-          try {
-            while (!validator.solved && !validator.failed) {
-              validator.step()
-              yield
+          if (candidate === view.carriers) break
+          // A truncated cutting-plane search can retain a small collision. Back off
+          // the displacement toward the accepted geometry; all direction, curve and
+          // length bounds remain valid under this interpolation.
+          for (const fraction of [
+            1, 0.999, 0.99, 0.95, 0.9, 0.75, 0.5, 0.25, 0.1,
+          ]) {
+            const carriers = candidate.map((trace, i) => ({
+              ...trace,
+              route: trace.route.map((point, j) => ({
+                ...point,
+                x:
+                  view.carriers[i].route[j].x +
+                  (point.x - view.carriers[i].route[j].x) * fraction,
+                y:
+                  view.carriers[i].route[j].y +
+                  (point.y - view.carriers[i].route[j].y) * fraction,
+              })),
+            }))
+            if (carriers.some((trace, i) => !viaClearance[i](trace.route))) {
+              viaRejected = true
+              continue
             }
+            const complete = view.join(carriers)
+            const after = signalEnvelope(complete)
             if (
-              !validator.solved ||
-              exteriorPairSpacingReports(view.input, carriers).some(
-                (r) => !r.matched,
-              )
+              !Number.isFinite(after.areaMm2) ||
+              after.areaMm2 >= previousBounds.areaMm2 - 1e-6 ||
+              (mode === "conservative" &&
+                (after.minX < previousBounds.minX - 1e-8 ||
+                  after.maxX > previousBounds.maxX + 1e-8 ||
+                  after.minY < previousBounds.minY - 1e-8 ||
+                  after.maxY > previousBounds.maxY + 1e-8))
             )
               continue
-            this.acceptedTraces = structuredClone(complete)
-            this.stats = {
-              ...this.stats,
-              envelopeOptimization: {
-                beforeAreaMm2: before.areaMm2,
-                afterAreaMm2: after.areaMm2,
-                milliseconds: performance.now() - started,
-              },
+            const validator = BusLanesSolver.forValidation(
+              view.input,
+              carriers,
+              this.options,
+            )
+            try {
+              while (!validator.solved && !validator.failed) {
+                validator.step()
+                yield
+              }
+              if (
+                !validator.solved ||
+                exteriorPairSpacingReports(view.input, carriers).some(
+                  (r) => !r.matched,
+                )
+              )
+                continue
+              branch = complete
+              if (
+                after.areaMm2 <
+                signalEnvelope(this.acceptedTraces!).areaMm2 - 1e-6
+              ) {
+                improvedBest = true
+                this.acceptedTraces = structuredClone(complete)
+                this.stats = {
+                  ...this.stats,
+                  envelopeOptimization: {
+                    beforeAreaMm2: before.areaMm2,
+                    afterAreaMm2: after.areaMm2,
+                    milliseconds: performance.now() - started,
+                  },
+                }
+              }
+              break
+            } finally {
+              if (!validator.solved && !validator.failed)
+                validator.tryFinalAcceptance()
             }
-            break
-          } finally {
-            if (!validator.solved && !validator.failed)
-              validator.tryFinalAcceptance()
           }
+          if (branch === original) {
+            if (mode !== "conservative" && pass === 0 && viaRejected)
+              protectVias = true
+            break
+          }
+          if (mode !== "conservative" && !improvedBest) break
+          if (
+            mode !== "conservative" &&
+            previousBounds.areaMm2 - signalEnvelope(branch).areaMm2 <
+              previousBounds.areaMm2 * 1e-5
+          )
+            break
         }
-        if (this.acceptedTraces === original) break
+        if (mode === "conservative") anchor = this.acceptedTraces!
       }
     } finally {
       this.stats = {

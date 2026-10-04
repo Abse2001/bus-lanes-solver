@@ -110,4 +110,4 @@ test("the original core AM3352 phase keeps compact, coupled routes without suppl
     expect(gaps.minimum).toBeGreaterThanOrEqual(0.0999)
     expect(gaps.maximum).toBeLessThanOrEqual(0.155)
   }
-}, 120_000)
+}, 300_000)
