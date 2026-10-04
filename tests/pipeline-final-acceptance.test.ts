@@ -132,3 +132,14 @@ test("final acceptance cannot turn an unfinished route into success", () => {
   expect(solver.traces).toEqual([])
   expect(() => solver.getOutput()).toThrow()
 })
+
+test("the real compactor can be interrupted without changing accepted copper", () => {
+  const solver = new BusLanesPipelineSolver(fixture(), { fanout: "none" })
+  const accepted = atOptimization(solver)
+  solver.step()
+  expect(solver.solved).toBe(false)
+  solver.tryFinalAcceptance()
+  expect(solver.solved).toBe(true)
+  expect(solver.traces).toEqual(accepted)
+  expect(solver.stats.optimizationStoppedEarly).toBe(true)
+})

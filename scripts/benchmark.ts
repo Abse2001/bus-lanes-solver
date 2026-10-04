@@ -39,6 +39,11 @@ interface BenchmarkReport {
   solveMilliseconds: number
   milliseconds: number
   iterations: number
+  envelopeOptimization?: {
+    beforeAreaMm2: number
+    afterAreaMm2: number
+    milliseconds: number
+  }
   requestedSignals: number
   routedSignals: number
   fixedPowerDogbones: number
@@ -141,6 +146,13 @@ if (!workerName) {
     console.log(
       `${report.solved ? "PASS" : "FAIL"} ${report.sample} RAM=(${report.ram.x},${report.ram.y}) ${report.routedSignals}/${report.requestedSignals} signals ${(report.solveMilliseconds / 1000).toFixed(3)}s ${report.solved ? "DRC + matching passed" : (report.error ?? report.status)}`,
     )
+    if (report.envelopeOptimization) {
+      const { beforeAreaMm2, afterAreaMm2, milliseconds } =
+        report.envelopeOptimization
+      console.log(
+        `  envelope=${beforeAreaMm2.toFixed(3)} -> ${afterAreaMm2.toFixed(3)}mm² reduction=${(100 * (1 - afterAreaMm2 / beforeAreaMm2)).toFixed(2)}% optimization=${(milliseconds / 1000).toFixed(3)}s`,
+      )
+    }
     const quality = report.validation?.quality
     if (quality)
       console.log(
@@ -209,6 +221,7 @@ try {
   }
   report.solveMilliseconds = performance.now() - solveStart
   report.iterations = solver.iterations
+  report.envelopeOptimization = solver.stats.envelopeOptimization
   report.routedSignals = solver.traces.length
   report.failureCode = solver.failureCode
   report.inputUnchanged = JSON.stringify(input) === before
