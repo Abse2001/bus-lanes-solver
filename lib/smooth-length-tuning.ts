@@ -21,7 +21,6 @@ export function tuneSmoothLengths(
   } = {},
 ) {
   let attempted = 0
-  let attemptedFolded = 0
   let allowFolded = false
   const fixed = fixedCopper(input)
   function* candidates(
@@ -80,6 +79,9 @@ export function tuneSmoothLengths(
     // a small free pocket at an endpoint, so retry with compact, endpoint-aligned
     // banks only after every ordinary run has exhausted the original choices.
     const folded = allowFolded
+    // Each lane (and each partial-deficit retry) must get a chance to search.
+    // A shared counter let one difficult lane starve every later connection.
+    let attemptedFolded = 0
     for (const compact of folded ? [false] : [false, true])
       for (const { i } of segments) {
         // A second bank must use an ordinary run; never place new teeth inside
@@ -156,11 +158,13 @@ export function tuneSmoothLengths(
                 x: start.x + ux * span * fraction,
                 y: start.y + uy * span * fraction,
               }
-              if (
-                folded &&
-                ++attemptedFolded > Math.min(128, options.maxCandidates ?? 128)
-              )
-                return
+              if (folded) {
+                if (
+                  ++attemptedFolded >
+                  Math.min(1024, options.maxCandidates ?? 1024)
+                )
+                  return
+              }
               if (
                 !folded &&
                 ++attempted > (options.maxCandidates ?? Infinity)
@@ -222,7 +226,17 @@ export function tuneSmoothLengths(
       }
   }
   const result = [...traces]
-  const pending = new Set(traces.map((_, i) => i))
+  const deficits = traces.map(
+    (trace) =>
+      targets.get(trace.connection_name!)! -
+      length(trace.route) -
+      fixedRouteLength(input, trace.connection_name!),
+  )
+  // Reserve tuning space for the largest corrections before small corrections
+  // occupy the neighboring pockets. Keep output and connection order intact.
+  const pending = new Set(
+    traces.map((_, i) => i).sort((a, b) => deficits[b] - deficits[a]),
+  )
   const partialBanks = new Map<number, number>()
   let allowPartial = false
   let changed = true
@@ -270,10 +284,9 @@ export function tuneSmoothLengths(
       allowFolded = true
       allowPartial = false
       // A partial ordinary bank can occupy the pocket the folded replacement
-      // needs. Restart this bounded fallback from the untouched input geometry.
-      result.splice(0, result.length, ...traces)
-      pending.clear()
-      traces.forEach((_, i) => pending.add(i))
+      // needs. Reset only unfinished lanes: discarding completed corrections
+      // can make a previously solved small deficit impossible to fold.
+      for (const index of pending) result[index] = traces[index]
       partialBanks.clear()
       changed = true
     }

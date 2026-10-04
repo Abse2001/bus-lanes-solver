@@ -34,6 +34,19 @@ export function* routeFreshSharedBuses(
     native.differentialPairs?.flatMap((pair) => pair.connectionNames),
   )
   const busNames = new Set(native.buses?.flatMap((bus) => bus.connectionNames))
+  const busLayerLoads = new Map<string, number>()
+  for (const bus of allocation.buses ?? []) {
+    const occupied = new Set(
+      allocation.connections
+        .filter((c) => bus.connectionNames.includes(c.name))
+        .map((c) => c.pointsToConnect[0].layer),
+    )
+    for (const layer of occupied)
+      busLayerLoads.set(layer, (busLayerLoads.get(layer) ?? 0) + 1)
+  }
+  const sharedTimingLayers = [...busLayerLoads.values()].some(
+    (count) => count > 1,
+  )
   const pairEscapes = originalEscapes.filter((trace) =>
     pairNames.has(trace.connection_name!),
   )
@@ -126,18 +139,33 @@ export function* routeFreshSharedBuses(
     let state: FlexibleSignalState | undefined
     try {
       let step = route.next(),
-        iterations = 0
+        iterations = 0,
+        lastImprovement = 0
       while (!step.done && iterations++ < 300000) {
-        if (step.value.length >= Math.max(1, pending.connections.length - 2)) {
+        if (
+          step.value.length >= Math.max(1, pending.connections.length - 2) &&
+          (!state || step.value.length > state.traces.length)
+        ) {
+          // A nearly complete assignment is a fallback, not a reason to stop
+          // negotiating. In particular, two missing signals can still close
+          // by changing carrier layers without moving any terminal vias.
+          lastImprovement = iterations
           state = {
             native,
-            pending,
+            pending: structuredClone(pending),
             escapes,
             retained: paired,
             traces: step.value,
           }
-          break
         }
+        // Independently assigned timing buses retain the established quick
+        // site-repair path. Shared timing layers need joint carrier negotiation
+        // before committing to a via-site repair topology.
+        if (state && !sharedTimingLayers) break
+        if (step.value.length === pending.connections.length) break
+        // Bound a stalled topology while retaining its best pocket-repair
+        // candidate. Do not let later layer choices mutate that saved input.
+        if (state && iterations - lastImprovement >= 60000) break
         yield
         step = route.next()
       }

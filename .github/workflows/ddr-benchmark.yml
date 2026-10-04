@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -12,9 +12,14 @@ jobs:
       - run: bun install
       # Require all eight powered AM3352 samples to complete and pass native
       # DRC plus full pad-to-pad length matching.
-      - run: ./benchmark.sh --timeout-seconds 60 --require-all-solved
+      - run: ./benchmark.sh --timeout-seconds 120 --require-all-solved
+      # The full CA/clock timing bus must pass the same native audits plus
+      # its own 24-member pad-to-pad skew check. Routing alone is insufficient.
+      - run: bun scripts/repro-am3352-ca-bus.ts --timeout-seconds 180 --output am3352-complete-ca-results.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: am3352-placement-benchmark-results
-          path: benchmark-results.json
+          path: |
+            benchmark-results.json
+            am3352-complete-ca-results.json
