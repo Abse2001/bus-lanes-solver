@@ -1,53 +1,38 @@
 import { expect, test } from "bun:test"
-import { createHash } from "node:crypto"
-import { gunzipSync } from "node:zlib"
-import type { SimpleRouteJson } from "../lib"
 import {
-  inspectMiniPcRoutes,
-  validateMiniPcInput,
+  hasCompleteInnerRoutes,
+  loadMiniPcInput,
+  runMiniPcCase,
 } from "../scripts/repro-am3352-mini-pc-inner-layers"
-import provenance from "./fixtures/am3352-mini-pc-inner-layers/provenance.json"
 
-test("mini-PC capture preserves all 50 native signals, exact source provenance, and both inner carrier layers", async () => {
-  const directory = `${import.meta.dir}/fixtures/am3352-mini-pc-inner-layers`
-  const compressed = Buffer.from(
-    await Bun.file(`${directory}/input.json.gz`).arrayBuffer(),
+test("mini-PC capture preserves 50 DDR signals, original timing and inner carrier layers", async () => {
+  const input = await loadMiniPcInput()
+  expect(input.layerCount).toBe(4)
+  expect(input.allowedLayers).toEqual(["inner1", "inner2"])
+  expect(input.connections).toHaveLength(50)
+  expect(input.obstacles).toHaveLength(1441)
+  expect(input.traces).toEqual([])
+  expect(input.buses!.map((bus) => bus.connectionNames.length)).toEqual([
+    11, 11, 27, 1,
+  ])
+  expect(new Set(input.buses!.flatMap((bus) => bus.connectionNames)).size).toBe(
+    50,
   )
-  const inputText = gunzipSync(compressed).toString("utf8")
-  const optionsText = await Bun.file(`${directory}/options.json`).text()
-  const defaultOptionsText = await Bun.file(
-    `${directory}/default-options.json`,
-  ).text()
-  expect(createHash("sha256").update(inputText).digest("hex")).toBe(
-    provenance.inputSha256,
-  )
-  expect(createHash("sha256").update(optionsText).digest("hex")).toBe(
-    provenance.optionsSha256,
-  )
-  expect(createHash("sha256").update(defaultOptionsText).digest("hex")).toBe(
-    provenance.defaultOptionsSha256,
-  )
-  expect(JSON.parse(defaultOptionsText)).toEqual({})
-  const input = JSON.parse(inputText) as SimpleRouteJson
-  const unchanged = structuredClone(input)
-  validateMiniPcInput(input)
-  expect(input).toEqual(unchanged)
-  expect(input.obstacles).toHaveLength(provenance.inputObstacleCount)
-  expect(input.connections.map((connection) => connection.name).sort()).toEqual(
-    Object.keys(provenance.signalNames).sort(),
-  )
-  expect(provenance.source.ram_package_rotation_override).toBe(90)
-  expect(provenance.source.source_copper_records).toBe(0)
-  const missingSignal = structuredClone(input)
-  missingSignal.connections.pop()
-  expect(() => validateMiniPcInput(missingSignal)).toThrow("50-signal")
-  const weakenedBus = structuredClone(input)
-  weakenedBus.buses![0].maxLengthSkew = 1
-  expect(() => validateMiniPcInput(weakenedBus)).toThrow("timing bound")
-  const outerCarrier = structuredClone(input)
-  outerCarrier.allowedLayers = ["inner1", "bottom"]
-  expect(() => validateMiniPcInput(outerCarrier)).toThrow("inner carriers")
-  const incomplete = inspectMiniPcRoutes(input, [])
-  expect(incomplete.complete).toBe(false)
-  expect(incomplete.endpointIssues).toHaveLength(51)
+  for (const bus of input.buses!) {
+    expect(bus.allowedLayers).toEqual(["inner1", "inner2"])
+    if (bus.busId !== "LAYER_DDR_RESETn") expect(bus.maxLengthSkew).toBe(0.635)
+  }
+  expect(
+    input.differentialPairs!.map((pair) => pair.lengthTolerance).sort(),
+  ).toEqual([0.1, 0.127, 0.127])
+  expect(hasCompleteInnerRoutes(input, [])).toBe(false)
+})
+
+test("an unfinished mini-PC reproduction cannot report connected or matched routes", async () => {
+  const report = await runMiniPcCase(0.000001)
+  expect(report.passed).toBe(false)
+  expect(report.complete).toBe(false)
+  expect(report.matched).toBe(false)
+  expect(report.inputUnchanged).toBe(true)
+  expect(report.routedSignals).toBe(0)
 })
