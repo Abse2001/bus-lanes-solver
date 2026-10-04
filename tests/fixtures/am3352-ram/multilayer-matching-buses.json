@@ -1,0 +1,72 @@
+[
+  {
+    "busId": "DDR_BYTE0",
+    "name": "DDR_BYTE0",
+    "connectionNames": [
+      "source_trace_14",
+      "source_trace_30",
+      "source_trace_3",
+      "source_trace_40",
+      "source_trace_17",
+      "source_trace_41",
+      "source_trace_4",
+      "source_trace_31",
+      "source_trace_29",
+      "source_trace_15",
+      "source_trace_16"
+    ],
+    "maxLengthSkew": 0.635,
+    "preferredLayer": "inner1"
+  },
+  {
+    "busId": "DDR_BYTE1",
+    "name": "DDR_BYTE1",
+    "connectionNames": [
+      "source_trace_28",
+      "source_trace_12",
+      "source_trace_39",
+      "source_trace_2",
+      "source_trace_25",
+      "source_trace_1",
+      "source_trace_38",
+      "source_trace_11",
+      "source_trace_13",
+      "source_trace_27",
+      "source_trace_26"
+    ],
+    "maxLengthSkew": 0.635,
+    "preferredLayer": "inner2"
+  },
+  {
+    "busId": "DDR_ADDR_CTRL",
+    "name": "DDR_ADDR_CTRL",
+    "connectionNames": [
+      "source_trace_22",
+      "source_trace_36",
+      "source_trace_23",
+      "source_trace_7",
+      "source_trace_43",
+      "source_trace_8",
+      "source_trace_44",
+      "source_trace_9",
+      "source_trace_45",
+      "source_trace_24",
+      "source_trace_34",
+      "source_trace_37",
+      "source_trace_35",
+      "source_trace_6",
+      "source_trace_42",
+      "source_trace_21",
+      "source_trace_5",
+      "source_trace_19",
+      "source_trace_18",
+      "source_trace_20",
+      "source_trace_46",
+      "source_trace_0",
+      "source_trace_32",
+      "source_trace_33"
+    ],
+    "maxLengthSkew": 2.54,
+    "preferredLayer": "bottom"
+  }
+]

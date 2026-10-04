@@ -24,12 +24,12 @@ function failedRoutingAttempts(input: SimpleRouteJson) {
   }
 }
 
-test("layer retries retain balanced buses and every immutable power dogbone", async () => {
+test("layer retries can split buses and retain every immutable power dogbone", async () => {
   const { input } = await loadAm3352Sample("control")
   const before = structuredClone(input)
   const attempts = failedRoutingAttempts(input)
   expect(attempts).toHaveLength(input.layerCount)
-  const assignments: string[][] = []
+  const assignments: string[][][] = []
   for (const attempt of attempts) {
     expect(attempt.traces!.slice(0, input.traces!.length)).toEqual(
       input.traces!,
@@ -60,27 +60,37 @@ test("layer retries retain balanced buses and every immutable power dogbone", as
             connection.pointsToConnect.map((point) => point.layer),
           ),
       )
-      expect(layers.size).toBe(1)
-      return [...layers][0]
+      return [...layers]
     })
-    expect(new Set(assigned).size).toBe(2)
+    for (const pair of attempt.differentialPairs ?? []) {
+      const layers = new Set(
+        attempt.connections
+          .filter((connection) =>
+            pair.connectionNames.includes(connection.name),
+          )
+          .flatMap((connection) =>
+            connection.pointsToConnect.map((point) => point.layer),
+          ),
+      )
+      expect(layers.size).toBe(1)
+    }
     assignments.push(assigned)
   }
+  expect(assignments[0].every((layers) => layers.length === 1)).toBe(true)
+  expect(new Set(assignments[0].flat()).size).toBe(2)
+  expect(
+    assignments
+      .slice(1)
+      .some((buses) => buses.some((layers) => layers.length > 1)),
+  ).toBe(true)
   for (const busIndex of [0, 1])
-    expect(new Set(assignments.map((layers) => layers[busIndex]))).toEqual(
+    expect(new Set(assignments.flatMap((buses) => buses[busIndex]))).toEqual(
       new Set(["inner1", "inner2", "bottom"]),
     )
-  expect(
-    new Set(assignments.slice(0, 3).map((layers) => layers.join(","))).size,
-  ).toBe(3)
-  for (const busIndex of [0, 1])
-    expect(
-      new Set(assignments.slice(0, 3).map((layers) => layers[busIndex])).size,
-    ).toBe(3)
   expect(input).toEqual(before)
 })
 
-test("layer retries keep explicit bus preferences and allowed layers", async () => {
+test("initial allocation prefers requested layers; retries respect allowed layers", async () => {
   const { input } = await loadAm3352Sample("control")
   input.buses![0].preferredLayer = "bottom"
   input.buses![0].allowedLayers = ["inner1", "bottom"]
@@ -88,16 +98,25 @@ test("layer retries keep explicit bus preferences and allowed layers", async () 
   input.buses![1].allowedLayers = ["inner2"]
   const attempts = failedRoutingAttempts(input)
   expect(attempts).toHaveLength(input.layerCount)
-  for (const attempt of attempts)
+  for (const [attemptIndex, attempt] of attempts.entries())
     for (const [index, layer] of ["bottom", "inner2"].entries()) {
-      const names = attempt.buses![index].connectionNames
+      const bus = attempt.buses![index]
+      const members = attempt.connections.filter((connection) =>
+        bus.connectionNames.includes(connection.name),
+      )
       expect(
-        attempt.connections
-          .filter((connection) => names.includes(connection.name))
-          .every((connection) =>
+        members.every((connection) =>
+          connection.pointsToConnect.every((point) =>
+            bus.allowedLayers!.includes(point.layer),
+          ),
+        ),
+      ).toBe(true)
+      if (attemptIndex === 0)
+        expect(
+          members.every((connection) =>
             connection.pointsToConnect.every((point) => point.layer === layer),
           ),
-      ).toBe(true)
+        ).toBe(true)
     }
 })
 
