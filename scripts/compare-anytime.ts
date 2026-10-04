@@ -44,7 +44,7 @@ import {
   type ComparisonSourceFingerprint,
 } from "./anytime-comparison-runner"
 
-const efforts = [1, 2, 5] as const
+const efforts = [1, 2, 5, 10] as const
 const ddrNames = [
   "ddr_left_io_right",
   "ddr_right_io_left",
@@ -358,6 +358,11 @@ async function saveValidatedComparisonData(
   directory: string,
   html: string,
 ) {
+  const htmlBytes = Buffer.byteLength(html)
+  if (htmlBytes > 25 * 1024 * 1024)
+    throw Error(
+      `Self-contained report is ${(htmlBytes / 1024 / 1024).toFixed(2)} MiB, above the 25 MiB static-asset limit`,
+    )
   await mkdir(join(directory, "outputs"), { recursive: true })
   for (const sample of report.samples)
     for (const checkpoint of sample.checkpoints) {
@@ -394,7 +399,7 @@ async function saveValidatedComparisonData(
   )
   await Bun.write(join(directory, "index.html"), html)
   console.log(
-    `All ${report.samples.length * 3} native checkpoints passed; validated report data saved before snapshot export.`,
+    `All ${report.samples.length * efforts.length} native checkpoints passed; validated report data saved before snapshot export (${(htmlBytes / 1024 / 1024).toFixed(2)} MiB self-contained HTML).`,
   )
 }
 
@@ -424,17 +429,81 @@ interface ComparisonSampleResult {
 }
 interface ComparisonRenderJob {
   kind: "am3352" | "other"
-  effort?: 1 | 2 | 5
+  effort?: (typeof efforts)[number]
   sampleResultFiles: string[]
   directory: string
   sourceFingerprint: ComparisonSourceFingerprint
   nativeManifestFile: string
+}
+interface ComparisonNativeManifest {
+  sourceFingerprint: string
+  samples: Array<{
+    id: string
+    inputSha256: string
+    checkpoints: Array<{
+      effort: Checkpoint["effort"]
+      valid: boolean
+      outputSha256: string
+      validationSha256: string
+    }>
+  }>
 }
 export interface CompareAnytimeExecutionOptions {
   /** Independent sample processes; each retains its own effort continuation. */
   concurrency?: number
   /** Stage fully validated assets for visual inspection before publishing. */
   publish?: boolean
+  /** Require byte-identical routed 1x/2x/5x prefixes from a previous report. */
+  referenceMeasurementsFile?: string
+}
+
+interface ComparisonPrefixReference {
+  iterationsPerX: number
+  samples: Array<{
+    id: string
+    checkpoints: Array<{
+      effort: number
+      valid: boolean
+      outputSha256: string
+    }>
+  }>
+}
+
+/** Optimization speedups must preserve the already measured deterministic
+ * prefix. A failed equivalence audit stops all final artifact generation. */
+export function assertAnytimeComparisonPrefix(
+  report: AnytimeComparisonReport,
+  reference: ComparisonPrefixReference,
+) {
+  if (
+    report.iterationsPerX !== reference.iterationsPerX ||
+    report.samples.length !== reference.samples.length ||
+    new Set(reference.samples.map((sample) => sample.id)).size !==
+      report.samples.length
+  )
+    throw Error("Prefix reference must use the same samples and base budget")
+  let matchedOutputs = 0
+  for (const sample of report.samples) {
+    const prior = reference.samples.find((s) => s.id === sample.id)
+    if (!prior) throw Error(`${sample.id}: missing prefix reference`)
+    for (const effort of [1, 2, 5] as const) {
+      const previous = prior.checkpoints.filter((c) => c.effort === effort)
+      const checkpoint = sample.checkpoints.find((c) => c.effort === effort)
+      if (
+        previous.length !== 1 ||
+        !previous[0].valid ||
+        !/^[0-9a-f]{64}$/.test(previous[0].outputSha256) ||
+        !checkpoint ||
+        !checkpoint.valid ||
+        am3352Hash(checkpoint.output) !== previous[0].outputSha256
+      )
+        throw Error(
+          `${sample.id} ${effort}x: output changed from the measured prefix; refusing artifacts`,
+        )
+      matchedOutputs++
+    }
+  }
+  return matchedOutputs
 }
 
 async function assertWorkerGeneration(expected: ComparisonSourceFingerprint) {
@@ -455,7 +524,63 @@ async function readComparisonSampleResult(file: string) {
   ) as ComparisonSampleResult
 }
 
-/** One worker owns the entire deterministic 1x→2x→5x continuation. */
+/** Bind every native audit, including exact-output reuse, to the routed bytes
+ * entering the report. This guard is repeated before snapshot generation. */
+export function assertAnytimeComparisonAudits(sample: Sample) {
+  const inputSha256 = am3352Hash(sample.input)
+  if (
+    sample.checkpoints.length !== efforts.length ||
+    efforts.some(
+      (effort) =>
+        sample.checkpoints.filter((c) => c.effort === effort).length !== 1,
+    )
+  )
+    throw Error(`${sample.id}: missing or duplicated native checkpoint`)
+  const audited = new Map<Checkpoint["effort"], Checkpoint>()
+  for (const effort of efforts) {
+    const checkpoint = sample.checkpoints.find((c) => c.effort === effort)!
+    if (
+      !checkpoint.valid ||
+      checkpoint.status !== "valid" ||
+      !(checkpoint.validation as { valid?: boolean })?.valid ||
+      checkpoint.validationInputSha256 !== inputSha256 ||
+      checkpoint.validationOutputSha256 !== am3352Hash(checkpoint.output) ||
+      checkpoint.validationTraceSha256 !==
+        am3352Hash(
+          checkpoint.output.traces?.slice(sample.input.traces?.length ?? 0),
+        )
+    )
+      throw Error(`${sample.id} ${effort}x: native audit does not match output`)
+    if (checkpoint.validationReusedFromEffort !== undefined) {
+      const original = audited.get(checkpoint.validationReusedFromEffort)
+      if (
+        !original ||
+        original.validationInputSha256 !== checkpoint.validationInputSha256 ||
+        original.validationOutputSha256 !== checkpoint.validationOutputSha256 ||
+        original.validationTraceSha256 !== checkpoint.validationTraceSha256 ||
+        am3352Hash(original.validation) !== am3352Hash(checkpoint.validation) ||
+        checkpoint.validationMilliseconds !== 0
+      )
+        throw Error(`${sample.id} ${effort}x: invalid native audit reuse`)
+    }
+    if (checkpoint.physicalReusedFromEffort !== undefined) {
+      const original = audited.get(checkpoint.physicalReusedFromEffort)
+      if (
+        !original ||
+        original.validationOutputSha256 !== checkpoint.validationOutputSha256 ||
+        original.validationTraceSha256 !== checkpoint.validationTraceSha256 ||
+        am3352Hash(original.physical ?? null) !==
+          am3352Hash(checkpoint.physical ?? null)
+      )
+        throw Error(
+          `${sample.id} ${effort}x: invalid physical measurement reuse`,
+        )
+    }
+    audited.set(effort, checkpoint)
+  }
+}
+
+/** One worker owns the entire deterministic 1x→2x→5x→10x continuation. */
 async function runAnytimeComparisonSample(job: ComparisonSampleJob) {
   await assertWorkerGeneration(job.sourceFingerprint)
   const loaded = [job.sample]
@@ -532,6 +657,18 @@ async function runAnytimeComparisonSample(job: ComparisonSampleJob) {
         )
       : undefined
     const checkpoints: Checkpoint[] = []
+    // A plateau has exactly the same frozen input and full native copper.
+    // Reuse only a successful independent audit of those identical bytes;
+    // every changed output or carrier set runs the original native validator.
+    const auditCache = new Map<
+      string,
+      {
+        effort: Checkpoint["effort"]
+        validation: Checkpoint["validation"]
+        physical: Checkpoint["physical"]
+      }
+    >()
+    let cumulativeValidationMilliseconds = 0
     for (const effort of efforts) {
       const solving = performance.now()
       if (effort === 1) solver.solve()
@@ -551,11 +688,37 @@ async function runAnytimeComparisonSample(job: ComparisonSampleJob) {
         throw Error(
           `${sample.id} ${effort}x: refusing best-effort review artifacts: ${solver.error ?? JSON.stringify(result.violations)}`,
         )
-      const validation = await validateAnytimeComparisonCheckpoint(
-        sample,
-        traces,
-        result.output,
-      )
+      const validationOutputSha256 = am3352Hash(result.output)
+      const validationTraceSha256 = am3352Hash(traces)
+      const auditKey = `${hash}:${validationOutputSha256}:${validationTraceSha256}`
+      const previousAudit = auditCache.get(auditKey)
+      const validationStarted = performance.now()
+      const validation = previousAudit
+        ? structuredClone(previousAudit.validation)
+        : await validateAnytimeComparisonCheckpoint(
+            sample,
+            traces,
+            result.output,
+          )
+      const validationMilliseconds = previousAudit
+        ? 0
+        : performance.now() - validationStarted
+      cumulativeValidationMilliseconds += validationMilliseconds
+      const physicalStarted = performance.now()
+      const physical = previousAudit
+        ? structuredClone(previousAudit.physical)
+        : physicalProbe
+          ? measureAnytimePhysicalMetrics(sample.input, traces, physicalProbe)
+          : undefined
+      const physicalMeasurementMilliseconds = previousAudit
+        ? 0
+        : performance.now() - physicalStarted
+      if (!previousAudit)
+        auditCache.set(auditKey, {
+          effort,
+          validation: structuredClone(validation),
+          physical: structuredClone(physical),
+        })
       const checkpoint: Checkpoint = {
         effort,
         solveMilliseconds,
@@ -573,10 +736,18 @@ async function runAnytimeComparisonSample(job: ComparisonSampleJob) {
         status: result.status,
         valid: true,
         validation,
-        diagnostics: structuredClone(solver.stats),
-        physical: physicalProbe
-          ? measureAnytimePhysicalMetrics(sample.input, traces, physicalProbe)
+        validationMilliseconds,
+        cumulativeValidationMilliseconds,
+        validationInputSha256: hash,
+        validationOutputSha256,
+        validationTraceSha256,
+        validationReusedFromEffort: previousAudit?.effort,
+        physicalMeasurementMilliseconds,
+        physicalReusedFromEffort: physicalProbe
+          ? previousAudit?.effort
           : undefined,
+        diagnostics: structuredClone(solver.stats),
+        physical,
         score: result.score,
         output: result.output,
       }
@@ -588,7 +759,7 @@ async function runAnytimeComparisonSample(job: ComparisonSampleJob) {
         throw Error(`${sample.id}: objective worsened at ${effort}x`)
       checkpoints.push(checkpoint)
       console.log(
-        `${sample.id} ${effort}x: complete + DRC + matching; objective=${result.score.objective.toFixed(6)} envelope=${result.score.envelopeAreaMm2.toFixed(3)}mm² copper=${result.score.totalLengthMm.toFixed(3)}mm time=${(solveMilliseconds / 1000).toFixed(3)}s iterations=${result.optimizationIterations}`,
+        `${sample.id} ${effort}x: complete + DRC + matching${previousAudit ? ` (identical native audit reused from ${previousAudit.effort}x)` : ""}; objective=${result.score.objective.toFixed(6)} envelope=${result.score.envelopeAreaMm2.toFixed(3)}mm² copper=${result.score.totalLengthMm.toFixed(3)}mm time=${(solveMilliseconds / 1000).toFixed(3)}s iterations=${result.optimizationIterations}`,
       )
     }
     report.samples.push({
@@ -640,15 +811,16 @@ async function renderOtherComparisonSample(sample: Sample, directory: string) {
 /** AM3352 keeps the native all-eight validation/export gate at every effort. */
 async function runComparisonRenderJob(job: ComparisonRenderJob) {
   await assertWorkerGeneration(job.sourceFingerprint)
-  const manifest = await Bun.file(job.nativeManifestFile).json()
+  const manifest = (await Bun.file(
+    job.nativeManifestFile,
+  ).json()) as ComparisonNativeManifest
   if (
     manifest.sourceFingerprint !== job.sourceFingerprint.sha256 ||
     manifest.samples.length !== 14 ||
-    new Set(manifest.samples.map((sample: { id: string }) => sample.id))
-      .size !== 14 ||
+    new Set(manifest.samples.map((sample) => sample.id)).size !== 14 ||
     manifest.samples.some(
-      (sample: { checkpoints: Array<{ effort: number; valid: boolean }> }) =>
-        sample.checkpoints.length !== 3 ||
+      (sample) =>
+        sample.checkpoints.length !== efforts.length ||
         efforts.some(
           (effort) =>
             sample.checkpoints.filter(
@@ -658,7 +830,7 @@ async function runComparisonRenderJob(job: ComparisonRenderJob) {
     )
   )
     throw Error(
-      "All 42 native checkpoints must pass before any snapshot export",
+      `All ${14 * efforts.length} native checkpoints must pass before any snapshot export`,
     )
   const results = await Promise.all(
     job.sampleResultFiles.map(readComparisonSampleResult),
@@ -667,6 +839,7 @@ async function runComparisonRenderJob(job: ComparisonRenderJob) {
     if (
       result.sourceFingerprint.sha256 !== job.sourceFingerprint.sha256 ||
       result.inputSha256 !== am3352Hash(result.loaded.input) ||
+      result.inputSha256 !== am3352Hash(result.comparison.input) ||
       result.comparison.checkpoints.length !== efforts.length ||
       result.comparison.checkpoints.some(
         (c) => !c.valid || c.status !== "valid",
@@ -675,6 +848,23 @@ async function runComparisonRenderJob(job: ComparisonRenderJob) {
       throw Error(
         "Snapshot worker requires fully audited comparison checkpoints",
       )
+    assertAnytimeComparisonAudits(result.comparison)
+    const native = manifest.samples.find(
+      (sample) => sample.id === result.comparison.id,
+    )
+    if (
+      native?.inputSha256 !== result.inputSha256 ||
+      result.comparison.checkpoints.some((checkpoint) => {
+        const proof = native.checkpoints.find(
+          (c) => c.effort === checkpoint.effort,
+        )
+        return (
+          proof?.outputSha256 !== am3352Hash(checkpoint.output) ||
+          proof.validationSha256 !== am3352Hash(checkpoint.validation)
+        )
+      })
+    )
+      throw Error("Snapshot output differs from its original native gate")
   }
   await mkdir(job.directory, { recursive: true })
   if (job.kind === "am3352") {
@@ -739,6 +929,18 @@ export async function compareAnytime(
     jobDirectory,
   ])
     await mkdir(path, { recursive: true })
+  const reference = executionOptions.referenceMeasurementsFile
+    ? ((await Bun.file(
+        executionOptions.referenceMeasurementsFile,
+      ).json()) as ComparisonPrefixReference)
+    : undefined
+  if (reference && reference.iterationsPerX !== iterationsPerX)
+    throw Error("Prefix reference must use the same base budget")
+  if (reference)
+    await Bun.write(
+      join(scratchDirectory, "prefix-reference.json"),
+      JSON.stringify(reference),
+    )
   const jobs: ComparisonSampleJob[] = []
   for (const sample of loaded) {
     const inputSha256 = am3352Hash(sample.input)
@@ -849,8 +1051,27 @@ export async function compareAnytime(
       )
     )
       throw Error(
-        "All 14 samples and 42 native checkpoint gates must pass before artifact generation",
+        `All 14 samples and ${14 * efforts.length} native checkpoint gates must pass before artifact generation`,
       )
+    for (const result of results) {
+      if (
+        result.inputSha256 !== am3352Hash(result.loaded.input) ||
+        result.inputSha256 !== am3352Hash(result.comparison.input)
+      )
+        throw Error(`${result.comparison.id}: validated input hash changed`)
+      assertAnytimeComparisonAudits(result.comparison)
+    }
+    if (reference) {
+      const matchedOutputs = assertAnytimeComparisonPrefix(report, reference)
+      report.prefixReference = {
+        sha256: am3352Hash(reference),
+        efforts: [1, 2, 5],
+        matchedOutputs,
+      }
+      console.log(
+        `All ${matchedOutputs} previously measured 1x/2x/5x output hashes match; 10x extends the same sequence.`,
+      )
+    }
     // Data and images are staged only after every native checkpoint succeeds.
     const nativeManifestFile = join(scratchDirectory, "native-checkpoints.json")
     await Bun.write(
@@ -859,6 +1080,7 @@ export async function compareAnytime(
         sourceFingerprint: frozen.sourceFingerprint.sha256,
         samples: report.samples.map((sample) => ({
           id: sample.id,
+          inputSha256: am3352Hash(sample.input),
           checkpoints: sample.checkpoints.map((checkpoint) => ({
             effort: checkpoint.effort,
             valid: checkpoint.valid,
@@ -907,7 +1129,7 @@ export async function compareAnytime(
     await frozen.assertUnchanged()
     if (executionOptions.publish === false) {
       console.log(
-        `Comparison staged for image inspection: ${stagedDirectory} (14 samples × ${iterationsPerX}/${iterationsPerX * 2}/${iterationsPerX * 5} steps; source ${frozen.sourceFingerprint.sha256})`,
+        `Comparison staged for image inspection: ${stagedDirectory} (14 samples × ${efforts.map((effort) => iterationsPerX * effort).join("/")} steps; source ${frozen.sourceFingerprint.sha256})`,
       )
       return report
     }
@@ -917,7 +1139,7 @@ export async function compareAnytime(
     for (const name of ["comparison.png", "meander-detail.png"])
       await rm(join(directory, name), { force: true })
     console.log(
-      `Comparison saved: ${join(directory, "index.html")} (14 samples × 3 fully validated checkpoints; source ${frozen.sourceFingerprint.sha256})`,
+      `Comparison saved: ${join(directory, "index.html")} (14 samples × ${efforts.length} fully validated checkpoints; source ${frozen.sourceFingerprint.sha256})`,
     )
     return report
   } catch (error) {
@@ -940,7 +1162,8 @@ if (import.meta.main) {
       physical = true,
       pitchMm = 0.1,
       concurrency = 4,
-      publish = true
+      publish = true,
+      referenceMeasurementsFile: string | undefined
     for (let i = 0; i < args.length; i++) {
       const argument = args[i]
       if (argument === "--reuse-baselines") reuseBaselines = true
@@ -948,7 +1171,12 @@ if (import.meta.main) {
       else if (argument === "--no-physical") physical = false
       else if (argument === "--pitch") pitchMm = Number(args[++i])
       else if (argument === "--concurrency") concurrency = Number(args[++i])
-      else if (argument.startsWith("--"))
+      else if (argument === "--reference-measurements") {
+        const referencePath = args[++i]
+        if (!referencePath || referencePath.startsWith("--"))
+          throw Error("--reference-measurements requires a JSON file path")
+        referenceMeasurementsFile = resolve(referencePath)
+      } else if (argument.startsWith("--"))
         throw Error(`Unknown comparison flag: ${argument}`)
       else positional.push(argument)
     }
@@ -964,14 +1192,14 @@ if (import.meta.main) {
       concurrency > 4
     )
       throw Error(
-        "Usage: bun scripts/compare-anytime.ts [directory] [iterations-per-x] [--reuse-baselines] [--no-physical] [--pitch .1] [--concurrency 1..4] [--stage-only]",
+        "Usage: bun scripts/compare-anytime.ts [directory] [iterations-per-x] [--reuse-baselines] [--no-physical] [--pitch .1] [--concurrency 1..4] [--stage-only] [--reference-measurements path]",
       )
     await compareAnytime(
       positional[0] ? resolve(positional[0]) : undefined,
       iterationsPerX,
       reuseBaselines,
       { enabled: physical, pitchMm },
-      { concurrency, publish },
+      { concurrency, publish, referenceMeasurementsFile },
     )
   }
 }

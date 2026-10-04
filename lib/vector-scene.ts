@@ -302,6 +302,9 @@ export class VectorScene {
     readonly connection: Connection,
     readonly width: number,
     all: Copper[],
+    /** A request-local index over the immutable all-copper batch. Sharing
+     * avoids rebuilding the same geometry for each net in a validation pass. */
+    sharedCopperIndex?: CopperIndex,
   ) {
     this.owners = new Set(
       [
@@ -321,7 +324,10 @@ export class VectorScene {
     this.margin =
       width / 2 +
       (input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075)
+    this.copperIndex = sharedCopperIndex
+    this.sharedIndex = !!sharedCopperIndex
   }
+  private sharedIndex = false
   visible(a: Point, b: Point) {
     const m = this.width / 2 + (this.input.minBoardEdgeClearance ?? 0),
       r = this.input.bounds
@@ -339,11 +345,16 @@ export class VectorScene {
       maxX = Math.max(a.x, b.x) + this.margin,
       minY = Math.min(a.y, b.y) - this.margin,
       maxY = Math.max(a.y, b.y) + this.margin
-    if (++this.visibleCalls === 16)
+    if (!this.copperIndex && ++this.visibleCalls === 16)
       this.copperIndex = new CopperIndex(this.copper)
     if (this.copperIndex)
-      return !this.copperIndex.some({ minX, maxX, minY, maxY }, (c) =>
-        copperTooClose(a, b, c, this.margin - 1e-8),
+      return !this.copperIndex.some(
+        { minX, maxX, minY, maxY },
+        (c) =>
+          (!this.sharedIndex ||
+            (c.layer === this.connection.pointsToConnect[0].layer &&
+              !c.owners.some((owner) => this.owners.has(owner)))) &&
+          copperTooClose(a, b, c, this.margin - 1e-8),
       )
     for (const c of this.copper) {
       const r = c.rect ?? {

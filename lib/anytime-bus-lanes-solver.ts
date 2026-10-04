@@ -24,7 +24,7 @@ import {
 } from "@tscircuit/fanout-solver"
 import type { SimpleRouteJson, Trace, Wire } from "./types"
 
-export type AnytimeEffort = 1 | 2 | 5 | "1x" | "2x" | "5x"
+export type AnytimeEffort = 1 | 2 | 5 | 10 | "1x" | "2x" | "5x" | "10x"
 export interface AnytimeBusLanesOptions extends BusLanesPipelineOptions {
   effort?: AnytimeEffort
   /** Candidate attempts per unit of optimization effort, after finding a route. */
@@ -47,15 +47,15 @@ export interface AnytimeResult {
 }
 
 const effortValue = (effort: AnytimeEffort) => {
-  if (![1, 2, 5, "1x", "2x", "5x"].includes(effort))
-    throw Error("Effort must be 1x, 2x or 5x")
+  if (![1, 2, 5, 10, "1x", "2x", "5x", "10x"].includes(effort))
+    throw Error("Effort must be 1x, 2x, 5x or 10x")
   return typeof effort === "number" ? effort : Number.parseInt(effort, 10)
 }
 
 /** Deterministic anytime search. Connectivity/clearance/matching outrank the
  * weighted objective; a validated incumbent can never be replaced by a fallback.
  * `solved` means a valid incumbent exists, `exhausted` means the current work
- * budget is finished. Calling improve(2/5) continues the very same search. */
+ * budget is finished. Calling improve(2/5/10) continues the very same search. */
 export class AnytimeBusLanesSolver {
   readonly input: SimpleRouteJson
   readonly options: AnytimeBusLanesOptions
@@ -174,7 +174,7 @@ export class AnytimeBusLanesSolver {
   }
 
   private retryRouting() {
-    const next = [1, 2, 5].find(
+    const next = [1, 2, 5, 10].find(
       (e) => e > this.routingEffort && e <= this.requestedEffort,
     )
     if (!next) return false
@@ -436,7 +436,6 @@ export class AnytimeBusLanesSolver {
 
   private effortBudget(effort: AnytimeEffort) {
     const value = effortValue(effort)
-    if (![1, 2, 5].includes(value)) throw Error("Effort must be 1x, 2x or 5x")
     return value * this.options.iterationsPerX!
   }
   /** Snapshots are detached so callers cannot mutate the retained best route. */

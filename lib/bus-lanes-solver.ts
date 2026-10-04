@@ -49,6 +49,7 @@ import { spreadTuningLanes } from "./spread-tuning-lanes"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { tuneLengths } from "./length-tuning"
 import { layerColor } from "./layer-colors"
+import { CopperIndex } from "./copper-index"
 /** Routes on an implicit clearance-offset visibility graph in board-world mm.
  * Every step expands a geometric vertex or commits a complete lane. */
 export class BusLanesSolver extends BaseSolver {
@@ -643,6 +644,13 @@ export class BusLanesSolver extends BaseSolver {
   private validateOutput() {
     if (this.options.smoothTuning && !routeAnglesAreConventional(this.traces))
       throw Error("Final route has a nonconventional corner")
+    const layerCounts = new Map<string, number>()
+    for (const c of this.input.connections) {
+      const layer = c.pointsToConnect[0].layer
+      layerCounts.set(layer, (layerCounts.get(layer) ?? 0) + 1)
+    }
+    let copper: Copper[] | undefined
+    const indexes = new Map<string, CopperIndex>()
     for (const c of this.input.connections) {
       const t = this.traces.find((t) => t.connection_name === c.name)
       if (!t) throw Error("Missing lane")
@@ -665,7 +673,28 @@ export class BusLanesSolver extends BaseSolver {
         )
       )
         throw Error("Carrier layer does not match its terminals")
-      const scene = this.scene(c)
+      const layer = c.pointsToConnect[0].layer
+      let scene: VectorScene
+      // Small layers benefit from excluding a net's own meanders before
+      // indexing. Larger batches amortize one complete index across the nets.
+      if (layerCounts.get(layer)! < 4) scene = this.scene(c)
+      else {
+        copper ??= [...this.fixed, ...this.traces.flatMap(routeCopper)]
+        let index = indexes.get(layer)
+        if (!index) {
+          index = new CopperIndex(
+            copper.filter((segment) => segment.layer === layer),
+          )
+          indexes.set(layer, index)
+        }
+        scene = new VectorScene(
+          this.input,
+          c,
+          this.widths.get(c.name)!,
+          copper,
+          index,
+        )
+      }
       if (
         !tuningPathIsSelfClear(
           t.route,

@@ -1,0 +1,578 @@
+{
+  "afterSourceFingerprint": "24c9010ae5f567ab6e693c87c4cf350ebd60e75f268f2de057f220cc2beaf837",
+  "method": "Three alternating before/after fresh-process optimization runs at identical 512/1024/2560 cumulative steps using the same pristine input and seed, without other CPU-heavy jobs. Every checkpoint matches route bytes, score bytes, objective, iteration count and complete search statistics. Initial native-routing figures are separate single profiled runs, not three-run medians.",
+  "waveCacheLimits": {
+    "pointReferencesPerGenerator": 200000,
+    "entriesPerGenerator": 128,
+    "eviction": "FIFO; a miss recomputes the identical pure geometry"
+  },
+  "kernel": {
+    "sample": "am3352-inner-layers-above",
+    "beforeCommit": "fda3d04664301badec1714cf6c168f4f3d98955d",
+    "iterationsPerX": 512,
+    "repeats": 3,
+    "checkpoints": [
+      {
+        "effort": 1,
+        "beforeOptimizationMilliseconds": 6270.710218,
+        "afterOptimizationMilliseconds": 4713.639595000001,
+        "speedup": 1.3303329818961265,
+        "reductionPercent": 24.830849598669808,
+        "allRoutesScoresAndStatsIdentical": true
+      },
+      {
+        "effort": 2,
+        "beforeOptimizationMilliseconds": 9408.135948000001,
+        "afterOptimizationMilliseconds": 6871.758786,
+        "speedup": 1.3691015998942546,
+        "reductionPercent": 26.95940169252325,
+        "allRoutesScoresAndStatsIdentical": true
+      },
+      {
+        "effort": 5,
+        "beforeOptimizationMilliseconds": 24715.272418,
+        "afterOptimizationMilliseconds": 17085.134693,
+        "speedup": 1.4465951168723397,
+        "reductionPercent": 30.872157085523412,
+        "allRoutesScoresAndStatsIdentical": true
+      }
+    ],
+    "reports": [
+      {
+        "label": "speed-before-1",
+        "root": "/tmp/anytime-kernel-fda3d04",
+        "inputHash": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+        "seedHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+        "constructedMs": 2886.2530410000004,
+        "checkpoints": [
+          {
+            "effort": 1,
+            "milliseconds": 6472.255410000001,
+            "totalMs": 9375.057415000001,
+            "status": "valid",
+            "iterations": 512,
+            "objective": 3.2428150958738837,
+            "routeHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+            "scoreHash": "6bd54a7d04138f7dbb550d4e624b7f222d260e199244a080c1c162b4d45254ef",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2428150958738837,
+              "optimizationIterations": 512,
+              "acceptedImprovements": 0,
+              "budget": 512,
+              "proposals": 55,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 2,
+            "milliseconds": 3199.025321000001,
+            "totalMs": 12610.868680000001,
+            "status": "valid",
+            "iterations": 1024,
+            "objective": 3.2227983926094295,
+            "routeHash": "0d4d1f1d63a3063c09842072e5d73fa5e58025ddd723f4618d909195a0a0a50f",
+            "scoreHash": "da8d5a95e405ebceca27917f94a00072ccf0a8314746265236d726799fbecc0c",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2227983926094295,
+              "optimizationIterations": 1024,
+              "acceptedImprovements": 1,
+              "budget": 1024,
+              "proposals": 56,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 5,
+            "milliseconds": 15043.991686999998,
+            "totalMs": 27691.257505,
+            "status": "valid",
+            "iterations": 2560,
+            "objective": 2.1853242042786913,
+            "routeHash": "e93fd2ca989a3ee1e196540e8e425df161ac0231a035118939f780acf4343fa2",
+            "scoreHash": "41e48b88a1023e3f31aa6731e5165c24f2eaab10337b622e03791d64e5732318",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 2.1853242042786913,
+              "optimizationIterations": 2560,
+              "acceptedImprovements": 6,
+              "budget": 2560,
+              "proposals": 116,
+              "objectiveRejected": 110,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          }
+        ],
+        "totalMs": 27721.870874,
+        "kind": "before",
+        "repeat": 1
+      },
+      {
+        "label": "speed-after-1",
+        "root": "/workspace/bus-lanes-solver",
+        "inputHash": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+        "seedHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+        "constructedMs": 3141.8660919999998,
+        "checkpoints": [
+          {
+            "effort": 1,
+            "milliseconds": 4713.639595000001,
+            "totalMs": 7871.222451,
+            "status": "valid",
+            "iterations": 512,
+            "objective": 3.2428150958738837,
+            "routeHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+            "scoreHash": "6bd54a7d04138f7dbb550d4e624b7f222d260e199244a080c1c162b4d45254ef",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2428150958738837,
+              "optimizationIterations": 512,
+              "acceptedImprovements": 0,
+              "budget": 512,
+              "proposals": 55,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 2,
+            "milliseconds": 2158.119191,
+            "totalMs": 10072.251032,
+            "status": "valid",
+            "iterations": 1024,
+            "objective": 3.2227983926094295,
+            "routeHash": "0d4d1f1d63a3063c09842072e5d73fa5e58025ddd723f4618d909195a0a0a50f",
+            "scoreHash": "da8d5a95e405ebceca27917f94a00072ccf0a8314746265236d726799fbecc0c",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2227983926094295,
+              "optimizationIterations": 1024,
+              "acceptedImprovements": 1,
+              "budget": 1024,
+              "proposals": 56,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 5,
+            "milliseconds": 10213.375907,
+            "totalMs": 20320.687882000002,
+            "status": "valid",
+            "iterations": 2560,
+            "objective": 2.1853242042786913,
+            "routeHash": "e93fd2ca989a3ee1e196540e8e425df161ac0231a035118939f780acf4343fa2",
+            "scoreHash": "41e48b88a1023e3f31aa6731e5165c24f2eaab10337b622e03791d64e5732318",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 2.1853242042786913,
+              "optimizationIterations": 2560,
+              "acceptedImprovements": 6,
+              "budget": 2560,
+              "proposals": 116,
+              "objectiveRejected": 110,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          }
+        ],
+        "totalMs": 20353.426621,
+        "kind": "after",
+        "repeat": 1
+      },
+      {
+        "label": "speed-after-2",
+        "root": "/workspace/bus-lanes-solver",
+        "inputHash": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+        "seedHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+        "constructedMs": 2720.4677149999998,
+        "checkpoints": [
+          {
+            "effort": 1,
+            "milliseconds": 5398.811822,
+            "totalMs": 8134.9445940000005,
+            "status": "valid",
+            "iterations": 512,
+            "objective": 3.2428150958738837,
+            "routeHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+            "scoreHash": "6bd54a7d04138f7dbb550d4e624b7f222d260e199244a080c1c162b4d45254ef",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2428150958738837,
+              "optimizationIterations": 512,
+              "acceptedImprovements": 0,
+              "budget": 512,
+              "proposals": 55,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 2,
+            "milliseconds": 2308.91165,
+            "totalMs": 10484.6857,
+            "status": "valid",
+            "iterations": 1024,
+            "objective": 3.2227983926094295,
+            "routeHash": "0d4d1f1d63a3063c09842072e5d73fa5e58025ddd723f4618d909195a0a0a50f",
+            "scoreHash": "da8d5a95e405ebceca27917f94a00072ccf0a8314746265236d726799fbecc0c",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2227983926094295,
+              "optimizationIterations": 1024,
+              "acceptedImprovements": 1,
+              "budget": 1024,
+              "proposals": 56,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 5,
+            "milliseconds": 10000.642734000001,
+            "totalMs": 20528.357956,
+            "status": "valid",
+            "iterations": 2560,
+            "objective": 2.1853242042786913,
+            "routeHash": "e93fd2ca989a3ee1e196540e8e425df161ac0231a035118939f780acf4343fa2",
+            "scoreHash": "41e48b88a1023e3f31aa6731e5165c24f2eaab10337b622e03791d64e5732318",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 2.1853242042786913,
+              "optimizationIterations": 2560,
+              "acceptedImprovements": 6,
+              "budget": 2560,
+              "proposals": 116,
+              "objectiveRejected": 110,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          }
+        ],
+        "totalMs": 20560.542628,
+        "kind": "after",
+        "repeat": 2
+      },
+      {
+        "label": "speed-before-2",
+        "root": "/tmp/anytime-kernel-fda3d04",
+        "inputHash": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+        "seedHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+        "constructedMs": 2841.5627649999997,
+        "checkpoints": [
+          {
+            "effort": 1,
+            "milliseconds": 6270.710218,
+            "totalMs": 9127.419214,
+            "status": "valid",
+            "iterations": 512,
+            "objective": 3.2428150958738837,
+            "routeHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+            "scoreHash": "6bd54a7d04138f7dbb550d4e624b7f222d260e199244a080c1c162b4d45254ef",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2428150958738837,
+              "optimizationIterations": 512,
+              "acceptedImprovements": 0,
+              "budget": 512,
+              "proposals": 55,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 2,
+            "milliseconds": 3137.425730000001,
+            "totalMs": 12304.71899,
+            "status": "valid",
+            "iterations": 1024,
+            "objective": 3.2227983926094295,
+            "routeHash": "0d4d1f1d63a3063c09842072e5d73fa5e58025ddd723f4618d909195a0a0a50f",
+            "scoreHash": "da8d5a95e405ebceca27917f94a00072ccf0a8314746265236d726799fbecc0c",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2227983926094295,
+              "optimizationIterations": 1024,
+              "acceptedImprovements": 1,
+              "budget": 1024,
+              "proposals": 56,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 5,
+            "milliseconds": 15603.274599,
+            "totalMs": 27945.667653,
+            "status": "valid",
+            "iterations": 2560,
+            "objective": 2.1853242042786913,
+            "routeHash": "e93fd2ca989a3ee1e196540e8e425df161ac0231a035118939f780acf4343fa2",
+            "scoreHash": "41e48b88a1023e3f31aa6731e5165c24f2eaab10337b622e03791d64e5732318",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 2.1853242042786913,
+              "optimizationIterations": 2560,
+              "acceptedImprovements": 6,
+              "budget": 2560,
+              "proposals": 116,
+              "objectiveRejected": 110,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          }
+        ],
+        "totalMs": 27975.174753,
+        "kind": "before",
+        "repeat": 2
+      },
+      {
+        "label": "speed-before-3",
+        "root": "/tmp/anytime-kernel-fda3d04",
+        "inputHash": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+        "seedHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+        "constructedMs": 2835.244622,
+        "checkpoints": [
+          {
+            "effort": 1,
+            "milliseconds": 6108.830436999999,
+            "totalMs": 8959.465688,
+            "status": "valid",
+            "iterations": 512,
+            "objective": 3.2428150958738837,
+            "routeHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+            "scoreHash": "6bd54a7d04138f7dbb550d4e624b7f222d260e199244a080c1c162b4d45254ef",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2428150958738837,
+              "optimizationIterations": 512,
+              "acceptedImprovements": 0,
+              "budget": 512,
+              "proposals": 55,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 2,
+            "milliseconds": 3033.2099749999998,
+            "totalMs": 12030.046606,
+            "status": "valid",
+            "iterations": 1024,
+            "objective": 3.2227983926094295,
+            "routeHash": "0d4d1f1d63a3063c09842072e5d73fa5e58025ddd723f4618d909195a0a0a50f",
+            "scoreHash": "da8d5a95e405ebceca27917f94a00072ccf0a8314746265236d726799fbecc0c",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2227983926094295,
+              "optimizationIterations": 1024,
+              "acceptedImprovements": 1,
+              "budget": 1024,
+              "proposals": 56,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 5,
+            "milliseconds": 14055.301766000002,
+            "totalMs": 26122.750797999997,
+            "status": "valid",
+            "iterations": 2560,
+            "objective": 2.1853242042786913,
+            "routeHash": "e93fd2ca989a3ee1e196540e8e425df161ac0231a035118939f780acf4343fa2",
+            "scoreHash": "41e48b88a1023e3f31aa6731e5165c24f2eaab10337b622e03791d64e5732318",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 2.1853242042786913,
+              "optimizationIterations": 2560,
+              "acceptedImprovements": 6,
+              "budget": 2560,
+              "proposals": 116,
+              "objectiveRejected": 110,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          }
+        ],
+        "totalMs": 26161.494016,
+        "kind": "before",
+        "repeat": 3
+      },
+      {
+        "label": "speed-after-3",
+        "root": "/workspace/bus-lanes-solver",
+        "inputHash": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+        "seedHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+        "constructedMs": 2480.543481,
+        "checkpoints": [
+          {
+            "effort": 1,
+            "milliseconds": 4652.204323,
+            "totalMs": 7149.424632,
+            "status": "valid",
+            "iterations": 512,
+            "objective": 3.2428150958738837,
+            "routeHash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223",
+            "scoreHash": "6bd54a7d04138f7dbb550d4e624b7f222d260e199244a080c1c162b4d45254ef",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2428150958738837,
+              "optimizationIterations": 512,
+              "acceptedImprovements": 0,
+              "budget": 512,
+              "proposals": 55,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 2,
+            "milliseconds": 1992.5747610000008,
+            "totalMs": 9180.559079,
+            "status": "valid",
+            "iterations": 1024,
+            "objective": 3.2227983926094295,
+            "routeHash": "0d4d1f1d63a3063c09842072e5d73fa5e58025ddd723f4618d909195a0a0a50f",
+            "scoreHash": "da8d5a95e405ebceca27917f94a00072ccf0a8314746265236d726799fbecc0c",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 3.2227983926094295,
+              "optimizationIterations": 1024,
+              "acceptedImprovements": 1,
+              "budget": 1024,
+              "proposals": 56,
+              "objectiveRejected": 55,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          },
+          {
+            "effort": 5,
+            "milliseconds": 9483.929977999998,
+            "totalMs": 18703.848462,
+            "status": "valid",
+            "iterations": 2560,
+            "objective": 2.1853242042786913,
+            "routeHash": "e93fd2ca989a3ee1e196540e8e425df161ac0231a035118939f780acf4343fa2",
+            "scoreHash": "41e48b88a1023e3f31aa6731e5165c24f2eaab10337b622e03791d64e5732318",
+            "diagnostics": {
+              "phase": "paused",
+              "status": "valid",
+              "score": 2.1853242042786913,
+              "optimizationIterations": 2560,
+              "acceptedImprovements": 6,
+              "budget": 2560,
+              "proposals": 116,
+              "objectiveRejected": 110,
+              "matchingRejected": 0,
+              "validationRejected": 0,
+              "lastValidationFailure": null
+            }
+          }
+        ],
+        "totalMs": 18743.18828,
+        "kind": "after",
+        "repeat": 3
+      }
+    ],
+    "seedAudit": {
+      "before": 2841.5627649999997,
+      "after": 2720.4677149999998
+    }
+  },
+  "native": {
+    "baselineCommit": "fda3d04664301badec1714cf6c168f4f3d98955d",
+    "strict": [
+      {
+        "id": "am3352-inner-layers-above",
+        "baselineMedianMs": 1623.252383,
+        "optimizedMedianMs": 714.372276,
+        "speedup": 2.272277967013378,
+        "exactOutputHashesEqual": true
+      },
+      {
+        "id": "am3352-inner-layers-left",
+        "baselineMedianMs": 1409.9839860000002,
+        "optimizedMedianMs": 633.2953010000001,
+        "speedup": 2.2264242033275403,
+        "exactOutputHashesEqual": true
+      },
+      {
+        "id": "am3352-control",
+        "baselineMedianMs": 643.3322339999995,
+        "optimizedMedianMs": 356.27503400000023,
+        "speedup": 1.8057179779821426,
+        "exactOutputHashesEqual": true
+      }
+    ],
+    "freshAm3352InnerAbove": {
+      "baseline": {
+        "milliseconds": 122738.79964900001,
+        "status": true,
+        "error": null,
+        "iterations": 322703,
+        "hash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223"
+      },
+      "optimized": {
+        "milliseconds": 103389.716931,
+        "status": true,
+        "error": null,
+        "iterations": 322703,
+        "hash": "958438ba4f8c30cdee1ffba03294c7b9fb63903c6cd9c56571b944be0bd16223"
+      },
+      "speedup": 1.1871470712209529,
+      "exactHashAndIterationsEqual": true
+    },
+    "limitations": "One fresh-routing measurement per version with CPU profiling; strict validation has three repeats per version. These measurements are separate from the original eight-placement benchmark and loaded comparison export."
+  }
+}

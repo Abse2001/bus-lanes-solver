@@ -352,7 +352,7 @@ export async function listAnytimeExperimentSeeds(
 }
 
 /** No rerouting of the original seeds. Each selected sample uses one genuine
- * sequence, and both 0x→5x and 1x→5x gains are reported without weakening 1x. */
+ * sequence; gains through 5x and 10x are reported without weakening 1x. */
 export async function runAnytimeExperiment(
   options: AnytimeExperimentOptions = {},
 ) {
@@ -380,7 +380,7 @@ export async function runAnytimeExperiment(
     nativeCheckpointThreshold: options.nativeCheckpointThreshold ?? 0.005,
     definitions: {
       efforts:
-        "0x is the pristine completed route; 1x, 2x, 5x continue one identical search sequence.",
+        "0x is the pristine completed route; 1x, 2x, 5x, 10x continue one identical search sequence.",
       dramatic:
         "At least 20% signal length, carrier clearance-exclusion footprint, or physical outer envelope reduction; layer-envelope reduction qualifies with at least 10% clearance-footprint reduction. Weighted objective alone never qualifies.",
       clearance:
@@ -428,7 +428,7 @@ export async function runAnytimeExperiment(
       | undefined
     let priorObjective = Infinity
     let optimizationMilliseconds = 0
-    for (const effort of [0, 1, 2, 5] as const) {
+    for (const effort of [0, 1, 2, 5, 10] as const) {
       const started = performance.now()
       const result: AnytimeResult =
         effort === 0
@@ -537,9 +537,12 @@ export async function runAnytimeExperiment(
     }
     const seed = checkpoints[0].physical,
       one = checkpoints[1].physical,
-      five = checkpoints[3].physical
+      five = checkpoints[3].physical,
+      ten = checkpoints[4].physical
     const seedToFive = physicalChange(seed, five),
-      oneToFive = physicalChange(one, five)
+      oneToFive = physicalChange(one, five),
+      oneToTen = physicalChange(one, ten),
+      fiveToTen = physicalChange(five, ten)
     const qualifies = (d: ReturnType<typeof physicalChange>) =>
       d.signalLengthReduction >= report.dramaticThreshold ||
       d.clearanceFootprintReduction >= report.dramaticThreshold ||
@@ -565,8 +568,11 @@ export async function runAnytimeExperiment(
       checkpoints,
       seedToFive,
       oneToFive,
+      oneToTen,
+      fiveToTen,
       dramaticSeedToFive: qualifies(seedToFive),
       dramaticOneToFive: qualifies(oneToFive),
+      dramaticOneToTen: qualifies(oneToTen),
     })
     await Bun.write(
       join(directory, "measurements.json"),

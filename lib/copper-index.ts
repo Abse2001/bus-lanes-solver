@@ -2,7 +2,7 @@ import type { Point } from "./types"
 import type { Copper } from "./vector-scene"
 
 type Box = { minX: number; maxX: number; minY: number; maxY: number }
-type Entry = Box & { copper: Copper }
+type Entry = Box & { copper: Copper; centerX: number; centerY: number }
 type Node = Box & { entries?: Entry[]; left?: Node; right?: Node }
 
 /** Conservative BVH over immutable scene copper. Queries only remove distant
@@ -10,15 +10,21 @@ type Node = Box & { entries?: Entry[]; left?: Node; right?: Node }
 export class CopperIndex {
   private root: Node | undefined
   constructor(copper: Copper[]) {
-    const entries: Entry[] = copper.map((c) => ({
-      copper: c,
-      ...(c.rect ?? {
-        minX: Math.min(c.a.x, c.b.x) - c.radius,
-        maxX: Math.max(c.a.x, c.b.x) + c.radius,
-        minY: Math.min(c.a.y, c.b.y) - c.radius,
-        maxY: Math.max(c.a.y, c.b.y) + c.radius,
-      }),
-    }))
+    const entries: Entry[] = copper.map((c) => {
+      const minX = c.rect?.minX ?? Math.min(c.a.x, c.b.x) - c.radius,
+        maxX = c.rect?.maxX ?? Math.max(c.a.x, c.b.x) + c.radius,
+        minY = c.rect?.minY ?? Math.min(c.a.y, c.b.y) - c.radius,
+        maxY = c.rect?.maxY ?? Math.max(c.a.y, c.b.y) + c.radius
+      return {
+        copper: c,
+        minX,
+        maxX,
+        minY,
+        maxY,
+        centerX: minX + maxX,
+        centerY: minY + maxY,
+      }
+    })
     const swap = (a: number, b: number) => {
       const value = entries[a]
       entries[a] = entries[b]
@@ -32,8 +38,7 @@ export class CopperIndex {
       middle: number,
       x: boolean,
     ) => {
-      const key = (entry: Entry) =>
-        x ? entry.minX + entry.maxX : entry.minY + entry.maxY
+      const key = (entry: Entry) => (x ? entry.centerX : entry.centerY)
       while (end - start > 1) {
         const a = key(entries[start]),
           b = key(entries[(start + end) >> 1]),
@@ -56,25 +61,30 @@ export class CopperIndex {
       }
     }
     const build = (start: number, end: number): Node => {
-      const box = {
-        minX: Infinity,
-        maxX: -Infinity,
-        minY: Infinity,
-        maxY: -Infinity,
-      }
+      let minX = Infinity,
+        maxX = -Infinity,
+        minY = Infinity,
+        maxY = -Infinity
       for (let i = start; i < end; i++) {
         const e = entries[i]
-        box.minX = Math.min(box.minX, e.minX)
-        box.maxX = Math.max(box.maxX, e.maxX)
-        box.minY = Math.min(box.minY, e.minY)
-        box.maxY = Math.max(box.maxY, e.maxY)
+        minX = Math.min(minX, e.minX)
+        maxX = Math.max(maxX, e.maxX)
+        minY = Math.min(minY, e.minY)
+        maxY = Math.max(maxY, e.maxY)
       }
       if (end - start <= 8)
-        return { ...box, entries: entries.slice(start, end) }
-      const x = box.maxX - box.minX >= box.maxY - box.minY
+        return { minX, maxX, minY, maxY, entries: entries.slice(start, end) }
+      const x = maxX - minX >= maxY - minY
       const middle = (start + end) >> 1
       partition(start, end, middle, x)
-      return { ...box, left: build(start, middle), right: build(middle, end) }
+      return {
+        minX,
+        maxX,
+        minY,
+        maxY,
+        left: build(start, middle),
+        right: build(middle, end),
+      }
     }
     if (entries.length) this.root = build(0, entries.length)
   }
@@ -90,7 +100,9 @@ export class CopperIndex {
     const lowerBound = (box: Box) => {
       const dx = Math.max(box.minX - point.x, 0, point.x - box.maxX)
       const dy = Math.max(box.minY - point.y, 0, point.y - box.maxY)
-      return dx || dy ? Math.hypot(dx, dy) - queryRadius : -Infinity
+      return dx || dy
+        ? (dx === 0 ? dy : dy === 0 ? dx : Math.hypot(dx, dy)) - queryRadius
+        : -Infinity
     }
     const visit = (node: Node, bound: number) => {
       if (bound >= nearest) return

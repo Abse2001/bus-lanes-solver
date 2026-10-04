@@ -1,5 +1,7 @@
 import { foldedPairedLobes, foldedTuningLobes } from "./folded-tuning"
 import { offsetPath } from "./coupled-pair-routing"
+import { CopperIndex } from "./copper-index"
+import { AnytimeWaveCache } from "./anytime-wave-cache"
 import { distance, length, simplify } from "./geometry"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { pairCouplingReports } from "./pair-coupling"
@@ -21,7 +23,12 @@ import type {
   AnytimeTuningBankMember,
 } from "./anytime-skeleton"
 import type { Point, SimpleRouteJson, Trace, Wire } from "./types"
-import { fixedCopper, routeCopper, VectorScene } from "./vector-scene"
+import {
+  fixedCopper,
+  routeCopper,
+  VectorScene,
+  type Copper,
+} from "./vector-scene"
 
 export interface JointTuningOptions {
   /** Bank handoffs indexed onto the supplied skeletons, e.g. recovery.pockets. */
@@ -1101,19 +1108,58 @@ export function* jointTuningCandidates(
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
   const fixed = fixedCopper(input)
   const banks = availableBanks(input, skeletons, options.banks ?? [])
+  // Search branches replace traces rather than mutating their geometry. Keep
+  // conversions local to this generator so unchanged carriers can supply the
+  // same copper to every bank trial without a process-wide geometry cache.
+  const copperByTrace = new WeakMap<Trace, Copper[]>()
+  const traceCopper = (trace: Trace) => {
+    let copper = copperByTrace.get(trace)
+    if (!copper) {
+      copper = routeCopper(trace)
+      copperByTrace.set(trace, copper)
+    }
+    return copper
+  }
+  const waves = new AnytimeWaveCache()
+  const restore = (bank: AnytimeTuningBank, amount: number) =>
+    waves.get(
+      bank,
+      "restore",
+      amount,
+      () => preservedWaves(bank, amount, options.preservedTraces),
+      (paths) => paths?.reduce((sum, path) => sum + path.length, 0) ?? 0,
+    )
+  const phases = (bank: AnytimeTuningBank, amount: number) =>
+    waves.get(
+      bank,
+      "phases",
+      amount,
+      () => pairedPhaseAlternatives(bank, amount, options.preservedTraces),
+      (choices) =>
+        choices.reduce(
+          (sum, paths) =>
+            sum + paths.reduce((count, path) => count + path.length, 0),
+          0,
+        ),
+    )
+  const mutableVertices = skeletons.map(
+      (trace) => new Uint8Array(trace.route.length),
+    ),
+    mutableSegments = skeletons.map(
+      (trace) => new Uint8Array(trace.route.length - 1),
+    )
+  for (const bank of banks)
+    for (const member of bank.members) {
+      for (let i = member.startIndex + 1; i < member.endIndex; i++)
+        mutableVertices[member.traceIndex][i] = 1
+      for (let i = member.startIndex; i < member.endIndex; i++)
+        mutableSegments[member.traceIndex][i] = 1
+    }
   const vertexReservations = skeletons.map((trace, traceIndex) => ({
     traceIndex,
     copper: [
       ...trace.route.flatMap((point, index) =>
-        point.route_type !== "wire" ||
-        banks.some((bank) =>
-          bank.members.some(
-            (member) =>
-              member.traceIndex === traceIndex &&
-              index > member.startIndex &&
-              index < member.endIndex,
-          ),
-        )
+        point.route_type !== "wire" || mutableVertices[traceIndex][index]
           ? []
           : [
               {
@@ -1125,16 +1171,8 @@ export function* jointTuningCandidates(
               },
             ],
       ),
-      ...routeCopper(trace).filter(
-        (_, index) =>
-          !banks.some((bank) =>
-            bank.members.some(
-              (member) =>
-                member.traceIndex === traceIndex &&
-                index >= member.startIndex &&
-                index + 1 <= member.endIndex,
-            ),
-          ),
+      ...traceCopper(trace).filter(
+        (_, index) => !mutableSegments[traceIndex][index],
       ),
     ],
   }))
@@ -1222,12 +1260,35 @@ export function* jointTuningCandidates(
               yield undefined
               return
             }
-            const copper = [...fixed, ...current.flatMap(routeCopper)]
+            const copper = [...fixed, ...current.flatMap(traceCopper)]
+            const layerIndices = new Map<string, CopperIndex>(),
+              layerCounts = new Map<string, number>()
+            for (const trace of current) {
+              const layer = (trace.route[0] as Wire).layer
+              layerCounts.set(layer, (layerCounts.get(layer) ?? 0) + 1)
+            }
             for (const trace of current) {
               const connection = input.connections.find(
                   (c) => c.name === trace.connection_name,
                 ),
                 wire = trace.route[0] as Wire
+              let sharedIndex: CopperIndex | undefined
+              // Tiny cohorts often have one dense bank beside a single chord.
+              // Their filtered per-net index avoids querying that bank's own
+              // copper; sharing wins once several lanes reuse the same scene.
+              if (
+                connection &&
+                (layerCounts.get(connection.pointsToConnect[0].layer) ?? 0) > 3
+              ) {
+                const layer = connection.pointsToConnect[0].layer
+                sharedIndex = layerIndices.get(layer)
+                if (!sharedIndex) {
+                  sharedIndex = new CopperIndex(
+                    copper.filter((item) => item.layer === layer),
+                  )
+                  layerIndices.set(layer, sharedIndex)
+                }
+              }
               if (
                 !connection ||
                 !new VectorScene(
@@ -1235,6 +1296,7 @@ export function* jointTuningCandidates(
                   connection,
                   wire.width,
                   copper,
+                  sharedIndex,
                 ).pathVisible(trace.route)
               ) {
                 report(index, "complete_clearance")
@@ -1247,12 +1309,45 @@ export function* jointTuningCandidates(
             return
           }
           const group = groups![index]
+          // All other completed carriers and future lane reservations are
+          // invariant while this group tries its bank patterns. Validate that
+          // immutable union once through retained scenes; changing mates are
+          // checked separately with the identical continuous scene predicate.
+          const unfinished = new Set(
+              groups!.slice(index + 1).flatMap((next) => next.members),
+            ),
+            groupMembers = new Set(group.members),
+            background = [
+              ...fixed,
+              ...vertexReservations.flatMap((reservation) =>
+                unfinished.has(reservation.traceIndex) &&
+                !groupMembers.has(reservation.traceIndex)
+                  ? reservation.copper
+                  : [],
+              ),
+              ...reservations.flatMap((reservation) =>
+                unfinished.has(reservation.traceIndex) &&
+                !groupMembers.has(reservation.traceIndex)
+                  ? reservation.copper
+                  : [],
+              ),
+              ...current.flatMap((trace, i) =>
+                groupMembers.has(i) || unfinished.has(i)
+                  ? []
+                  : traceCopper(trace),
+              ),
+            ],
+            scenes = new Map<number, VectorScene>(),
+            backgroundIndices = new Map<string, CopperIndex>(),
+            oldLengths = new Map(
+              group.members.map((i) => [i, length(current[i].route)]),
+            )
           for (const allocation of allocationPlans(group, tier)) {
             const restored = allocation.map(({ bank, amount }) =>
-              preservedWaves(bank, amount, options.preservedTraces),
+              restore(bank, amount),
             )
             const phaseAlternatives = allocation.map(({ bank, amount }) =>
-                pairedPhaseAlternatives(bank, amount, options.preservedTraces),
+                phases(bank, amount),
               ),
               phaseTrials = Math.max(
                 0,
@@ -1325,32 +1420,8 @@ export function* jointTuningCandidates(
                 // Future lanes move as part of this transaction. Their provisional
                 // straight skeletons need not be legal beside an already restored
                 // bank. They are checked against all copper at transaction completion.
-                const unfinished = new Set(
-                  groups!.slice(index + 1).flatMap((next) => next.members),
-                )
-                const copper = [
-                  ...fixed,
-                  ...vertexReservations.flatMap((reservation) =>
-                    unfinished.has(reservation.traceIndex) &&
-                    !group.members.includes(reservation.traceIndex)
-                      ? reservation.copper
-                      : [],
-                  ),
-                  ...reservations.flatMap((reservation) =>
-                    unfinished.has(reservation.traceIndex) &&
-                    !group.members.includes(reservation.traceIndex)
-                      ? reservation.copper
-                      : [],
-                  ),
-                  ...candidate.flatMap((trace, i) =>
-                    unfinished.has(i) && !group.members.includes(i)
-                      ? []
-                      : routeCopper(trace),
-                  ),
-                ]
                 for (const member of group.members) {
                   const trace = candidate[member],
-                    old = current[member],
                     wire = trace.route[0] as Wire
                   const connection = input.connections.find(
                     (c) => c.name === trace.connection_name,
@@ -1358,7 +1429,9 @@ export function* jointTuningCandidates(
                   if (
                     !connection ||
                     Math.abs(
-                      length(trace.route) - length(old.route) - group.amount,
+                      length(trace.route) -
+                        oldLengths.get(member)! -
+                        group.amount,
                     ) > 1e-6
                   ) {
                     valid = false
@@ -1370,13 +1443,40 @@ export function* jointTuningCandidates(
                     reason = "angles"
                     break
                   }
-                  const scene = new VectorScene(
-                    input,
-                    connection,
-                    wire.width,
-                    copper,
-                  )
-                  if (!scene.pathVisible(trace.route)) {
+                  let scene = scenes.get(member)
+                  if (!scene) {
+                    let sharedIndex: CopperIndex | undefined
+                    if (group.members.length > 1) {
+                      const layer = connection.pointsToConnect[0].layer
+                      sharedIndex = backgroundIndices.get(layer)
+                      if (!sharedIndex) {
+                        sharedIndex = new CopperIndex(
+                          background.filter((copper) => copper.layer === layer),
+                        )
+                        backgroundIndices.set(layer, sharedIndex)
+                      }
+                    }
+                    scene = new VectorScene(
+                      input,
+                      connection,
+                      wire.width,
+                      background,
+                      sharedIndex,
+                    )
+                    scenes.set(member, scene)
+                  }
+                  if (
+                    !scene.pathVisible(trace.route) ||
+                    (group.members.length > 1 &&
+                      !new VectorScene(
+                        input,
+                        connection,
+                        wire.width,
+                        group.members.flatMap((other) =>
+                          other === member ? [] : traceCopper(candidate[other]),
+                        ),
+                      ).pathVisible(trace.route))
+                  ) {
                     valid = false
                     reason = "clearance"
                     break

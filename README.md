@@ -47,14 +47,15 @@ const immediate = solver.getResult() // status: "best_effort", with violations
 const one = solver.solve()
 const two = solver.improve("2x")
 const five = solver.improve("5x")
+const ten = solver.improve("10x")
 ```
 
-The levels are cumulative work budgets: 512, 1024 and 2560 optimization trial or
+The levels are cumulative work budgets: 512, 1024, 2560 and 5120 optimization trial or
 discovery steps by default. They follow one deterministic search sequence, and
 continuation produces the same geometry as a fresh run at that effort. Routing
 the first valid incumbent is a separate cost; these labels are not wall-time
 multipliers. If bounded routing fails, higher effort retries the same input with
-larger routing budgets (1, 2 and 5 times `maxSearchIterations`).
+larger routing budgets (1, 2, 5 and 10 times `maxSearchIterations`).
 After any valid checkpoint, `runIterations(1000)` continues optimization beyond
 the presets. The current best remains available if the neighborhood converges.
 
@@ -109,6 +110,13 @@ exterior pair-spacing checks. `stats` reports candidate and rejection counts.
 Acceptance also checks original carrier handoffs, widths, ownership, immutable
 escape geometry, and the accepted shared corridors' physical minimum gap.
 
+Geometry work reuses immutable copper, bank shapes and obstacle scenes within a
+search, and shares spatial indexes across sufficiently large validation batches.
+On inner-layers-above, three alternating before/after runs reduced median 5x
+optimization from 24.7 s to 17.1 s while preserving identical routes, scores and
+search statistics. Initial routing is a separate cost. See the
+[performance measurements](docs/anytime/performance.json).
+
 `status: "best_effort"` always carries violations and must not be treated as
 fabrication-ready copper. Infeasible or unsupported inputs still have a result,
 but no algorithm can promise legal routing for impossible physical constraints.
@@ -119,12 +127,12 @@ Generate the complete effort comparison, independent validations, output JSON,
 and an interactive local report with:
 
 ```sh
-bun scripts/compare-anytime.ts docs/anytime 512 --concurrency 4
+bun scripts/compare-anytime.ts docs/anytime 512 --concurrency 2
 ```
 
 The report covers all eight AM3352 placements, all four complete AM62L DDR
 samples, the obstacle channel, and the skew-tolerance example. Each sample shows
-1x, 2x and 5x at a shared physical scale, with separate routing and optimization
+1x, 2x, 5x and 10x at a shared physical scale, with separate routing and optimization
 timings. See [the generated report](docs/anytime/index.html).
 
 ## Review target

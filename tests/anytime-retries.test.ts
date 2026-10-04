@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test"
 import { AnytimeBusLanesSolver } from "../lib"
-import type { SimpleRouteJson, Trace } from "../lib"
+import type { AnytimeEffort, SimpleRouteJson, Trace } from "../lib"
 
 const input: SimpleRouteJson = {
   layerCount: 2,
@@ -36,6 +36,16 @@ test("extra effort can recover a routing-budget failure and follows the same att
   }).solve()
   expect(result.output).toEqual(fresh.output)
   expect(result.score).toEqual(fresh.score)
+  const ten = resumed.improve("10x")
+  const freshTen = new AnytimeBusLanesSolver(input, {
+    ...options,
+    effort: 10,
+  }).solve()
+  expect(ten.status).toBe("valid")
+  expect(ten.score.objective).toBeLessThanOrEqual(result.score.objective)
+  expect(ten.output).toEqual(freshTen.output)
+  expect(ten.score).toEqual(freshTen.score)
+  expect(ten.optimizationIterations).toBe(freshTen.optimizationIterations)
 })
 
 test("completed seeds are validated and remain detached", () => {
@@ -66,11 +76,15 @@ test("completed seeds are validated and remain detached", () => {
   )
 })
 
-test("effort strings must exactly name a supported level", () => {
-  expect(
-    () => new AnytimeBusLanesSolver(input, { effort: "2abc" as "2x" }),
-  ).toThrow("Effort")
-})
+test.each(["2abc", "10abc", "10", "10X", "20x"])(
+  "effort string %s must exactly name a supported level",
+  (effort) => {
+    expect(
+      () =>
+        new AnytimeBusLanesSolver(input, { effort: effort as AnytimeEffort }),
+    ).toThrow("Effort")
+  },
+)
 
 test("optimization can continue beyond the named effort presets", () => {
   const matched: SimpleRouteJson = {
@@ -91,7 +105,7 @@ test("optimization can continue beyond the named effort presets", () => {
   const solver = new AnytimeBusLanesSolver(matched, {
     fanout: "none",
     iterationsPerX: 1,
-    effort: 5,
+    effort: 10,
   })
   const before = solver.solve()
   const after = solver.runIterations(100)

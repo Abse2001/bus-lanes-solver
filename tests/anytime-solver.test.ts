@@ -51,6 +51,20 @@ test("a complete endpoint-connected approximation is available before the first 
   expect(input).toEqual(original)
 })
 
+test.each([10, "10x"] as const)(
+  "tenfold effort %s uses the cumulative 5120-step default optimization budget",
+  (effort) => {
+    const solver = new AnytimeBusLanesSolver(fixture(), {
+      fanout: "none",
+      effort,
+    })
+    expect(solver.options.iterationsPerX).toBe(512)
+    expect(solver.stats.budget).toBe(5120)
+    expect(solver.getResult().optimizationIterations).toBe(0)
+    expect(solver.getResult().status).toBe("best_effort")
+  },
+)
+
 test("an impossible planar wall retains a usable approximation without claiming successful routing", () => {
   const input = fixture()
   input.buses = []
@@ -77,13 +91,33 @@ test("an impossible planar wall retains a usable approximation without claiming 
   expect(solver.failed).toBe(false)
   expect(solver.exhausted).toBe(true)
   expect(() => solver.getOutput()).not.toThrow()
+  const ten = solver.improve("10x")
+  expect(ten.status).toBe("best_effort")
+  expect(ten.output).toEqual(result.output)
+  expect(ten.score).toEqual(result.score)
+  expect(ten.violations.length).toBeGreaterThanOrEqual(result.violations.length)
+  expect(solver.failed).toBe(false)
+  expect(solver.exhausted).toBe(true)
+  const directTen = new AnytimeBusLanesSolver(input, {
+    ...options,
+    maxSearchIterations: 200,
+    effort: 10,
+  }).solve()
+  expect(directTen.output).toEqual(ten.output)
+  expect(directTen.score).toEqual(ten.score)
+  expect(directTen.violations).toEqual(ten.violations)
   expect(input).toEqual(before)
 })
 
 test("effort checkpoints retain valid matching and a nonincreasing objective", () => {
   const input = fixture()
   const solver = new AnytimeBusLanesSolver(input, { ...options, effort: "1x" })
-  const results = [solver.solve(), solver.improve("2x"), solver.improve("5x")]
+  const results = [
+    solver.solve(),
+    solver.improve("2x"),
+    solver.improve("5x"),
+    solver.improve("10x"),
+  ]
   for (const [index, result] of results.entries()) {
     expect(result.status).toBe("valid")
     expect(result.violations).toEqual([])
@@ -136,6 +170,18 @@ test("continuing an earlier effort checkpoint reproduces a fresh run at the same
   expect(five.output).toEqual(freshFive.output)
   expect(five.score).toEqual(freshFive.score)
   expect(five.optimizationIterations).toBe(freshFive.optimizationIterations)
+  const ten = continued.improve(10)
+  const directTen = new AnytimeBusLanesSolver(fixture(), {
+    ...options,
+    effort: "10x",
+  })
+  const freshTen = directTen.solve()
+  expect(ten.output).toEqual(freshTen.output)
+  expect(ten.score).toEqual(freshTen.score)
+  expect(ten.optimizationIterations).toBe(freshTen.optimizationIterations)
+  expect(ten.acceptedImprovements).toBe(freshTen.acceptedImprovements)
+  expect(continued.history).toEqual(directTen.history)
+  expect(continued.stats.budget).toBe(120)
 })
 
 test("returned snapshots cannot modify the stored incumbent or later checkpoints", () => {
@@ -156,7 +202,15 @@ test("returned snapshots cannot modify the stored incumbent or later checkpoints
   const output = solver.getOutput()
   output.traces![0].route[0].y += 100
   expect(solver.getResult()).toEqual(expected)
-  solver.improve(2)
+  const history = solver.history
+  const expectedHistory = structuredClone(history)
+  history[0].score.objective = -100
+  history[0].score.busLengths[0].lengths[0].totalLengthMm = -100
+  history.push(history[0])
+  expect(solver.history).toEqual(expectedHistory)
+  solver.improve("10x")
+  expect(solver.history[0]).toEqual(expectedHistory[0])
+  expect(solver.history.at(-1)!.score).toEqual(solver.getResult().score)
   expect(expected.output.traces![0].route[0].x).toBe(0)
   expect(expected.score.objective).toBeGreaterThanOrEqual(0)
 })
@@ -194,7 +248,7 @@ test("scoring and matching include immutable fixed fanouts in total electrical l
     reports[0].lengths.reduce((sum, lane) => sum + lane.totalLengthMm!, 0),
     7,
   )
-  solver.improve(5)
+  solver.improve(10)
   expect(solver.getOutput().traces!.slice(0, 2)).toEqual(before.traces!)
   expect(input).toEqual(before)
 })
