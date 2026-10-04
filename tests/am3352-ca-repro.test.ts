@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { withAm3352CaBus } from "../scripts/repro-am3352-ca-bus"
+import { runCaBusCase, withAm3352CaBus } from "../scripts/repro-am3352-ca-bus"
 import { loadAm3352Sample } from "../scripts/am3352-samples"
 
 test("CA reproduction changes only bus constraints on the native powered fixture", async () => {
@@ -43,4 +43,13 @@ test("CA reproduction refuses a missing signal or duplicate bus", async () => {
       metadata.signalNames,
     ),
   ).toThrow("already exists")
+})
+
+test("an unfinished CA reproduction cannot invoke its routed-artifact exporter", async () => {
+  let exported = false
+  const report = await runCaBusCase(true, 0.000001, async () => {
+    exported = true
+  })
+  expect(report.passed).toBe(false)
+  expect(exported).toBe(false)
 })

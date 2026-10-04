@@ -1,5 +1,9 @@
 # AM3352: adding the complete address/control/clock timing bus
 
+> The stacked solver fix now completes this three-bus case. See the
+> [validated routed snapshot and current measurements](routed-am3352-complete-ca/README.md).
+> The v0.0.15 failure measurements below are retained as the original reproduction.
+
 The existing `inner-layers` sample completes 47 signals with two byte buses and
 three differential pairs. Adding a third, 24-signal address/control/clock (CA/CK)
 bus to that same input exhausts the solver's iteration budget on v0.0.15.

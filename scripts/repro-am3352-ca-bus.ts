@@ -1,6 +1,10 @@
 import { BusLanesPipelineSolver, type SimpleRouteJson } from "../lib"
 import { busLengthReports, pairLengthReports } from "../lib/route-lengths"
-import { am3352Hash, loadAm3352Sample } from "./am3352-samples"
+import {
+  am3352Hash,
+  loadAm3352Sample,
+  type Am3352SampleMetadata,
+} from "./am3352-samples"
 import {
   validateAm3352OutputShape,
   validateAm3352Sample,
@@ -55,6 +59,11 @@ export function withAm3352CaBus(
 export async function runCaBusCase(
   completeCa: boolean,
   timeoutSeconds: number,
+  onValidatedOutput?: (candidate: {
+    input: SimpleRouteJson
+    metadata: Am3352SampleMetadata
+    solver: BusLanesPipelineSolver
+  }) => Promise<void>,
 ) {
   const { input: baseline, metadata } = await loadAm3352Sample("inner-layers")
   // The benchmark validator deliberately requires exactly its two original
@@ -136,6 +145,9 @@ export async function runCaBusCase(
       "Stackup/impedance, reference planes, package/via delays and signal integrity",
     ],
   }
+  // Exporters can see copper only after every independent acceptance gate.
+  if (passed && onValidatedOutput)
+    await onValidatedOutput({ input, metadata, solver })
   if (!solver.solved && !solver.failed) solver.tryFinalAcceptance()
   return report
 }
