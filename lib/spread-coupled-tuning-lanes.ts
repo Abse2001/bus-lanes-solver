@@ -73,6 +73,7 @@ export function spreadCoupledTuningLanes(
   pitch: number,
   style: "dogleg" | "diagonal" | "interior" = "dogleg",
   packUnconstrained = false,
+  bankPitches?: ReadonlyMap<string, number>,
 ): Trace[] | null {
   let result = alignCoupledSectionBoundaries(input, structuredClone(traces))
   const clearance =
@@ -217,9 +218,23 @@ export function spreadCoupledTuningLanes(
         maxV = Math.max(...cuts.flatMap((c) => [c.a!.point.y, c.b!.point.y]))
       const center = (minV + maxV) / 2,
         split = Math.floor(cuts.length / 2)
-      const bankPositions = cuts.map(
+      let bankPositions = cuts.map(
         (_, ordinal) => center + (ordinal - (cuts.length - 1) / 2) * pitch,
       )
+      if (bankPitches) {
+        const sizes = cuts.map((c) =>
+          Math.max(
+            ...c.channel.traces.map(
+              (t) => bankPitches.get(t.connection_name!) ?? pitch,
+            ),
+          ),
+        )
+        const positions = [0]
+        for (let i = 1; i < cuts.length; i++)
+          positions.push(positions[i - 1] + (sizes[i - 1] + sizes[i]) / 2)
+        const middle = (positions[0] + positions.at(-1)!) / 2
+        bankPositions = positions.map((p) => center + p - middle)
+      }
       const entries =
         style === "interior"
           ? staggeredBankEntries(
@@ -303,7 +318,7 @@ export function spreadCoupledTuningLanes(
             const ordinal = cuts.indexOf(c)
             const v =
               style !== "dogleg"
-                ? center + (ordinal - (cuts.length - 1) / 2) * pitch
+                ? bankPositions[ordinal]
                 : center + side * (sideExtent - distances[i])
             const lead = Math.abs(v - c.a!.point.y),
               tail = Math.abs(v - c.b!.point.y)

@@ -86,3 +86,34 @@ test("interior allocation rejects blocked banks without moving fixed copper", ()
   expect(spreadCoupledTuningLanes(input, traces, 0.8, "interior")).toBeNull()
   expect(input).toEqual(before)
 })
+
+test("variable bank widths reserve a difficult lane without widening every neighbor", () => {
+  const { input, traces } = fixture()
+  const before = structuredClone({ input, traces })
+  const wide = spreadCoupledTuningLanes(input, traces, 2, "interior")!
+  const varied = spreadCoupledTuningLanes(
+    input,
+    traces,
+    1.6,
+    "interior",
+    false,
+    new Map([["D3", 2]]),
+  )!
+  expect(varied).not.toBeNull()
+  expect(wide).not.toBeNull()
+  expect(height(varied)).toBeLessThan(height(wide))
+  expect(sharedPairSpacingReports(input, varied).every((p) => p.matched)).toBe(
+    true,
+  )
+  const copper = [...fixedCopper(input), ...varied.flatMap(routeCopper)]
+  for (const [i, t] of varied.entries()) {
+    expect(t.route[0]).toEqual(traces[i].route[0])
+    expect(t.route.at(-1)).toEqual(traces[i].route.at(-1))
+    expect(
+      new VectorScene(input, input.connections[i], 0.1, copper).pathVisible(
+        t.route,
+      ),
+    ).toBe(true)
+  }
+  expect({ input, traces }).toEqual(before)
+})

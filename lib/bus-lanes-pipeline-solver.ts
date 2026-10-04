@@ -1,3 +1,8 @@
+import {
+  optimizeTuningEnvelope,
+  routeEnvelopeArea,
+  validateNativeEnvelopeCandidate,
+} from "./optimize-tuning-envelope"
 import { compactUnconstrainedLanes } from "./compact-unconstrained-lanes"
 import { routeFreshSharedBuses } from "./route-fresh-shared-buses"
 import { routeSharedLayerBuses } from "./route-shared-layer-buses"
@@ -22,6 +27,10 @@ import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
 
 export interface BusLanesPipelineOptions extends SolverOptions {
   fanout?: "auto" | "none"
+  /** Bounded improvement after routing; false retains the first accepted route. */
+  optimizeEnvelope?: boolean
+  /** Default: two tuning-bank attempts; an explicit zero skips the search. */
+  maxEnvelopeAttempts?: number
 }
 
 /** Board-world points in mm, +X right, +Y up. Adds only local terminal vias;
@@ -34,9 +43,115 @@ export class BusLanesPipelineSolver extends BaseSolver {
   failureCode: string | null = null
   private acceptedTraces?: Trace[]
   private envelopeOptimization?: Generator<void, void>
+  private envelopeSeed?: { input: SimpleRouteJson; traces: Trace[] }
   /** Runs only after a complete accepted route exists. A budget interrupt or
    * exception restores that private snapshot, never mutable work-in-progress. */
-  protected *optimizeEnvelope(): Generator<void, void> {}
+  protected *optimizeEnvelope(): Generator<void, void> {
+    if (this.options.optimizeEnvelope === false || !this.envelopeSeed) return
+    const start = performance.now()
+    const initialAreaMm2 = routeEnvelopeArea(this.acceptedTraces!)
+    const metrics = {
+      attempts: 0,
+      accepted: 0,
+      initialAreaMm2,
+      finalAreaMm2: initialAreaMm2,
+      milliseconds: 0,
+    }
+    this.stats = { ...this.stats, envelopeOptimization: metrics }
+    try {
+      for (const candidate of optimizeTuningEnvelope(
+        this.envelopeSeed.input,
+        this.envelopeSeed.traces,
+        this.options.maxEnvelopeAttempts ?? 2,
+      )) {
+        metrics.attempts++
+        yield
+        if (!candidate) continue
+        try {
+          const coupled = yield* this.finishPackageCoupling(
+            this.envelopeSeed.input,
+            candidate,
+          )
+          const refined = simplifyMatchedTraces(
+            this.envelopeSeed.input,
+            coupled,
+          )
+          const validation = BusLanesSolver.forValidation(
+            this.envelopeSeed.input,
+            refined,
+            this.options,
+          )
+          validation.solve()
+          if (!validation.solved) continue
+          const complete = this.attachEscapes(refined)
+          const area = routeEnvelopeArea(complete)
+          if (
+            area >= metrics.finalAreaMm2 - 1e-7 ||
+            !validateNativeEnvelopeCandidate(this.input, complete)
+          )
+            continue
+          this.acceptedTraces = structuredClone(complete)
+          this.traces = complete
+          metrics.accepted++
+          metrics.finalAreaMm2 = area
+        } catch {
+          /* Keep the last accepted route when a refinement cannot pass. */
+        }
+      }
+    } finally {
+      metrics.milliseconds = performance.now() - start
+    }
+  }
+
+  private attachEscapes(refined: Trace[]): Trace[] {
+    return refined.map((lane) => {
+      const signalLayer = lane.route.find((p) => p.route_type === "wire")!.layer
+      const escapes = this.escapes
+        .filter((t) => t.connection_name === lane.connection_name)
+        .map((t) => {
+          const via = t.route.find((p) => p.route_type === "via")!
+          return {
+            ...t,
+            route: t.route.map((p) =>
+              p.route_type === "via"
+                ? { ...p, to_layer: signalLayer }
+                : p.layer === via.to_layer
+                  ? { ...p, layer: signalLayer }
+                  : p,
+            ),
+          }
+        })
+      const near = (a: { x: number; y: number }, b: { x: number; y: number }) =>
+        Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
+      const prefix = escapes.find((t) => near(t.route.at(-1)!, lane.route[0]))
+      const suffix = escapes.find(
+        (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
+      )
+      const prefixRoute = prefix?.route,
+        suffixRoute = suffix?.route
+      const reversed =
+        suffixRoute
+          ?.toReversed()
+          .map((p) =>
+            p.route_type === "via"
+              ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
+              : p,
+          ) ?? []
+      const offset = (prefix?.route.length ?? 1) - 1
+      return {
+        ...lane,
+        coupledSection: lane.coupledSection?.map((i) => i + offset) as
+          | [number, number]
+          | undefined,
+        curvedSegments: lane.curvedSegments?.map((i) => i + offset),
+        route: [
+          ...(prefixRoute?.slice(0, -1) ?? []),
+          ...lane.route,
+          ...reversed.slice(1),
+        ],
+      }
+    })
+  }
 
   private finishAccepted(early: boolean) {
     const optimization = this.envelopeOptimization
@@ -636,6 +751,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.sharedPackages = undefined
         if (!state.value) throw Error("Shared-layer bus routing exhausted")
         this.escapes = state.value.escapes
+        if (state.value.envelopeSeed)
+          this.envelopeSeed = {
+            input: state.value.input,
+            traces: state.value.envelopeSeed,
+          }
         this.child = BusLanesSolver.forValidation(
           state.value.input,
           state.value.traces,
@@ -753,59 +873,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
             },
             refined,
           )
-        this.traces = refined.map((lane) => {
-          const signalLayer = lane.route.find(
-            (p) => p.route_type === "wire",
-          )!.layer
-          const escapes = this.escapes
-            .filter((t) => t.connection_name === lane.connection_name)
-            .map((t) => {
-              const via = t.route.find((p) => p.route_type === "via")!
-              return {
-                ...t,
-                route: t.route.map((p) =>
-                  p.route_type === "via"
-                    ? { ...p, to_layer: signalLayer }
-                    : p.layer === via.to_layer
-                      ? { ...p, layer: signalLayer }
-                      : p,
-                ),
-              }
-            })
-          const near = (
-            a: { x: number; y: number },
-            b: { x: number; y: number },
-          ) => Math.hypot(a.x - b.x, a.y - b.y) < 1e-8
-          const prefix = escapes.find((t) =>
-            near(t.route.at(-1)!, lane.route[0]),
-          )
-          const suffix = escapes.find(
-            (t) => t !== prefix && near(t.route.at(-1)!, lane.route.at(-1)!),
-          )
-          const prefixRoute = prefix?.route,
-            suffixRoute = suffix?.route
-          const reversed =
-            suffixRoute
-              ?.toReversed()
-              .map((p) =>
-                p.route_type === "via"
-                  ? { ...p, from_layer: p.to_layer, to_layer: p.from_layer }
-                  : p,
-              ) ?? []
-          const offset = (prefix?.route.length ?? 1) - 1
-          return {
-            ...lane,
-            coupledSection: lane.coupledSection?.map((i) => i + offset) as
-              | [number, number]
-              | undefined,
-            curvedSegments: lane.curvedSegments?.map((i) => i + offset),
-            route: [
-              ...(prefixRoute?.slice(0, -1) ?? []),
-              ...lane.route,
-              ...reversed.slice(1),
-            ],
-          }
-        })
+        this.traces = this.attachEscapes(refined)
         this.acceptedTraces = structuredClone(this.traces)
         this.phase = "optimize_envelope"
         this.envelopeOptimization = this.optimizeEnvelope()
@@ -830,6 +898,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.attempt < this.input.layerCount
       ) {
         this.child = undefined
+        this.envelopeSeed = undefined
         this.escapes = []
         this.completedLanes = []
         this.remainingInput = undefined

@@ -9,6 +9,14 @@ import { distance, length, simplify, segmentDistance } from "./geometry"
 import { VectorScene, fixedCopper, routeCopper } from "./vector-scene"
 import type { SimpleRouteJson, Trace, Point, Wire } from "./types"
 
+/** Failed lane identities let envelope search allocate space where it is needed. */
+export class TuningClearanceError extends Error {
+  constructor(readonly connectionNames: string[]) {
+    super(`Insufficient tuning clearance for ${connectionNames.join(", ")}`)
+    this.name = "TuningClearanceError"
+  }
+}
+
 /** Generate continuous octilinear tuning patterns while preserving every other
  * lane as hard copper. Revisit blocked lanes after neighboring tuning frees space. */
 export function tuneSmoothLengths(
@@ -302,8 +310,8 @@ export function tuneSmoothLengths(
     }
   }
   if (pending.size)
-    throw Error(
-      `Insufficient tuning clearance for ${[...pending].map((i) => traces[i].connection_name).join(", ")}`,
+    throw new TuningClearanceError(
+      [...pending].map((i) => traces[i].connection_name!),
     )
   return result
 }

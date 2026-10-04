@@ -20,7 +20,9 @@ if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
   throw Error("--timeout-seconds must be a positive finite number")
 for (let i = 0; i < args.length; i++) {
   if (["--worker", "--timeout-seconds", "--output"].includes(args[i])) i++
-  else if (args[i] !== "--require-all-solved")
+  else if (
+    !["--require-all-solved", "--no-envelope-optimization"].includes(args[i])
+  )
     throw Error(`Unknown option: ${args[i]}`)
 }
 
@@ -46,6 +48,7 @@ interface BenchmarkReport {
   fixedPowerPreserved: boolean
   failureCode: string | null
   error: string | null
+  optimization?: Record<string, unknown>
   validation: ValidationReport | null
 }
 
@@ -70,6 +73,9 @@ if (!workerName) {
         placement.name,
         "--timeout-seconds",
         String(timeoutSeconds),
+        ...(args.includes("--no-envelope-optimization")
+          ? ["--no-envelope-optimization"]
+          : []),
       ],
       { stdout: "pipe", stderr: "pipe" },
     )
@@ -141,6 +147,8 @@ if (!workerName) {
     console.log(
       `${report.solved ? "PASS" : "FAIL"} ${report.sample} RAM=(${report.ram.x},${report.ram.y}) ${report.routedSignals}/${report.requestedSignals} signals ${(report.solveMilliseconds / 1000).toFixed(3)}s ${report.solved ? "DRC + matching passed" : (report.error ?? report.status)}`,
     )
+    if (report.optimization)
+      console.log(`  optimization=${JSON.stringify(report.optimization)}`)
     const quality = report.validation?.quality
     if (quality)
       console.log(
@@ -201,12 +209,16 @@ try {
     throw Error("Pre-dogboned power copper failed DRC")
   const before = JSON.stringify(input)
   const fixedBefore = JSON.stringify(input.traces ?? [])
-  const solver = new BusLanesPipelineSolver(input)
+  const solver = new BusLanesPipelineSolver(input, {
+    optimizeEnvelope: !args.includes("--no-envelope-optimization"),
+  })
   const solveStart = performance.now()
   while (!solver.solved && !solver.failed) {
     if (performance.now() - solveStart >= timeoutSeconds * 1000) break
     solver.step()
   }
+  if (!solver.solved && !solver.failed) solver.tryFinalAcceptance()
+  report.optimization = solver.stats.envelopeOptimization
   report.solveMilliseconds = performance.now() - solveStart
   report.iterations = solver.iterations
   report.routedSignals = solver.traces.length
@@ -216,7 +228,7 @@ try {
     JSON.stringify(solver.input.traces ?? []) === fixedBefore
   if (!report.inputUnchanged || !report.fixedPowerPreserved)
     throw Error("Routing changed immutable input or power dogbones")
-  if (report.solveMilliseconds >= timeoutSeconds * 1000) {
+  if (!solver.solved && report.solveMilliseconds >= timeoutSeconds * 1000) {
     report.status = "timed_out"
     report.error = `Routing exceeded ${timeoutSeconds} seconds`
   } else if (!solver.solved) {

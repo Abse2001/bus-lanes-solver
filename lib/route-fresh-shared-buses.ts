@@ -241,7 +241,12 @@ export function* routeFreshSharedBuses(
         yield
       }
       if (matcher.solved)
-        return { input, traces: matcher.traces, escapes: state.escapes }
+        return {
+          input,
+          traces: matcher.traces,
+          escapes: state.escapes,
+          envelopeSeed: traces,
+        }
     } finally {
       if (!matcher.solved && !matcher.failed) matcher.tryFinalAcceptance()
     }

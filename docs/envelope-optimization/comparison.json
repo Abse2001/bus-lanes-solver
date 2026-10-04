@@ -1,0 +1,92 @@
+[
+  {
+    "sample": "control",
+    "beforeAreaMm2": 412.37,
+    "afterAreaMm2": 412.37,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 25.019613005,
+    "afterSeconds": 22.061101399,
+    "deltaSeconds": -2.958511606000002,
+    "optimizationSeconds": 0.0
+  },
+  {
+    "sample": "right",
+    "beforeAreaMm2": 660.4500000000002,
+    "afterAreaMm2": 660.4500000000002,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 22.597749947,
+    "afterSeconds": 20.366556181,
+    "deltaSeconds": -2.2311937660000005,
+    "optimizationSeconds": 0.0
+  },
+  {
+    "sample": "left",
+    "beforeAreaMm2": 568.8591000000001,
+    "afterAreaMm2": 568.8591000000001,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 27.665716761,
+    "afterSeconds": 27.397901225000002,
+    "deltaSeconds": -0.26781553599999697,
+    "optimizationSeconds": 0.0
+  },
+  {
+    "sample": "above",
+    "beforeAreaMm2": 638.4000000000001,
+    "afterAreaMm2": 638.4000000000001,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 36.63524506299999,
+    "afterSeconds": 43.309016133,
+    "deltaSeconds": 6.673771070000008,
+    "optimizationSeconds": 0.0
+  },
+  {
+    "sample": "inner-layers",
+    "beforeAreaMm2": 468.3125,
+    "afterAreaMm2": 468.3125,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 36.359964737,
+    "afterSeconds": 37.647814955,
+    "deltaSeconds": 1.2878502180000027,
+    "optimizationSeconds": 0.0
+  },
+  {
+    "sample": "inner-layers-right",
+    "beforeAreaMm2": 880.4250000000003,
+    "afterAreaMm2": 880.4250000000003,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 46.139243242999996,
+    "afterSeconds": 50.063114766,
+    "deltaSeconds": 3.9238715230000025,
+    "optimizationSeconds": 0.0
+  },
+  {
+    "sample": "inner-layers-left",
+    "beforeAreaMm2": 983.2889942640521,
+    "afterAreaMm2": 983.2889942640521,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 62.185763592,
+    "afterSeconds": 69.267812407,
+    "deltaSeconds": 7.082048814999993,
+    "optimizationSeconds": 6.686656221000005
+  },
+  {
+    "sample": "inner-layers-above",
+    "beforeAreaMm2": 1184.357665685862,
+    "afterAreaMm2": 1184.357665685862,
+    "areaReductionPercent": 0.0,
+    "beforeSeconds": 80.52935697699999,
+    "afterSeconds": 92.08302456999999,
+    "deltaSeconds": 11.553667593,
+    "optimizationSeconds": 13.585980265999998
+  },
+  {
+    "sample": "inner-layers-complete-ca",
+    "beforeAreaMm2": 1521.211061212798,
+    "afterAreaMm2": 1451.4060612127973,
+    "areaReductionPercent": 4.588778097915495,
+    "beforeSeconds": 103.93726088,
+    "afterSeconds": 127.26745871199999,
+    "deltaSeconds": 23.330197831999996,
+    "optimizationSeconds": 25.901524321000004
+  }
+]

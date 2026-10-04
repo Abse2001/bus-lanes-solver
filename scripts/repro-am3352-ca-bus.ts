@@ -41,6 +41,7 @@ export async function runCaBusCase(
     performance.now() - start < timeoutSeconds * 1000
   )
     solver.step()
+  if (!solver.solved && !solver.failed) solver.tryFinalAcceptance()
   const runtimeMs = performance.now() - start
   const buses = busLengthReports(input, solver.traces)
   const pairs = pairLengthReports(input, solver.traces)

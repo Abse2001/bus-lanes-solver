@@ -295,7 +295,7 @@ export async function exportAm3352RoutedSnapshots(
 if (import.meta.main) {
   const args = process.argv.slice(2)
   const directory = args[0] ?? "docs/routed-am3352-placements"
-  const timeoutSeconds = Number(args[1] ?? 60)
+  const timeoutSeconds = Number(args[1] ?? 180)
   if (
     args.length > 2 ||
     !Number.isFinite(timeoutSeconds) ||
@@ -311,10 +311,13 @@ if (import.meta.main) {
     const solver = new BusLanesPipelineSolver(input)
     const start = performance.now()
     while (!solver.solved && !solver.failed) {
-      if (performance.now() - start >= timeoutSeconds * 1000)
+      if (performance.now() - start >= timeoutSeconds * 1000) {
+        solver.tryFinalAcceptance()
+        if (solver.solved) break
         throw Error(
           `${placement.name}: routing exceeded ${timeoutSeconds}s; no artifacts written`,
         )
+      }
       solver.step()
     }
     if (am3352Hash(input) !== before)

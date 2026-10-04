@@ -49,6 +49,8 @@ export function ownedSignalEscapes(
 }
 
 export interface RepairedBusDogbones {
+  /** Untuned carrier geometry from this invocation; never a saved solution. */
+  envelopeSeed?: Trace[]
   input: SimpleRouteJson
   traces: Trace[]
   escapes: Trace[]
