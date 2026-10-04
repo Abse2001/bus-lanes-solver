@@ -32,6 +32,30 @@ export class BusLanesPipelineSolver extends BaseSolver {
   phase = "resolve_layers"
   traces: Trace[] = []
   failureCode: string | null = null
+  private acceptedTraces?: Trace[]
+  private envelopeOptimization?: Generator<void, void>
+  /** Runs only after a complete accepted route exists. A budget interrupt or
+   * exception restores that private snapshot, never mutable work-in-progress. */
+  protected *optimizeEnvelope(): Generator<void, void> {}
+
+  private finishAccepted(early: boolean) {
+    const optimization = this.envelopeOptimization
+    this.envelopeOptimization = undefined
+    try {
+      optimization?.return()
+    } catch (error) {
+      this.stats = { ...this.stats, optimizationCleanupError: String(error) }
+    }
+    this.traces = structuredClone(this.acceptedTraces!)
+    this.solved = true
+    this.failed = false
+    this.error = null
+    this.failureCode = null
+    this.phase = "solved"
+    this.progress = 1
+    this.stats = { ...this.stats, optimizationStoppedEarly: early }
+  }
+
   private sharedPackages?: Generator<void, RepairedBusDogbones | null>
   private backwardPackages?: Generator<void, RepairedBusDogbones | null>
   private child?: BusLanesSolver
@@ -62,6 +86,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
   tryFinalAcceptance() {
+    if (this.solved) return
+    if (this.acceptedTraces) {
+      this.finishAccepted(true)
+      return
+    }
     this.sharedPackages?.return(null)
     this.sharedPackages = undefined
     this.backwardPackages?.return(null)
@@ -505,6 +534,11 @@ export class BusLanesPipelineSolver extends BaseSolver {
   }
   _step() {
     try {
+      if (this.envelopeOptimization) {
+        const step = this.envelopeOptimization.next()
+        if (step.done) this.finishAccepted(false)
+        return
+      }
       if (this.siteRematch) {
         const step = this.siteRematch.next()
         this.phase = "resolve_control_sites"
@@ -707,10 +741,16 @@ export class BusLanesPipelineSolver extends BaseSolver {
             ],
           }
         })
-        this.solved = true
-        this.phase = "solved"
+        this.acceptedTraces = structuredClone(this.traces)
+        this.phase = "optimize_envelope"
+        this.envelopeOptimization = this.optimizeEnvelope()
       }
     } catch (error) {
+      if (this.acceptedTraces) {
+        this.stats = { ...this.stats, optimizationError: String(error) }
+        this.finishAccepted(true)
+        return
+      }
       this.sharedPackages?.return(null)
       this.sharedPackages = undefined
       this.backwardPackages?.return(null)
