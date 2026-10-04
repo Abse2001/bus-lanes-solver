@@ -13,13 +13,14 @@ export function compactionMotionGroups(
   traces: Trace[],
   flexible: boolean,
   protectVias: boolean,
+  flexiblePairs = false,
 ): Vertex[][] {
   let groups = 0
   const paired = new Set(
     input.differentialPairs?.flatMap((p) => p.connectionNames),
   )
   const paths: Vertex[][] = traces.map((t) => {
-    if (flexible && !paired.has(t.connection_name!)) {
+    if (flexible && (flexiblePairs || !paired.has(t.connection_name!))) {
       const curve = new Set(t.curvedSegments ?? []),
         banks: number[][] = []
       for (const k of [...curve].sort((a, b) => a - b)) {

@@ -223,7 +223,13 @@ test("cancelling a pending compaction leaves accepted copper untouched", () => {
   expect(traces).toEqual(before)
 })
 
-for (const mode of ["coordinated", "flexible", "guarded"] as const)
+for (const mode of [
+  "coordinated",
+  "flexible",
+  "guarded",
+  "cohort",
+  "guarded-cohort",
+] as const)
   test(`${mode} reduces matched copper within full-pad length bounds`, () => {
     const { input, traces } = fixture()
     const companion = structuredClone(traces[0])
