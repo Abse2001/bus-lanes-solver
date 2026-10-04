@@ -3,7 +3,7 @@ on: [push, pull_request]
 jobs:
   benchmark:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -12,7 +12,7 @@ jobs:
       - run: bun install
       # Include the additional bounded envelope searches, then require native
       # DRC plus full pad-to-pad length matching for all nine completed routes.
-      - run: ./benchmark.sh --timeout-seconds 300 --require-all-solved
+      - run: ./benchmark.sh --timeout-seconds 480 --require-all-solved
       - uses: actions/upload-artifact@v4
         if: always()
         with:

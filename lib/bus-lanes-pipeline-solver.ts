@@ -8,6 +8,10 @@ import {
   carrierCompactionView,
   signalEnvelope,
 } from "./carrier-compaction-view"
+import {
+  compactMatchingGroups,
+  matchingGroupsSupportEnvelope,
+} from "./compact-matching-groups"
 import { compactUnconstrainedLanes } from "./compact-unconstrained-lanes"
 import { routeFreshSharedBuses } from "./route-fresh-shared-buses"
 import { routeSharedLayerBuses } from "./route-shared-layer-buses"
@@ -58,6 +62,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
         milliseconds: 0,
       },
     }
+    let cohortStarted: number | undefined
     let protectVias = false
     // Independent neighborhoods avoid trapping a flexible bank behind a small
     // rigid-bank improvement. Only the best validated branch is published.
@@ -186,12 +191,80 @@ export class BusLanesPipelineSolver extends BaseSolver {
         }
         if (mode === "conservative") anchor = this.acceptedTraces!
       }
+      if (
+        this.input.allowedLayers?.length &&
+        this.input.allowedLayers.every(
+          (layer) => layer !== "top" && layer !== "bottom",
+        ) &&
+        matchingGroupsSupportEnvelope(this.input, this.acceptedTraces!)
+      ) {
+        const view = carrierCompactionView(this.input, this.acceptedTraces!)
+        if (view) {
+          cohortStarted = performance.now()
+          this.stats = {
+            ...this.stats,
+            envelopeOptimization: {
+              ...this.stats.envelopeOptimization,
+              cohortBeforeAreaMm2: signalEnvelope(this.acceptedTraces!).areaMm2,
+            },
+          }
+          for (const carriers of compactMatchingGroups(
+            view.input,
+            view.carriers,
+            this.options,
+          )) {
+            if (carriers) {
+              const complete = view.join(carriers)
+              const area = signalEnvelope(complete).areaMm2
+              if (
+                area < signalEnvelope(this.acceptedTraces!).areaMm2 - 1e-6 &&
+                exteriorPairSpacingReports(this.input, complete).every(
+                  (r) => r.matched,
+                )
+              ) {
+                // Validate the complete carrier set as well as the active
+                // cohort, so shared ownership and cross-group constraints
+                // cannot invalidate an earlier local improvement.
+                const validator = BusLanesSolver.forValidation(
+                  view.input,
+                  carriers,
+                  this.options,
+                )
+                try {
+                  while (!validator.solved && !validator.failed) {
+                    validator.step()
+                    yield
+                  }
+                  if (!validator.solved) continue
+                } finally {
+                  if (!validator.solved && !validator.failed)
+                    validator.tryFinalAcceptance()
+                }
+                this.acceptedTraces = structuredClone(complete)
+                this.stats = {
+                  ...this.stats,
+                  envelopeOptimization: {
+                    ...this.stats.envelopeOptimization,
+                    beforeAreaMm2: before.areaMm2,
+                    afterAreaMm2: area,
+                    milliseconds: performance.now() - started,
+                  },
+                }
+              }
+            }
+            yield
+          }
+        }
+      }
     } finally {
       this.stats = {
         ...this.stats,
         envelopeOptimization: {
           ...this.stats.envelopeOptimization,
           milliseconds: performance.now() - started,
+          ...(cohortStarted === undefined
+            ? {}
+            : { cohortMilliseconds: performance.now() - cohortStarted }),
         },
       }
     }

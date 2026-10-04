@@ -144,6 +144,36 @@ test("the real compactor can be interrupted without changing accepted copper", (
   expect(solver.stats.optimizationStoppedEarly).toBe(true)
 })
 
+test("interrupting an inner-layer cohort search retains the complete accepted route", () => {
+  const input = fixture()
+  input.layerCount = 4
+  input.allowedLayers = ["inner1", "inner2"]
+  for (const c of input.connections)
+    for (const p of c.pointsToConnect) p.layer = "inner1"
+  const solver = new BusLanesPipelineSolver(input, { fanout: "none" })
+  const accepted = atOptimization(solver)
+  for (
+    let i = 0;
+    i < 1000 &&
+    !solver.solved &&
+    solver.stats.envelopeOptimization?.cohortBeforeAreaMm2 === undefined;
+    i++
+  )
+    solver.step()
+  expect(solver.solved).toBe(false)
+  expect(solver.stats.envelopeOptimization.cohortBeforeAreaMm2).toBeGreaterThan(
+    0,
+  )
+  solver.traces.pop()
+  solver.tryFinalAcceptance()
+  expect(solver.solved).toBe(true)
+  expect(solver.traces).toEqual(accepted)
+  expect(solver.stats.optimizationStoppedEarly).toBe(true)
+  expect(
+    solver.stats.envelopeOptimization.cohortMilliseconds,
+  ).toBeGreaterThanOrEqual(0)
+})
+
 test("interruption after a coordinated improvement retains the improved route", () => {
   const input = fixture()
   input.connections = input.connections.slice(0, 1)

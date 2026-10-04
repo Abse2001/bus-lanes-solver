@@ -1,6 +1,7 @@
 import { solve, type Constraint } from "yalps"
 import { fixedRouteLength, lengthConstraints } from "./route-lengths"
 import { compactionMotionGroups } from "./compaction-motion-groups"
+import { projectCompactionDirections } from "./project-compaction-directions"
 import { CompactionCutSet } from "./compaction-cut-set"
 import { length, distance, segmentDistance } from "./geometry"
 import { fixedCopper, clearanceToCopper, type Copper } from "./vector-scene"
@@ -13,6 +14,8 @@ export type CompactionMode =
   | "coordinated"
   | "flexible"
   | "guarded"
+  | "cohort"
+  | "guarded-cohort"
 /** A bounded linear compaction proposal. Ordinary edges keep their directions
  * and positive spans. Conservative proposals preserve matched lengths and rigid
  * banks; coordinated proposals may shorten matched lanes within their full-copper
@@ -50,16 +53,18 @@ export function* compactEnvelopeCandidate(
   }
   // Bound displacement per proposal. Flexible banks need more travel because
   // shrinking opposite legs can otherwise exhaust the local search window.
+  const cohort = mode === "cohort" || mode === "guarded-cohort"
+  const protectedVias = mode === "guarded" || mode === "guarded-cohort"
   const advanced = mode !== "conservative"
-  const flexible = mode === "flexible" || mode === "guarded"
-  const motion = flexible ? 4 : 2
-  const maxCutPasses = advanced ? 12 : 24
-  const maxTableauCells = mode === "guarded" ? 96_000_000 : 64_000_000
+  const flexible = mode === "flexible" || mode === "guarded" || cohort
+  const motion = flexible && !cohort ? 4 : 2
+  const maxCutPasses = advanced && !cohort ? 12 : 24
+  const maxTableauCells = protectedVias ? 96_000_000 : 64_000_000
   const paired = new Set(
     input.differentialPairs?.flatMap((p) => p.connectionNames),
   )
   const paths: Vertex[][] = advanced
-    ? compactionMotionGroups(input, traces, flexible, mode === "guarded")
+    ? compactionMotionGroups(input, traces, flexible, protectedVias, cohort)
     : traces.map((t) => {
         const first = Math.min(...(t.curvedSegments ?? [])) - 1,
           last = Math.max(...(t.curvedSegments ?? []))
@@ -158,12 +163,15 @@ export function* compactEnvelopeCandidate(
       // Its nonnegative shrink is sufficient because no signal may lengthen.
       const ceiling = Math.max(...members.map((m) => m.total)),
         v = `bus_shrink_${index}`
-      // Keep a previously validated boundary solution feasible despite LP
-      // roundoff. The unchanged output validator still enforces the SRJ limit.
-      const allowedSkew = Math.max(
-        tolerance + 1e-8,
-        ceiling - Math.min(...members.map((m) => m.total)) + 1e-9,
-      )
+      // Cohorts reserve matching slack for simplex rounding and direction
+      // projection. Other modes retain the validated boundary solution. The
+      // output validator always enforces the original SRJ limits.
+      const allowedSkew = cohort
+        ? Math.max(0, tolerance - 1e-5)
+        : Math.max(
+            tolerance + 1e-8,
+            ceiling - Math.min(...members.map((m) => m.total)) + 1e-9,
+          )
       variables[v] = { objective: 0 }
       add(new Map([[v, 1]]), { max: ceiling })
       for (const member of members) {
@@ -267,34 +275,72 @@ export function* compactEnvelopeCandidate(
     )
     if ((rows + 1) * (variableCount + 1) > maxTableauCells) return proposal
     yield
+    // Cohort models contain many nearly dependent equalities. Solve them at
+    // a stable simplex precision, then restore straight directions before
+    // checking actual geometry; this does not relax output tolerances.
     const solution = solve(
       { direction: "minimize", objective: "objective", variables, constraints },
-      { precision: 1e-10, maxPivots: 4096, checkCycles: advanced },
+      {
+        precision: cohort ? 1e-7 : 1e-10,
+        maxPivots: 4096,
+        checkCycles: advanced,
+      },
     )
     if (solution.status !== "optimal") return proposal
     const values = new Map(solution.variables)
+    const shifts = cohort
+      ? projectCompactionDirections(paths, values, false)
+      : undefined
+    if (
+      shifts &&
+      [...shifts.values()].some(
+        (p) =>
+          !Number.isFinite(p.x) ||
+          !Number.isFinite(p.y) ||
+          Math.abs(p.x) > motion + 1e-6 ||
+          Math.abs(p.y) > motion + 1e-6,
+      )
+    )
+      return proposal
     const at = (p: Vertex) => ({
       ...p,
       x:
         p.x +
         (p.group === undefined
           ? 0
-          : (values.get(`${p.group}_x_1`) ?? 0) -
-            (values.get(`${p.group}_x_-1`) ?? 0)),
+          : shifts
+            ? shifts.get(p.group)!.x
+            : (values.get(`${p.group}_x_1`) ?? 0) -
+              (values.get(`${p.group}_x_-1`) ?? 0)),
       y:
         p.y +
         (p.group === undefined
           ? 0
-          : (values.get(`${p.group}_y_1`) ?? 0) -
-            (values.get(`${p.group}_y_-1`) ?? 0)),
+          : shifts
+            ? shifts.get(p.group)!.y
+            : (values.get(`${p.group}_y_1`) ?? 0) -
+              (values.get(`${p.group}_y_-1`) ?? 0)),
     })
+    // Pin numerical zeroes only in the returned proposal. Keeping those
+    // pins out of collision discovery avoids changing separating sides at
+    // an existing contact because of a rounded simplex coordinate.
+    const publishShifts = cohort
+      ? projectCompactionDirections(paths, values)
+      : undefined
+    const publishAt = (p: Vertex) =>
+      publishShifts && p.group !== undefined
+        ? {
+            x: p.x + publishShifts.get(p.group)!.x,
+            y: p.y + publishShifts.get(p.group)!.y,
+          }
+        : at(p)
     if (advanced)
       proposal = traces.map((t, i) => ({
         ...t,
         route: t.route.map((p, j) => ({
           ...p,
-          x: at(paths[i][j]).x,
-          y: at(paths[i][j]).y,
+          x: publishAt(paths[i][j]).x,
+          y: publishAt(paths[i][j]).y,
         })),
       }))
     const copper = originals.map((c) => ({ ...c, a: at(c.a), b: at(c.b) }))
@@ -433,8 +479,8 @@ export function* compactEnvelopeCandidate(
         ...t,
         route: t.route.map((p, j) => ({
           ...p,
-          x: at(paths[i][j]).x,
-          y: at(paths[i][j]).y,
+          x: publishAt(paths[i][j]).x,
+          y: publishAt(paths[i][j]).y,
         })),
       }))
   }
