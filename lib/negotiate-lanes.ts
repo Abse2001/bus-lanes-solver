@@ -1,3 +1,4 @@
+import { maximumCarrierLength } from "./route-lengths"
 import { refineRouteCandidates } from "./refine-route-candidates"
 import { routeViaWaypoint } from "./route-via-waypoint"
 import { pendingLaneCertificates } from "./pending-lane-certificates"
@@ -67,8 +68,9 @@ export function* negotiateLanes(
       // Reserve one percent of the compact search envelope for length tuning.
       1.5 * 0.99 * Math.max(...members.map((c) => length(c.pointsToConnect)))
     for (const member of members) {
-      limits.set(member.name, limit)
-      ceilings.set(member.name, (limit * 4) / 3)
+      const hardLimit = maximumCarrierLength(input, member.name)
+      limits.set(member.name, Math.min(limit, hardLimit))
+      ceilings.set(member.name, Math.min((limit * 4) / 3, hardLimit))
     }
   }
   const candidates = new RouteCandidatePool(clearance, 240)
@@ -296,7 +298,13 @@ export function* negotiateLanes(
         [...routedCopper, ...pendingCopper],
         congestionPenalty,
         histories.get(layer),
-        { maxLength: limits.get(connection.name), checkReachability },
+        {
+          maxLength: limits.get(connection.name),
+          paretoLength: Number.isFinite(
+            maximumCarrierLength(input, connection.name),
+          ),
+          checkReachability,
+        },
       )
       if (!histories.has(layer))
         histories.set(layer, new Float32Array(search.cellCount))
@@ -321,7 +329,13 @@ export function* negotiateLanes(
                 [...routedCopper, ...pendingCopper],
                 congestionPenalty,
                 histories.get(candidateLayer),
-                { maxLength: limits.get(connection.name), checkReachability },
+                {
+                  maxLength: limits.get(connection.name),
+                  paretoLength: Number.isFinite(
+                    maximumCarrierLength(input, connection.name),
+                  ),
+                  checkReachability,
+                },
               )
         if (!histories.has(candidateLayer))
           histories.set(
@@ -349,7 +363,10 @@ export function* negotiateLanes(
             [],
             0,
             undefined,
-            { checkReachability },
+            {
+              checkReachability,
+              maxLength: maximumCarrierLength(input, connection.name),
+            },
           )
           try {
             while (!candidateSearch.solved && !candidateSearch.failed) {
@@ -368,7 +385,13 @@ export function* negotiateLanes(
               b.connectionNames.includes(connection.name),
             )!
             for (const name of bus.connectionNames)
-              limits.set(name, length(candidateSearch.result) * 1.05)
+              limits.set(
+                name,
+                Math.min(
+                  length(candidateSearch.result) * 1.05,
+                  maximumCarrierLength(input, name),
+                ),
+              )
           }
         }
         if (!candidateSearch.solved) continue
@@ -427,6 +450,11 @@ export function* negotiateLanes(
           if (step.value) paths.push(step.value)
         }
         for (const path of paths) {
+          if (
+            length(path) >
+            maximumCarrierLength(input, connection.name) + 1e-7
+          )
+            continue
           let hits = 0
           for (const other of routed.values()) {
             if ((other.route[0] as Wire).layer !== candidateLayer) continue

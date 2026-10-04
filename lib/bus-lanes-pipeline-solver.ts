@@ -481,7 +481,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
       (laneInput.buses?.length ?? 0) > 1 &&
       this.options.smoothTuning &&
       this.options.denseSearch &&
-      (Math.abs(direction.x) > Math.abs(direction.y) ||
+      (this.input.buses?.some((bus) => bus.maxLength !== undefined) ||
+        Math.abs(direction.x) > Math.abs(direction.y) ||
         backwardFacingPackageTerminals({
           ...this.input,
           connections: this.input.connections.filter((c) =>
@@ -507,7 +508,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
             ),
         )
       this.sharedPackages = (
-        freshSites ? routeFreshSharedBuses : routeSharedLayerBuses
+        freshSites && !this.input.buses?.some((b) => b.maxLength !== undefined)
+          ? routeFreshSharedBuses
+          : routeSharedLayerBuses
       )(
         this.input,
         laneInput,
@@ -806,6 +809,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
             ],
           }
         })
+        if (
+          busLengthReports(this.input, this.traces).some(
+            (b) => !b.withinLengthLimit || !b.aboveMinimumLength,
+          )
+        )
+          throw Error("Final absolute bus length violation")
         this.acceptedTraces = structuredClone(this.traces)
         this.phase = "optimize_envelope"
         this.envelopeOptimization = this.optimizeEnvelope()

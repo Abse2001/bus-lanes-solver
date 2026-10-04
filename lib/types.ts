@@ -20,6 +20,10 @@ export interface Bus {
   busId: string
   name?: string
   connectionNames: string[]
+  /** Maximum total planar copper per member, including supplied fanouts, in mm. */
+  maxLength?: number
+  /** Minimum total planar copper per member, including supplied fanouts, in mm. */
+  minLength?: number
   maxLengthSkew?: number
   traceWidth?: number
   preferredLayer?: string

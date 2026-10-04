@@ -1,3 +1,4 @@
+import { maximumCarrierLength } from "./route-lengths"
 import { CopperConflictIndex } from "./copper-conflict-index"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import {
@@ -57,7 +58,11 @@ export function* expandSignalSitePocket(
         lanes.flatMap(routeCopper),
         100,
         undefined,
-        { checkReachability: true },
+        {
+          checkReachability: true,
+          maxLength: maximumCarrierLength(local, c.name),
+          paretoLength: Number.isFinite(maximumCarrierLength(local, c.name)),
+        },
       )
       try {
         let steps = 0
@@ -234,7 +239,13 @@ export function* findViaAwareSignalPocket(
               .flatMap(routeCopper),
             100,
             undefined,
-            { checkReachability: true },
+            {
+              checkReachability: true,
+              maxLength:
+                maximumCarrierLength(native, connection.name) -
+                length(a.escape.route) -
+                length(b.escape.route),
+            },
           )
           try {
             let steps = 0

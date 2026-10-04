@@ -1,3 +1,4 @@
+import { routeBoundedBusGroups } from "./route-bounded-bus-groups"
 import { BusLanesSolver } from "./bus-lanes-solver"
 import { planSharedPairCorridors } from "./plan-shared-pair-corridors"
 import { reachableSignalDogbones } from "./reachable-signal-dogbones"
@@ -74,7 +75,9 @@ export function* routeFreshSharedBuses(
   const nearestAttachments = Math.abs(direction.x) > Math.abs(direction.y)
   for (const paired of planSharedPairCorridors(
     allocation,
-    terminalLayers,
+    native.buses?.some((bus) => bus.maxLength !== undefined)
+      ? layers
+      : terminalLayers,
     true,
   )) {
     if (!paired) {
@@ -117,9 +120,55 @@ export function* routeFreshSharedBuses(
     const pending: SimpleRouteJson = {
       ...native,
       connections: generated.connections,
-      buses: [],
+      buses: native.buses?.some((bus) => bus.maxLength !== undefined)
+        ? native.buses
+            .map((bus) => ({
+              ...bus,
+              connectionNames: bus.connectionNames.filter((name) =>
+                generated.connections.some((c) => c.name === name),
+              ),
+            }))
+            .filter((bus) => bus.connectionNames.length)
+        : [],
       differentialPairs: [],
       traces: [...(native.traces ?? []), ...escapes, ...paired],
+    }
+    if (native.buses?.some((bus) => bus.maxLength !== undefined)) {
+      const stagedInput: SimpleRouteJson = {
+        ...native,
+        traces: [...(native.traces ?? []), ...escapes],
+        connections: native.connections.map(
+          (c) =>
+            generated.connections.find((g) => g.name === c.name) ?? {
+              ...c,
+              pointsToConnect: [
+                paired.find((t) => t.connection_name === c.name)!.route[0],
+                paired.find((t) => t.connection_name === c.name)!.route.at(-1)!,
+              ] as Wire[],
+            },
+        ),
+      }
+      const staged = yield* routeBoundedBusGroups(
+        stagedInput,
+        paired,
+        layers,
+        options,
+      )
+      if (staged)
+        return {
+          input: {
+            ...stagedInput,
+            connections: stagedInput.connections.map((c) => {
+              const t = staged.find((t) => t.connection_name === c.name)!
+              return {
+                ...c,
+                pointsToConnect: [t.route[0], t.route.at(-1)!] as Wire[],
+              }
+            }),
+          },
+          traces: staged,
+          escapes,
+        }
     }
     const widths = new Map(
       pending.connections.map((c) => [c.name, signalWidth(native, c)]),
@@ -140,8 +189,17 @@ export function* routeFreshSharedBuses(
     try {
       let step = route.next(),
         iterations = 0,
-        lastImprovement = 0
+        lastImprovement = 0,
+        bestCount = 0
       while (!step.done && iterations++ < 300000) {
+        bestCount = Math.max(bestCount, step.value.length)
+        if (
+          native.buses?.some((b) => b.maxLength !== undefined) &&
+          iterations > 60000 &&
+          bestCount < pending.connections.length - 3
+        )
+          break
+
         if (
           step.value.length >= Math.max(1, pending.connections.length - 2) &&
           (!state || step.value.length > state.traces.length)

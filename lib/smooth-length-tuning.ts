@@ -16,6 +16,7 @@ export function tuneSmoothLengths(
   traces: Trace[],
   targets: Map<string, number>,
   options: {
+    priorityConnectionNames?: string[]
     maxCandidates?: number
     packMeanders?: boolean
     packageOnlyPairTuning?: boolean
@@ -245,7 +246,16 @@ export function tuneSmoothLengths(
   // Reserve tuning space for the largest corrections before small corrections
   // occupy the neighboring pockets. Keep output and connection order intact.
   const pending = new Set(
-    traces.map((_, i) => i).sort((a, b) => deficits[b] - deficits[a]),
+    traces
+      .map((_, i) => i)
+      .sort((a, b) => {
+        const order = options.priorityConnectionNames ?? []
+        const rank = (index: number) => {
+          const n = order.indexOf(traces[index].connection_name!)
+          return n < 0 ? Infinity : n
+        }
+        return rank(a) - rank(b) || deficits[b] - deficits[a]
+      }),
   )
   const partialBanks = new Map<number, number>()
   let allowPartial = false
