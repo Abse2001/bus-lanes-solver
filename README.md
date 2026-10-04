@@ -129,7 +129,7 @@ The repository follows the [handbook bootstrapping guide](https://github.com/tsc
 
 ## AM3352 placement benchmark
 
-`./benchmark.sh` runs eight AM3352/RAM samples. The AM3352 stays at
+`./benchmark.sh` runs nine AM3352/RAM samples. The AM3352 stays at
 (0, 0) mm, and only the RAM is translated; both chips retain their orientation.
 Board coordinates use +X right and +Y up.
 
@@ -143,8 +143,9 @@ Board coordinates use +X right and +Y up.
 | Inner layers right | (27, 0) | inner1, inner2 |
 | Inner layers left | (-27, 0) | inner1, inner2 |
 | Inner layers above | (0, 27) | inner1, inner2 |
+| Inner layers with complete CA/clock bus | (0, -27) | inner1, inner2 |
 
-The four inner-layer samples set `input.allowedLayers = ["inner1", "inner2"]`
+The inner-layer samples set `input.allowedLayers = ["inner1", "inner2"]`
 on the corresponding placement geometry. This restricts all signal carriers, including
 clock and control signals, during allocation and congestion retries. The board
 still has four physical copper layers: top-pad dogbones and through-via barrels
@@ -154,7 +155,8 @@ existing fanout handoff is rejected rather than dogboned again.
 
 The [fixture loader](scripts/am3352-samples.ts) uses one native core phase
 capture, the original 47 DDR signal connections, two byte buses, and three
-differential pairs. Signal routes are computed from the pads every run.
+differential pairs. The complete-CA sample also matches the 24-signal
+address/control/clock bus. Signal routes are computed from the pads every run.
 Only RAM pads, terminals, and their associated fixed power geometry move.
 The older AM62L examples remain separate regression fixtures; the benchmark
 does not run those cases, mixed-layer negatives, or carrier-prefix samples.
@@ -176,16 +178,16 @@ between each trace's two terminal vias, combined-copper DRC, byte-bus skew
 within 0.635 mm, and differential-pair skew within 0.127 mm. Matching measures
 full pad-to-pad planar copper, including signal dogbones.
 
-Each sample runs in a fresh process, serially, with a 60-second routing budget.
-Override it with `./benchmark.sh --timeout-seconds 60`. All eight cases are always
+Each sample runs in a fresh process, serially, with a 180-second routing budget.
+Override it with `./benchmark.sh --timeout-seconds 60`. All nine cases are always
 attempted and their results written to `benchmark-results.json`. Failed searches
 and timeouts are failures in the completion score. By default the command records
 these measured outcomes and exits nonzero for invalid fixtures, worker crashes,
 or invalid completed copper. Use `./benchmark.sh --require-all-solved` for a
 strict gate that also exits nonzero when any sample remains unrouted. CI runs the
-same eight-case measurement and uploads the result JSON.
+same nine-case measurement and uploads the result JSON.
 
-The current eight-case run on macOS arm64 with Bun 1.3.2 completes **8/8**
+The earlier eight-case baseline on macOS arm64 with Bun 1.3.2 completes **8/8**
 within the 60-second routing limit per sample. Fresh two-layer routing jointly
 chooses local dogbone sites and carrier layers, preserving supplied fanouts.
 Pair corridors reserve package exit space before ordinary signals negotiate
@@ -231,8 +233,8 @@ extended while preserving already matched internal compensation, then the bus
 and pair lengths are revalidated without raising the bus length target.
 
 Generate completed review images for every declared sample with
-`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 60`.
-The exporter validates all eight before writing any images; it refuses partial
+`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 180`.
+The exporter validates all nine before writing any images; it refuses partial
 or unrouted results. The existing five baseline images are:
 [control](docs/routed-am3352-placements/control-solved.png),
 [right](docs/routed-am3352-placements/right-solved.png),
@@ -272,6 +274,21 @@ bounds, centerline excursion, and timings.
 Length tuning prioritizes long runs over short terminal approaches and centers evenly pitched serpentine lobes along them. The integrated preset uses rounded curves for both individual lanes and shared pair centerlines. Lobe count scales with the required added length, spreading large corrections without turning small corrections into dense teeth. Chamfers scale with lobe dimensions instead of a fixed microscopic corner cut. Returning arms retain at least three trace widths of center-to-center spacing (and the requested copper clearance). When the shortest lanes leave no room, the router opens an octilinear central corridor in winding order and rematches all affected bus lengths. Endpoints and fixed fanouts remain unchanged.
 
 The [routed artifacts](./docs/routed-ddr) contain complete boards. All new carrier bends in the DDR samples are checked to turn by at most 45 degrees; length matching and combined-copper DRC remain mandatory.
+
+### Envelope compaction
+
+After accepting a complete route, the pipeline tries up to two bounded linear
+compaction proposals. Straight segments retain their directions, tuning banks retain their
+shape, and each matched signal retains its total copper length. Differential
+pairs, endpoints, vias and supplied fanouts stay fixed. Clearance constraints
+move surrounding lanes into available space; unconstrained controls may shorten.
+
+The proposal must reduce the signal copper envelope without expanding any bound
+and pass the existing carrier, self-clearance, angle, skew and coupling checks.
+An interrupted, oversized or unsuccessful optimization retains the accepted
+routing. The benchmark reports the before/after area and optimization time.
+See the [nine-sample compaction report](docs/envelope-compaction/README.md) for
+measurements and completed routed snapshots.
 
 ## Integrated local-dogbone pipeline (experimental)
 

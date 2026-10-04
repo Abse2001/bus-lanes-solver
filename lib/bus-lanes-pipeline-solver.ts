@@ -1,3 +1,9 @@
+import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
+import { compactEnvelopeCandidate } from "./compact-envelope"
+import {
+  carrierCompactionView,
+  signalEnvelope,
+} from "./carrier-compaction-view"
 import { compactUnconstrainedLanes } from "./compact-unconstrained-lanes"
 import { routeFreshSharedBuses } from "./route-fresh-shared-buses"
 import { routeSharedLayerBuses } from "./route-shared-layer-buses"
@@ -36,7 +42,105 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private envelopeOptimization?: Generator<void, void>
   /** Runs only after a complete accepted route exists. A budget interrupt or
    * exception restores that private snapshot, never mutable work-in-progress. */
-  protected *optimizeEnvelope(): Generator<void, void> {}
+  protected *optimizeEnvelope(): Generator<void, void> {
+    if (!this.options.smoothTuning) return
+    const before = signalEnvelope(this.acceptedTraces!)
+    const started = performance.now()
+    this.stats = {
+      ...this.stats,
+      envelopeOptimization: {
+        beforeAreaMm2: before.areaMm2,
+        afterAreaMm2: before.areaMm2,
+        milliseconds: 0,
+      },
+    }
+    try {
+      for (let pass = 0; pass < 2; pass++) {
+        const original = this.acceptedTraces!
+        const previousBounds = signalEnvelope(original)
+        const view = carrierCompactionView(this.input, original)
+        if (!view) return
+        const viaClearance = view.carriers.map((trace) =>
+          createTerminalViaClearanceChecker(view.input, trace),
+        )
+        const candidate = yield* compactEnvelopeCandidate(
+          view.input,
+          view.carriers,
+        )
+        if (candidate === view.carriers) return
+        // A truncated cutting-plane search can retain a small collision. Back off
+        // the displacement toward the accepted geometry; all direction, curve and
+        // length equalities remain valid under this interpolation.
+        for (const fraction of [1, 0.999, 0.99, 0.95, 0.9, 0.75, 0.5]) {
+          const carriers = candidate.map((trace, i) => ({
+            ...trace,
+            route: trace.route.map((point, j) => ({
+              ...point,
+              x:
+                view.carriers[i].route[j].x +
+                (point.x - view.carriers[i].route[j].x) * fraction,
+              y:
+                view.carriers[i].route[j].y +
+                (point.y - view.carriers[i].route[j].y) * fraction,
+            })),
+          }))
+          if (carriers.some((trace, i) => !viaClearance[i](trace.route)))
+            continue
+          const complete = view.join(carriers)
+          const after = signalEnvelope(complete)
+          if (
+            !Number.isFinite(after.areaMm2) ||
+            after.areaMm2 >= previousBounds.areaMm2 - 1e-6 ||
+            after.minX < previousBounds.minX - 1e-8 ||
+            after.maxX > previousBounds.maxX + 1e-8 ||
+            after.minY < previousBounds.minY - 1e-8 ||
+            after.maxY > previousBounds.maxY + 1e-8
+          )
+            continue
+          const validator = BusLanesSolver.forValidation(
+            view.input,
+            carriers,
+            this.options,
+          )
+          try {
+            while (!validator.solved && !validator.failed) {
+              validator.step()
+              yield
+            }
+            if (
+              !validator.solved ||
+              exteriorPairSpacingReports(view.input, carriers).some(
+                (r) => !r.matched,
+              )
+            )
+              continue
+            this.acceptedTraces = structuredClone(complete)
+            this.stats = {
+              ...this.stats,
+              envelopeOptimization: {
+                beforeAreaMm2: before.areaMm2,
+                afterAreaMm2: after.areaMm2,
+                milliseconds: performance.now() - started,
+              },
+            }
+            break
+          } finally {
+            if (!validator.solved && !validator.failed)
+              validator.tryFinalAcceptance()
+          }
+        }
+        if (this.acceptedTraces === original) break
+      }
+    } finally {
+      this.stats = {
+        ...this.stats,
+        envelopeOptimization: {
+          ...this.stats.envelopeOptimization,
+          milliseconds: performance.now() - started,
+        },
+      }
+    }
+  }
 
   private finishAccepted(early: boolean) {
     const optimization = this.envelopeOptimization
