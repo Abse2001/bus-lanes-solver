@@ -178,8 +178,9 @@ between each trace's two terminal vias, combined-copper DRC, byte-bus skew
 within 0.635 mm, and differential-pair skew within 0.127 mm. Matching measures
 full pad-to-pad planar copper, including signal dogbones.
 
-Each sample runs in a fresh process, serially, with a 180-second routing budget.
-Override it with `./benchmark.sh --timeout-seconds 60`. All nine cases are always
+Each sample runs in a fresh process, serially, with a default 180-second routing budget.
+CI uses `./benchmark.sh --timeout-seconds 480 --require-all-solved` to include the
+additional envelope searches. All nine cases are always
 attempted and their results written to `benchmark-results.json`. Failed searches
 and timeouts are failures in the completion score. By default the command records
 these measured outcomes and exits nonzero for invalid fixtures, worker crashes,
@@ -195,8 +196,8 @@ crossings; remaining conflicts release a bounded set of carrier and via sites.
 Full length matching and exterior pair coupling run before final acceptance.
 No component names, fixture coordinates, or saved signal geometry select routes.
 
-Reproduce the strict check with
-`./benchmark.sh --timeout-seconds 60 --require-all-solved`.
+Those eight-case timings precede the current envelope searches. Reproduce the
+current strict check with `./benchmark.sh --timeout-seconds 480 --require-all-solved`.
 
 | Sample | Routing | Including validation | Signals | Native DRC | Byte 0 / byte 1 skew | DQS0 / DQS1 / clock skew |
 | --- | ---: | ---: | --- | --- | --- | --- |
@@ -233,7 +234,7 @@ extended while preserving already matched internal compensation, then the bus
 and pair lengths are revalidated without raising the bus length target.
 
 Generate completed review images for every declared sample with
-`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 180`.
+`bun scripts/snapshot-routed-am3352.ts docs/routed-am3352-placements 480`.
 The exporter validates all nine before writing any images; it refuses partial
 or unrouted results. The existing five baseline images are:
 [control](docs/routed-am3352-placements/control-solved.png),
@@ -277,18 +278,36 @@ The [routed artifacts](./docs/routed-ddr) contain complete boards. All new carri
 
 ### Envelope compaction
 
-After accepting a complete route, the pipeline tries up to two bounded linear
-compaction proposals. Straight segments retain their directions, tuning banks retain their
-shape, and each matched signal retains its total copper length. Differential
-pairs, endpoints, vias and supplied fanouts stay fixed. Clearance constraints
-move surrounding lanes into available space; unconstrained controls may shorten.
+After accepting a complete route, the pipeline makes bounded linear compaction
+proposals. It first preserves matched lengths, then tries coordinated shortening
+within the declared bus/pair skew and absolute length bounds. These measurements
+include immutable fanout copper. Nearby differential rails move together;
+endpoints, vias and supplied fanouts stay fixed.
 
-The proposal must reduce the signal copper envelope without expanding any bound
-and pass the existing carrier, self-clearance, angle, skew and coupling checks.
-An interrupted, oversized or unsuccessful optimization retains the accepted
-routing. The benchmark reports the before/after area and optimization time.
-See the [nine-sample compaction report](docs/envelope-compaction/README.md) for
-measurements and completed routed snapshots.
+Flexible tuning banks retain the shape and radius of each sampled bend while
+allowing the straight legs between bends to contract. Collision constraints
+retain the original separating sides of copper obstacles. Redundant constraints
+are removed geometrically to bound the linear solver's memory use.
+
+For routing restricted to inner layers, a final search compacts each matching
+bus and its paired rails while holding the other carriers fixed. Shrinking an
+interior group can make room for the next outer group. This search runs only
+when a constrained signal supports the outer envelope, makes at most four
+sweeps, and stops when a full sweep improves the envelope by less than 0.1%.
+Straight-edge projection corrects simplex rounding before the unchanged route
+checks; fixed endpoints and sampled bend shapes remain intact.
+
+Every published improvement must reduce the actual signal copper envelope and pass
+the existing carrier, self-clearance, angle, terminal-via, length and coupling
+checks. Coordinated proposals may trade width for height when total area falls.
+The initial neighborhoods start from the conservative result; the inner-layer
+group search follows the best result. The pipeline keeps the best validated route. An interrupted, oversized or unsuccessful optimization retains
+that accepted route. The benchmark reports before/after area and optimization
+time, including the additional group-search time when applicable. See the
+[inner-layer compaction report](docs/inner-layer-compaction/README.md) for the
+comparison against merged PR #38 and complete routed snapshots. The earlier
+[further compaction report](docs/envelope-compaction-further/README.md) records
+measurements against v0.0.19.
 
 ## Integrated local-dogbone pipeline (experimental)
 

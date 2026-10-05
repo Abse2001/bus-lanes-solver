@@ -49,4 +49,4 @@ test("native AM3352 pads route without supplied fanouts, with matching and exter
   expect(drc.valid).toBe(true)
   expect(drc.checkedViaCount).toBe(94)
   expect(input).toEqual(original)
-}, 120_000)
+}, 300_000)

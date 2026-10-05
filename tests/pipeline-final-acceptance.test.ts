@@ -143,3 +143,88 @@ test("the real compactor can be interrupted without changing accepted copper", (
   expect(solver.traces).toEqual(accepted)
   expect(solver.stats.optimizationStoppedEarly).toBe(true)
 })
+
+test("interrupting an inner-layer cohort search retains the complete accepted route", () => {
+  const input = fixture()
+  input.layerCount = 4
+  input.allowedLayers = ["inner1", "inner2"]
+  for (const c of input.connections)
+    for (const p of c.pointsToConnect) p.layer = "inner1"
+  const solver = new BusLanesPipelineSolver(input, { fanout: "none" })
+  const accepted = atOptimization(solver)
+  for (
+    let i = 0;
+    i < 1000 &&
+    !solver.solved &&
+    solver.stats.envelopeOptimization?.cohortBeforeAreaMm2 === undefined;
+    i++
+  )
+    solver.step()
+  expect(solver.solved).toBe(false)
+  expect(solver.stats.envelopeOptimization.cohortBeforeAreaMm2).toBeGreaterThan(
+    0,
+  )
+  solver.traces.pop()
+  solver.tryFinalAcceptance()
+  expect(solver.solved).toBe(true)
+  expect(solver.traces).toEqual(accepted)
+  expect(solver.stats.optimizationStoppedEarly).toBe(true)
+  expect(
+    solver.stats.envelopeOptimization.cohortMilliseconds,
+  ).toBeGreaterThanOrEqual(0)
+})
+
+test("interruption after a coordinated improvement retains the improved route", () => {
+  const input = fixture()
+  input.connections = input.connections.slice(0, 1)
+  input.buses![0].connectionNames = ["signal0"]
+  input.bounds.maxY = 8
+  const solver = new BusLanesPipelineSolver(input, { fanout: "none" })
+  atOptimization(solver)
+  const initial = [
+    {
+      type: "pcb_trace" as const,
+      pcb_trace_id: "signal0",
+      connection_name: "signal0",
+      route: [
+        [-4, 0],
+        [-3, 0],
+        [-2, 1],
+        [-2, 4],
+        [-1, 5],
+        [1, 5],
+        [2, 4],
+        [2, 1],
+        [3, 0],
+        [4, 0],
+      ].map(([x, y]) => ({
+        route_type: "wire" as const,
+        x,
+        y,
+        layer: "top",
+        width: 0.1,
+      })),
+    },
+  ]
+  // Seed a valid detour at the optimizer boundary to exercise a later accepted
+  // branch without relying on the routing search to choose that detour.
+  ;(solver as unknown as { acceptedTraces: typeof initial }).acceptedTraces =
+    structuredClone(initial)
+  solver.traces = structuredClone(initial)
+  for (let i = 0; i < 1000 && !solver.solved; i++) {
+    solver.step()
+    const area = solver.stats.envelopeOptimization
+    if (area && area.afterAreaMm2 < area.beforeAreaMm2 - 1e-6) break
+  }
+  expect(solver.solved).toBe(false)
+  expect(solver.stats.envelopeOptimization.afterAreaMm2).toBeLessThan(
+    solver.stats.envelopeOptimization.beforeAreaMm2,
+  )
+  solver.tryFinalAcceptance()
+  expect(solver.solved).toBe(true)
+  expect(solver.traces).not.toEqual(initial)
+  expect(busLengthReports(input, solver.traces).every((r) => r.matched)).toBe(
+    true,
+  )
+  expect(solver.getOutput().traces[0]).toEqual(input.traces![0])
+})
