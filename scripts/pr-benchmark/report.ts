@@ -245,6 +245,12 @@ const percentiles = (values: readonly number[]): Percentiles => ({
   p90: percentile(values, 0.9),
   p95: percentile(values, 0.95),
 })
+const relativeChange = (before: number | null, after: number | null) =>
+  before === null || after === null || before === 0
+    ? null
+    : Number.isFinite(((after - before) / before) * 100)
+      ? ((after - before) / before) * 100
+      : null
 const BUS_TOLERANCES = { DDR_BYTE0: 0.635, DDR_BYTE1: 0.635 }
 const PAIR_TOLERANCES = { pair_0: 0.127, pair_1: 0.127, pair_2: 0.127 }
 const measurements = (
@@ -474,12 +480,6 @@ export function summarizeComparison(
       ? matchedSamples.map((sample) => sample.pr.solveMilliseconds!)
       : [],
   )
-  const delta = (before: number | null, after: number | null) =>
-    before === null || after === null || before === 0
-      ? null
-      : Number.isFinite(((after - before) / before) * 100)
-        ? ((after - before) / before) * 100
-        : null
   return {
     samples,
     artifactComplete,
@@ -498,10 +498,10 @@ export function summarizeComparison(
       main: mainMatched,
       pr: prMatched,
       deltaPercent: {
-        p50: delta(mainMatched.p50, prMatched.p50),
-        p80: delta(mainMatched.p80, prMatched.p80),
-        p90: delta(mainMatched.p90, prMatched.p90),
-        p95: delta(mainMatched.p95, prMatched.p95),
+        p50: relativeChange(mainMatched.p50, prMatched.p50),
+        p80: relativeChange(mainMatched.p80, prMatched.p80),
+        p90: relativeChange(mainMatched.p90, prMatched.p90),
+        p95: relativeChange(mainMatched.p95, prMatched.p95),
       },
     },
   }
@@ -518,6 +518,14 @@ const seconds = (milliseconds: number | null) =>
   milliseconds === null ? "n/a" : `${(milliseconds / 1000).toFixed(3)} s`
 const percent = (value: number | null) =>
   value === null ? "n/a" : `${value > 0 ? "+" : ""}${value.toFixed(1)}%`
+const countChange = (before: number, after: number) =>
+  `${after > before ? "+" : ""}${after - before}`
+const completion = (accepted: number) =>
+  `${accepted}/${SAMPLE_NAMES.length} (${((accepted / SAMPLE_NAMES.length) * 100).toFixed(1)}%)`
+const completionChange = (before: number, after: number) => {
+  const points = ((after - before) / SAMPLE_NAMES.length) * 100
+  return `${points > 0 ? "+" : ""}${points.toFixed(1)} pp`
+}
 const percentileRows = (
   main: Percentiles,
   pr: Percentiles,
@@ -525,7 +533,7 @@ const percentileRows = (
 ) =>
   (["p50", "p80", "p90", "p95"] as const).map(
     (key) =>
-      `| ${key.toUpperCase()} | ${seconds(main[key])} | ${seconds(pr[key])}${delta ? ` | ${percent(delta[key])}` : ""} |`,
+      `| ${key.toUpperCase()} time | ${seconds(main[key])} | ${seconds(pr[key])} | ${percent(delta ? delta[key] : relativeChange(main[key], pr[key]))} |`,
   )
 const resultCell = (result: SampleResult) =>
   `${result.status.replace("_", " ")}${result.accepted ? " (47/47 signals; DRC passed)" : ""} · solve ${seconds(result.solveMilliseconds)} · wall ${seconds(result.wallMilliseconds)}`
@@ -549,8 +557,6 @@ export function renderComparison(options: ComparisonOptions): string {
     ...(options.controllerSha
       ? [`Controller: \`${options.controllerSha}\`.`, ""]
       : []),
-    `Accepted completions: main **${summary.main.accepted}/${SAMPLE_NAMES.length}**, PR **${summary.pr.accepted}/${SAMPLE_NAMES.length}**. Timeouts: ${summary.main.timeouts} → ${summary.pr.timeouts}. Other failures (including crash, invalid, or missing): ${summary.main.failures} → ${summary.pr.failures}.`,
-    "",
     `Lost completions (main accepted, PR not accepted): ${summary.lost.join(", ") || "none"}. Gained completions: ${summary.gained.join(", ") || "none"}.`,
     "",
   ]
@@ -574,13 +580,18 @@ export function renderComparison(options: ComparisonOptions): string {
     "",
     "Acceptance requires solving strictly before the timeout budget. An accepted sample contributes min(actual solve time, timeout budget). Every failure, timeout, crash, missing artifact, or invalid result contributes the full budget. These are completion-aware budgeted values, not percentiles of actual elapsed durations.",
     "",
-    "| Percentile | Main | PR |",
-    "| --- | ---: | ---: |",
+    "| Metric | Main | PR | Change |",
+    "| --- | ---: | ---: | ---: |",
+    `| Completion | ${completion(summary.main.accepted)} | ${completion(summary.pr.accepted)} | ${completionChange(summary.main.accepted, summary.pr.accepted)} |`,
+    `| Timeouts | ${summary.main.timeouts} | ${summary.pr.timeouts} | ${countChange(summary.main.timeouts, summary.pr.timeouts)} |`,
+    `| Other failures | ${summary.main.failures} | ${summary.pr.failures} | ${countChange(summary.main.failures, summary.pr.failures)} |`,
     ...percentileRows(summary.main.budgeted, summary.pr.budgeted),
+    "",
+    "Completion changes are percentage points (pp); timing changes are relative percentages, with negative values faster. Other failures include crashes, invalid results, and missing artifacts.",
     "",
     `**Actual solve time on the same ${summary.matched.count} samples accepted on both revisions**`,
     "",
-    "| Percentile | Main | PR | PR change |",
+    "| Metric | Main | PR | Change |",
     "| --- | ---: | ---: | ---: |",
     ...percentileRows(
       summary.matched.main,

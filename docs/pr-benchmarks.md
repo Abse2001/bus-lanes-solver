@@ -36,9 +36,13 @@ bus and pair copper skews, runtime, and input hashes.
 
 ## Reading the timing tables
 
-The first table reports completion and **budgeted time to valid completion**
-across all eleven placements. Accepted cases use their routing time. Failed,
-timed-out, crashed, invalid, or missing cases receive the full solver budget.
+The tables follow the autorouter's layout: metrics are rows, with Main, PR,
+and Change columns. The first table includes Completion, Timeouts, Other
+failures, and P50/P80/P90/P95 **budgeted time to valid completion** across all
+eleven placements. Completion changes use percentage points; timing changes
+use relative percentages, with negative values faster. Accepted cases use
+their routing time. Failed, timed-out, crashed, invalid, or missing cases
+receive the full solver budget.
 This keeps a PR that loses slow successes from appearing faster by dropping
 those cases.
 

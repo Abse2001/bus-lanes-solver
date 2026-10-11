@@ -193,6 +193,17 @@ test("all accepted samples use solve duration and require the canonical signal c
   expect(summary.samples[0].main.solveMilliseconds).toBe(100)
   expect(summary.samples[0].main.busSkews[0].skewMm).toBe(0.01)
   expect(summary.samples[9].pr.accepted).toBeTrue()
+  const rendered = renderComparison(options(allPairs()))
+  expect(rendered).toContain("| Metric | Main | PR | Change |")
+  expect(rendered).toContain(
+    "| Completion | 11/11 (100.0%) | 11/11 (100.0%) | 0.0 pp |",
+  )
+  expect(rendered).toContain("| Timeouts | 0 | 0 | 0 |")
+  expect(rendered).toContain("| Other failures | 0 | 0 | 0 |")
+  expect(rendered).toContain("| P50 time | 0.600 s | 0.600 s | 0.0% |")
+  expect(rendered).toContain("| P80 time | 0.900 s | 0.900 s | 0.0% |")
+  expect(rendered).toContain("| P90 time | 1.000 s | 1.000 s | 0.0% |")
+  expect(rendered).toContain("| P95 time | 1.050 s | 1.050 s | 0.0% |")
 })
 
 test("a lost fast completion receives a budget penalty and survivor comparisons use the same cases", () => {
@@ -213,6 +224,13 @@ test("a lost fast completion receives a budget penalty and survivor comparisons 
   expect(summary.matched.pr.p50).toBe(325)
   expect(summary.matched.deltaPercent.p50).toBe(-50)
   expect(summary.samples[0].pr.busSkews).toEqual([])
+  const rendered = renderComparison(options(samples))
+  expect(rendered).toContain(
+    "| Completion | 11/11 (100.0%) | 10/11 (90.9%) | -9.1 pp |",
+  )
+  expect(rendered).toContain("| Other failures | 0 | 1 | +1 |")
+  expect(rendered).toContain("| P50 time | 0.600 s | 0.350 s | -41.7% |")
+  expect(rendered).toContain("| P50 time | 0.650 s | 0.325 s | -50.0% |")
 })
 
 test("completion requires every trusted validation and fixed-power preservation check", () => {
@@ -381,7 +399,7 @@ test("missing canonical artifacts remain visible and suppress matched-duration c
   expect(rendered).toContain("Incomplete artifacts")
   expect(rendered).toContain("cannot establish no regression")
   expect(rendered).toContain("| control | missing")
-  expect(rendered).toContain("| P50 | n/a | n/a | n/a |")
+  expect(rendered).toContain("| P50 time | n/a | n/a | n/a |")
 })
 
 test("a missing revision worker preserves its paired result and suppresses matched-duration statistics", () => {
