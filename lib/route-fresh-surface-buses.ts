@@ -13,6 +13,7 @@ import {
 import { signalLayers, type FlexibleSignalState } from "./flexible-signal-state"
 import {
   negotiateSignalSites,
+  type DeferredCarrierExpansion,
   type SignalSiteDomainFailure,
 } from "./negotiate-signal-sites"
 import {
@@ -47,6 +48,145 @@ export interface SurfaceSeedOptions {
 }
 
 export const MAX_SELECTIVE_NATIVE_APPROACH_GUIDE_EVENTS = 24
+
+/** An unchanged contradictory native-site core cannot be repaired by widening
+ * unrelated domains. Incomplete metadata or a partial certificate keeps the
+ * existing expanded retry; this is never a native infeasibility assertion. */
+export function shouldRetryDeferredCarrierExpansion(
+  failure: SignalSiteDomainFailure | undefined,
+  deferred: readonly DeferredCarrierExpansion[] | undefined,
+): boolean {
+  if (
+    !failure ||
+    failure.kind !== "incompatible-offered-native-site-domains" ||
+    failure.searchComplete !== true ||
+    failure.budgetUnknown !== false ||
+    !Array.isArray(deferred) ||
+    !deferred.length ||
+    !Array.isArray(failure.domains) ||
+    !failure.domains.length ||
+    !Array.isArray(failure.names) ||
+    !failure.names.length ||
+    failure.proof?.kind !== "arc-consistency"
+  )
+    return true
+  const domains = failure.domains
+  if (
+    domains.some(
+      (domain) =>
+        !domain ||
+        typeof domain.name !== "string" ||
+        !domain.name ||
+        !Array.isArray(domain.options) ||
+        !domain.options.length ||
+        domain.options.some(
+          (option) =>
+            !option ||
+            !Array.isArray(option.escapes) ||
+            !option.escapes.length ||
+            !Array.isArray(option.escapeCopper),
+        ),
+    )
+  )
+    return true
+  const domainNames = new Set(domains.map((domain) => domain.name))
+  if (
+    domainNames.size !== domains.length ||
+    deferred.some(
+      (entry) =>
+        !entry ||
+        typeof entry.connectionName !== "string" ||
+        !domainNames.has(entry.connectionName) ||
+        typeof entry.layer !== "string" ||
+        !entry.layer,
+    )
+  )
+    return true
+  const { removals, implicatedRemovals, emptyDomain, unsupportedBy } =
+    failure.proof
+  const validDomain = (index: number) =>
+    Number.isInteger(index) && index >= 0 && index < domains.length
+  if (
+    !Array.isArray(removals) ||
+    !removals.length ||
+    !Array.isArray(implicatedRemovals) ||
+    !implicatedRemovals.length ||
+    !validDomain(emptyDomain) ||
+    !validDomain(unsupportedBy)
+  )
+    return true
+  const remaining = domains.map((domain) =>
+    domain.options.map((_, index) => index),
+  )
+  for (let index = 0; index < removals.length; index++) {
+    const removal = removals[index]
+    if (
+      !removal ||
+      !validDomain(removal.first) ||
+      !validDomain(removal.second) ||
+      removal.first === removal.second ||
+      !Array.isArray(removal.removed) ||
+      !removal.removed.length ||
+      !Array.isArray(removal.support) ||
+      !removal.support.length ||
+      JSON.stringify(removal.support) !==
+        JSON.stringify(remaining[removal.second]) ||
+      new Set(removal.removed).size !== removal.removed.length ||
+      removal.removed.some(
+        (option) =>
+          !Number.isInteger(option) ||
+          !remaining[removal.first].includes(option),
+      )
+    )
+      return true
+    remaining[removal.first] = remaining[removal.first].filter(
+      (option) => !removal.removed.includes(option),
+    )
+    const last = index === removals.length - 1
+    if (
+      last
+        ? removal.first !== emptyDomain ||
+          removal.second !== unsupportedBy ||
+          remaining[removal.first].length !== 0
+        : remaining[removal.first].length === 0
+    )
+      return true
+  }
+  // Match the producer's conservative closure, including every earlier
+  // elimination of a variable or of its supporting variable. The last arc
+  // alone can omit the deferred variable that caused support to disappear.
+  const implicated = new Set<number>()
+  const visit = (index: number) => {
+    if (implicated.has(index)) return
+    implicated.add(index)
+    const removal = removals[index]
+    for (let earlier = 0; earlier < index; earlier++)
+      if (
+        removals[earlier].first === removal.first ||
+        removals[earlier].first === removal.second
+      )
+        visit(earlier)
+  }
+  visit(removals.length - 1)
+  const closure = [...implicated]
+    .sort((a, b) => a - b)
+    .map((index) => removals[index])
+  if (JSON.stringify(closure) !== JSON.stringify(implicatedRemovals))
+    return true
+  const coreNames = new Set(
+    closure.flatMap((removal) => [
+      domains[removal.first].name,
+      domains[removal.second].name,
+    ]),
+  )
+  if (
+    new Set(failure.names).size !== failure.names.length ||
+    coreNames.size !== failure.names.length ||
+    failure.names.some((name) => !coreNames.has(name))
+  )
+    return true
+  return deferred.some((entry) => coreNames.has(entry.connectionName))
+}
 
 /** Choose fresh surface sites before committing independent control dogbones.
  * Complete results still pass matching and physical coupling; partial computed
@@ -250,6 +390,10 @@ export function* routeFreshSurfaceSeeds(
       const guidanceState = state
       let domainFailure: SignalSiteDomainFailure | undefined
       let deferredCarrierExpansion = false
+      let deferredCarrierExpansions:
+        | readonly DeferredCarrierExpansion[]
+        | undefined
+      let deferredFineNativeApproachRetry = false
       if (ordinaryNames.size) {
         const siteOptions = {
           allowExpandedSites: true,
@@ -261,31 +405,52 @@ export function* routeFreshSurfaceSeeds(
         }
         const attemptLimit =
           paired.length && !isProvisionalPairPlan(paired) ? 250000 : 1500000
-        state = yield* runBoundedRouting(
-          negotiateSignalSites(guidanceState, ordinaryNames, false, false, {
-            ...siteOptions,
-            deferAlternateCarrierExpansion: true,
-            onDeferredCarrierExpansion: () => {
-              deferredCarrierExpansion = true
-            },
-          }),
-          attemptLimit,
-        )
-        if (!state && deferredCarrierExpansion) {
+        function* attempt(
+          allowFineNativeApproachRetry: boolean,
+          deferAlternateCarrierExpansion: boolean,
+        ): Generator<void, FlexibleSignalState | null> {
+          domainFailure = undefined
+          deferredCarrierExpansion = false
+          deferredCarrierExpansions = undefined
+          deferredFineNativeApproachRetry = false
+          return yield* runBoundedRouting(
+            negotiateSignalSites(guidanceState, ordinaryNames, false, false, {
+              ...siteOptions,
+              allowFineNativeApproachRetry,
+              ...(deferAlternateCarrierExpansion
+                ? { deferAlternateCarrierExpansion: true }
+                : {}),
+              onDeferredCarrierExpansion: (deferred) => {
+                deferredCarrierExpansion = true
+                deferredCarrierExpansions = deferred
+              },
+              onDeferredFineNativeApproachRetry: () => {
+                deferredFineNativeApproachRetry = true
+              },
+            }),
+            attemptLimit,
+          )
+        }
+        let fineAllowed = false
+        state = yield* attempt(false, true)
+        if (!state && deferredFineNativeApproachRetry) {
+          fineAllowed = true
+          state = yield* attempt(true, true)
+        }
+        if (
+          !state &&
+          deferredCarrierExpansion &&
+          shouldRetryDeferredCarrierExpansion(
+            domainFailure,
+            deferredCarrierExpansions,
+          )
+        ) {
           // Preserve the established cheap first choice. Only a failed attempt
           // that actually omitted a carrier domain needs this broader retry.
           // Feedback from the partial first domain cannot guide a new pair.
-          domainFailure = undefined
-          state = yield* runBoundedRouting(
-            negotiateSignalSites(
-              guidanceState,
-              ordinaryNames,
-              false,
-              false,
-              siteOptions,
-            ),
-            attemptLimit,
-          )
+          state = yield* attempt(fineAllowed, false)
+          if (!state && deferredFineNativeApproachRetry)
+            state = yield* attempt(true, false)
         }
       }
       if (!state) {

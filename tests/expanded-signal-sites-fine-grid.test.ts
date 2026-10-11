@@ -56,7 +56,9 @@ function narrowNativeApproach(): SimpleRouteJson {
 
 function choicesForA7(input: SimpleRouteJson) {
   const connection = input.connections.find((c) => c.name === "source_trace_9")!
-  const work = expandedSignalSiteChoices(input, connection, "bottom", 4)
+  const work = expandedSignalSiteChoices(input, connection, "bottom", 4, {
+    allowFineNativeApproachRetry: true,
+  })
   let step = work.next()
   for (let i = 0; !step.done && i < 20_000; i++) step = work.next()
   expect(step.done).toBe(true)

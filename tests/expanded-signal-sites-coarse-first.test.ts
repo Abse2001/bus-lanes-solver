@@ -5,6 +5,8 @@ import {
   expandedSignalSites,
   expandedSignalSiteChoices,
 } from "../lib/expanded-signal-sites"
+import { negotiateSignalSites } from "../lib/negotiate-signal-sites"
+import type { FlexibleSignalState } from "../lib/flexible-signal-state"
 import { joinSignalEscapes } from "../lib/join-signal-escapes"
 import type { SimpleRouteJson, Trace } from "../lib/types"
 import { loadG350Am3352Sample } from "../scripts/g350-am3352-sample"
@@ -71,7 +73,23 @@ test("fine recovery leaves a healthy opposite endpoint byte-identical to the fro
   const input = narrowNativeApproach()
   const before = structuredClone(input)
   const connection = input.connections.find((c) => c.name === "source_trace_9")!
-  const ends = complete(expandedSignalSites(input, connection, "bottom"))
+  let deferred = 0
+  const coarseEnds = complete(
+    expandedSignalSites(input, connection, "bottom", {
+      onDeferredFineNativeApproachRetry: () => {
+        deferred++
+      },
+    }),
+  )
+  expect(coarseEnds[0]).toEqual([])
+  expect(coarseEnds[1]).toHaveLength(29)
+  expect(deferred).toBe(1)
+  const ends = complete(
+    expandedSignalSites(input, connection, "bottom", {
+      allowFineNativeApproachRetry: true,
+    }),
+  )
+  expect(ends[1]).toEqual(coarseEnds[1])
   // Frozen f7428d538bc3f71b0f408eb2fca354f2787e8c87 returned CPU=[], RAM=29.
   // This digest includes ordered terminal coordinates, full escape geometry,
   // widths, manufactured via dimensions/span, route identifiers and lengths.
@@ -82,7 +100,9 @@ test("fine recovery leaves a healthy opposite endpoint byte-identical to the fro
   expect(ends[0]).toHaveLength(3)
 
   const choices = complete(
-    expandedSignalSiteChoices(input, connection, "bottom", 1),
+    expandedSignalSiteChoices(input, connection, "bottom", 1, {
+      allowFineNativeApproachRetry: true,
+    }),
   )
   expect(choices).toHaveLength(1)
   const choice = choices[0]
@@ -107,3 +127,86 @@ test("fine recovery leaves a healthy opposite endpoint byte-identical to the fro
   expect(input.obstacles).toHaveLength(854)
   expect(input).toEqual(before)
 }, 30_000)
+
+test("an actual A7 coarse failure reports precision once and the explicit fine replay manufactures a connection", () => {
+  const input = narrowNativeApproach()
+  const before = structuredClone(input)
+  const connection = input.connections.find(
+    (candidate) => candidate.name === "source_trace_9",
+  )!
+  const state: FlexibleSignalState = {
+    native: input,
+    pending: input,
+    escapes: [],
+    traces: [],
+    retained: [],
+  }
+  let deferred = 0
+  const coarse = complete(
+    negotiateSignalSites(state, new Set([connection.name]), false, false, {
+      allowExpandedSites: true,
+      expandOnlyWhenBlocked: true,
+      onDeferredFineNativeApproachRetry: () => {
+        deferred++
+      },
+    }),
+  )
+  expect(coarse).toBeNull()
+  expect(deferred).toBe(1)
+  const fine = complete(
+    negotiateSignalSites(state, new Set([connection.name]), false, false, {
+      allowExpandedSites: true,
+      expandOnlyWhenBlocked: true,
+      allowFineNativeApproachRetry: true,
+      onDeferredFineNativeApproachRetry: () => {
+        deferred++
+      },
+    }),
+  )
+  expect(fine).toBeTruthy()
+  expect(fine!.traces).toHaveLength(1)
+  const joined = joinSignalEscapes(fine!.traces[0], fine!.escapes)
+  const checked = validateRoutedCopperDrc({
+    inputSrj: input,
+    routedSrj: { ...input, traces: [...input.traces!, joined] },
+    clearance: 0.1016,
+    allowBlindAndBuriedVias: false,
+  } as Parameters<typeof validateRoutedCopperDrc>[0])
+  expect(checked).toMatchObject({ valid: true, issues: [] })
+  expect(deferred).toBe(1)
+  expect(input).toEqual(before)
+}, 30000)
+
+test("denying expansion and canceling native coarse generation emit no precision deferral", () => {
+  const input = narrowNativeApproach()
+  const connection = input.connections.find(
+    (candidate) => candidate.name === "source_trace_9",
+  )!
+  const state: FlexibleSignalState = {
+    native: input,
+    pending: input,
+    escapes: [],
+    traces: [],
+    retained: [],
+  }
+  let deferred = 0
+  expect(
+    complete(
+      negotiateSignalSites(state, new Set([connection.name]), false, false, {
+        allowExpandedSites: false,
+        onDeferredFineNativeApproachRetry: () => {
+          deferred++
+        },
+      }),
+    ),
+  ).toBeNull()
+  expect(deferred).toBe(0)
+  const work = expandedSignalSites(input, connection, "bottom", {
+    onDeferredFineNativeApproachRetry: () => {
+      deferred++
+    },
+  })
+  expect(work.next().done).toBe(false)
+  work.return([[], []])
+  expect(deferred).toBe(0)
+}, 30000)

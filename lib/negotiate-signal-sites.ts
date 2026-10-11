@@ -55,6 +55,11 @@ export type SignalSiteDomainFailure =
       proof: CandidateDomainFailure & { kind: "arc-consistency" }
     }
 
+export interface DeferredCarrierExpansion {
+  connectionName: string
+  layer: string
+}
+
 interface SignalSiteOptions {
   allowExpandedSites?: boolean
   /** Widen only carrier layers with no reachable cheap site/carrier choice. */
@@ -62,7 +67,13 @@ interface SignalSiteOptions {
   /** Try the cheap joint domains before widening an alternate carrier. */
   deferAlternateCarrierExpansion?: boolean
   /** Emitted only after all offered native-site domains have completed. */
-  onDeferredCarrierExpansion?: () => void
+  onDeferredCarrierExpansion?: (
+    deferred?: readonly DeferredCarrierExpansion[],
+  ) => void
+  /** Fine native approaches are a failed-stage recovery, not a default bank. */
+  allowFineNativeApproachRetry?: boolean
+  /** Completed eligible precision deferrals; cancellation emits nothing. */
+  onDeferredFineNativeApproachRetry?: () => void
   maxCandidateSearchNodes?: number
   retainExistingRoutes?: boolean
   /** Feedback concerns finite offered native sites, never carrier failures. */
@@ -334,7 +345,9 @@ export function* negotiateSignalSites(
     projectors = new Map<string, GridHistoryProjector>()
   const clearance =
     native.minTraceToPadEdgeClearance ?? native.defaultObstacleMargin ?? 0.075
-  let deferredAlternateCarrierExpansion = false
+  const deferredCarrierExpansions: DeferredCarrierExpansion[] = []
+  const deferredCarrierExpansionKeys = new Set<string>()
+  let deferredFineNativeApproachRetry = false
   let nativeSiteSearchIncomplete = false
   for (const connection of base.connections) {
     const previous = options.retainExistingRoutes
@@ -421,6 +434,7 @@ export function* negotiateSignalSites(
     }
     const choices: SiteOption[] = previous ? [previous.option] : []
     let siteSearchIncomplete = false
+    let connectionDeferredFineNativeApproachRetry = false
     // A cached physical site can survive after its carrier becomes blocked.
     // Only a reachable carrier may suppress the blocked-only fallback.
     const reachableLocalCarriers = new Set(
@@ -521,7 +535,14 @@ export function* negotiateSignalSites(
         !reachableLocalCarriers.has(layer) &&
         reachableLocalCarriers.size > 0
       ) {
-        deferredAlternateCarrierExpansion = true
+        const key = JSON.stringify([connection.name, layer])
+        if (!deferredCarrierExpansionKeys.has(key)) {
+          deferredCarrierExpansionKeys.add(key)
+          deferredCarrierExpansions.push({
+            connectionName: connection.name,
+            layer,
+          })
+        }
         continue
       }
       const expanded = yield* expandedSignalSiteChoices(
@@ -530,6 +551,10 @@ export function* negotiateSignalSites(
         layer,
         8,
         {
+          allowFineNativeApproachRetry: options.allowFineNativeApproachRetry,
+          onDeferredFineNativeApproachRetry: () => {
+            connectionDeferredFineNativeApproachRetry = true
+          },
           onSearchIncomplete: () => {
             siteSearchIncomplete = true
           },
@@ -563,6 +588,10 @@ export function* negotiateSignalSites(
     }
     choices.sort((a, b) => a.length - b.length)
     if (!choices.length) {
+      // Another connection's precision cannot repair this independent empty
+      // bank. Retry only if this failed connection itself omitted fine sites.
+      if (connectionDeferredFineNativeApproachRetry)
+        options.onDeferredFineNativeApproachRetry?.()
       if (!siteSearchIncomplete)
         options.onSiteDomainFailure?.({
           kind: "empty-native-site-domain",
@@ -573,9 +602,14 @@ export function* negotiateSignalSites(
       return null
     }
     nativeSiteSearchIncomplete ||= siteSearchIncomplete
+    deferredFineNativeApproachRetry ||=
+      connectionDeferredFineNativeApproachRetry
     variants.set(connection.name, choices)
   }
-  if (deferredAlternateCarrierExpansion) options.onDeferredCarrierExpansion?.()
+  if (deferredCarrierExpansions.length)
+    options.onDeferredCarrierExpansion?.(deferredCarrierExpansions)
+  if (deferredFineNativeApproachRetry)
+    options.onDeferredFineNativeApproachRetry?.()
   if (options.onSiteDomainFailure) {
     const domains = [...variants].map(([name, choices]) => ({
       name,

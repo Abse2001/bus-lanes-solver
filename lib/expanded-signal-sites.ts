@@ -26,6 +26,10 @@ export interface ExpandedSignalSiteChoice {
  * Cancellation never reports a completed bounded search. */
 export interface ExpandedSignalSiteSearchOptions {
   onSearchIncomplete?: () => void
+  /** Preserve the coarse policy unless a failed caller explicitly widens it. */
+  allowFineNativeApproachRetry?: boolean
+  /** Only a completed, empty coarse endpoint can defer an eligible retry. */
+  onDeferredFineNativeApproachRetry?: () => void
 }
 
 const viaHoleClearance = (input: SimpleRouteJson) =>
@@ -210,6 +214,7 @@ export function* expandedSignalSites(
   options: ExpandedSignalSiteSearchOptions = {},
 ): Generator<void, [ExpandedSignalSite[], ExpandedSignalSite[]]> {
   const ends: [ExpandedSignalSite[], ExpandedSignalSite[]] = [[], []]
+  let deferredFineNativeApproachRetry = false
   const physical = getCopperLayerNames(input.layerCount)
   if (!physical.includes(targetLayer)) return ends
   const fixed = fixedCopper(input)
@@ -294,6 +299,10 @@ export function* expandedSignalSites(
     // coarse approach; postprocessing rejection keeps its original behavior.
     for (const fine of [false, true]) {
       if (fine && ends[end].length) break
+      if (fine && !options.allowFineNativeApproachRetry) {
+        deferredFineNativeApproachRetry ||= failedCandidates.length > 0
+        break
+      }
       for (const point of fine ? failedCandidates : candidates) {
         if (viaScenes.some((scene) => !scene.visible(point, point))) continue
         if (
@@ -407,5 +416,7 @@ export function* expandedSignalSites(
       }
     }
   }
+  if (deferredFineNativeApproachRetry)
+    options.onDeferredFineNativeApproachRetry?.()
   return ends
 }
