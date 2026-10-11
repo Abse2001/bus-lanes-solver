@@ -13,6 +13,10 @@ import {
 import { distance, length } from "./geometry"
 import { GridHistoryProjector, GridVisibilitySearch } from "./grid-visibility"
 import {
+  type CandidateDomainFailure,
+  pruneCandidateDomains,
+} from "./prune-candidate-domains"
+import {
   ownedSignalEscapes,
   signalDogboneOptions,
   signalWidth,
@@ -29,12 +33,32 @@ import {
   VectorScene,
 } from "./vector-scene"
 
+export type SignalSiteDomainFailure =
+  | {
+      kind: "empty-native-site-domain"
+      connection: Connection
+      /** The offered finite policy completed; it does not exhaust all copper. */
+      searchComplete: true
+      budgetUnknown: false
+    }
+  | {
+      kind: "incompatible-native-site-domains"
+      names: string[]
+      domains: Array<{
+        name: string
+        options: Array<{ escapes: Trace[]; escapeCopper: Copper[] }>
+      }>
+      proof: CandidateDomainFailure & { kind: "arc-consistency" }
+    }
+
 interface SignalSiteOptions {
   allowExpandedSites?: boolean
-  /** Widen a terminal domain only when every cheap site/carrier choice failed. */
+  /** Widen only carrier layers with no reachable cheap site/carrier choice. */
   expandOnlyWhenBlocked?: boolean
   maxCandidateSearchNodes?: number
   retainExistingRoutes?: boolean
+  /** Internal feedback concerns completed native-site domains, never carriers. */
+  onSiteDomainFailure?: (failure: SignalSiteDomainFailure) => void
 }
 
 interface SiteOption {
@@ -386,9 +410,12 @@ export function* negotiateSignalSites(
       yield
     }
     const choices: SiteOption[] = previous ? [previous.option] : []
+    let siteSearchIncomplete = false
     // A cached physical site can survive after its carrier becomes blocked.
     // Only a reachable carrier may suppress the blocked-only fallback.
-    let hasReachableLocalCarrier = previous?.trace !== undefined
+    const reachableLocalCarriers = new Set(
+      previous?.trace ? [previous.option.layer] : [],
+    )
     for (const a of ends[0])
       for (const b of ends[1])
         for (const layer of signalLayers(native, connection)) {
@@ -451,7 +478,7 @@ export function* negotiateSignalSites(
               yield
             }
             if (search.solved) {
-              hasReachableLocalCarrier = true
+              reachableLocalCarriers.add(layer)
               choices.push({
                 connection: local,
                 escapes,
@@ -461,7 +488,7 @@ export function* negotiateSignalSites(
                 length: length(search.result),
                 maxLength,
               })
-            }
+            } else if (!search.failed) siteSearchIncomplete = true
           } finally {
             search.cancel()
           }
@@ -469,7 +496,7 @@ export function* negotiateSignalSites(
     for (const layer of carrierLayers) {
       if (
         options.allowExpandedSites === false ||
-        (options.expandOnlyWhenBlocked && hasReachableLocalCarrier) ||
+        (options.expandOnlyWhenBlocked && reachableLocalCarriers.has(layer)) ||
         !connection.pointsToConnect.every((point) =>
           native.allowedLayers?.includes(point.layer),
         ) ||
@@ -483,6 +510,12 @@ export function* negotiateSignalSites(
         single,
         connection,
         layer,
+        8,
+        {
+          onSearchIncomplete: () => {
+            siteSearchIncomplete = true
+          },
+        },
       )
       for (const option of expanded) {
         const maxLength = maximumCarrierLength(
@@ -511,8 +544,52 @@ export function* negotiateSignalSites(
       }
     }
     choices.sort((a, b) => a.length - b.length)
-    if (!choices.length) return null
+    if (!choices.length) {
+      if (!siteSearchIncomplete)
+        options.onSiteDomainFailure?.({
+          kind: "empty-native-site-domain",
+          connection,
+          searchComplete: true,
+          budgetUnknown: false,
+        })
+      return null
+    }
     variants.set(connection.name, choices)
+  }
+  if (options.onSiteDomainFailure) {
+    const domains = [...variants].map(([name, choices]) => ({
+      name,
+      options: choices.map(({ escapes, escapeCopper }) => ({
+        escapes,
+        escapeCopper,
+      })),
+    }))
+    const index = new CopperConflictIndex()
+    const compatible = (a: SiteOption, b: SiteOption) =>
+      !generatedEscapeHolesConflict(native, a.escapes, b.escapes) &&
+      !index.firstConflict(a.escapeCopper, b.escapeCopper, clearance - 1e-8)
+    const remaining = pruneCandidateDomains(
+      [...variants.values()],
+      compatible,
+      1_000_000,
+      (failure) => {
+        const names = [
+          ...new Set(
+            failure.implicatedRemovals.flatMap(({ first, second }) => [
+              domains[first].name,
+              domains[second].name,
+            ]),
+          ),
+        ]
+        options.onSiteDomainFailure!({
+          kind: "incompatible-native-site-domains",
+          names,
+          domains,
+          proof: { kind: "arc-consistency", ...failure },
+        })
+      },
+    )
+    if (!remaining) return null
   }
   const copperConflicts = new CopperConflictIndex()
   const overlap = (a: Copper[], b: Copper[]) =>

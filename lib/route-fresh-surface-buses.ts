@@ -11,7 +11,14 @@ import {
   findViaAwareSignalPocket,
 } from "./find-signal-site-pocket"
 import { signalLayers, type FlexibleSignalState } from "./flexible-signal-state"
-import { negotiateSignalSites } from "./negotiate-signal-sites"
+import {
+  negotiateSignalSites,
+  type SignalSiteDomainFailure,
+} from "./negotiate-signal-sites"
+import {
+  deriveSelectiveNativeApproachGuide,
+  type NativeApproachGuide,
+} from "./selective-native-approach-guidance"
 import { negotiateSurfaceRoutes } from "./negotiate-surface-routes"
 import { pairCouplingReports } from "./pair-coupling"
 import { prepareSurfaceTimingBanks } from "./prepare-surface-timing-banks"
@@ -38,6 +45,8 @@ export interface SurfaceSeedOptions {
   maxControlAttempts?: number
   maxControlIterations?: number
 }
+
+export const MAX_SELECTIVE_NATIVE_APPROACH_GUIDE_EVENTS = 24
 
 /** Choose fresh surface sites before committing independent control dogbones.
  * Complete results still pass matching and physical coupling; partial computed
@@ -206,11 +215,9 @@ export function* routeFreshSurfaceSeeds(
     ),
     traces: [...(native.traces ?? []), ...pairEscapes],
   }
-  const plans = priorityPairPlans(
-    timingAllocation,
-    terminalLayers,
-    ordinaryNativeApproachGuides(native, originalEscapes, ordinaryNames),
-  )
+  const plans = priorityPairPlans(timingAllocation, terminalLayers)
+  const guides: NativeApproachGuide[] = []
+  let guideEvents = 0
   let plan = plans.next()
   let greatest: FlexibleSignalState | null = null
   try {
@@ -240,17 +247,44 @@ export function* routeFreshSurfaceSeeds(
         retained: paired,
         traces: [],
       }
+      const guidanceState = state
+      let domainFailure: SignalSiteDomainFailure | undefined
       if (ordinaryNames.size)
         state = yield* runBoundedRouting(
           negotiateSignalSites(state, ordinaryNames, false, false, {
             allowExpandedSites: true,
             expandOnlyWhenBlocked: true,
             maxCandidateSearchNodes: 12000,
+            onSiteDomainFailure: (failure) => {
+              domainFailure = failure
+            },
           }),
           paired.length && !isProvisionalPairPlan(paired) ? 250000 : 1500000,
         )
       if (!state) {
-        plan = plans.next(true)
+        const derived =
+          domainFailure &&
+          guideEvents < MAX_SELECTIVE_NATIVE_APPROACH_GUIDE_EVENTS
+            ? deriveSelectiveNativeApproachGuide(
+                guidanceState,
+                domainFailure,
+                originalEscapes,
+                guides,
+                { physicalInput: native },
+              )
+            : undefined
+        if (derived?.guide) {
+          const existing = guides.findIndex(
+            (guide) => guide.key === derived.guide!.key,
+          )
+          if (existing < 0) guides.push(derived.guide)
+          else guides[existing] = derived.guide
+          guideEvents++
+          plan = plans.next({
+            kind: "native-approach-guidance",
+            guides: guides.map((guide) => guide.trace),
+          })
+        } else plan = plans.next()
         continue
       }
       if (firstNativeControl) {
@@ -351,11 +385,15 @@ function carrierCount(state: FlexibleSignalState) {
   return state.retained.length + state.traces.length
 }
 
+export type PairPlanFeedback =
+  | boolean
+  | { kind: "native-approach-guidance"; guides: readonly Trace[] }
+
 export function* priorityPairPlans(
   allocation: SimpleRouteJson,
   terminalLayers: ReadonlyMap<string, string[]>,
   nativeApproachGuides: Trace[] = [],
-): Generator<Trace[] | undefined, void, boolean | undefined> {
+): Generator<Trace[] | undefined, void, PairPlanFeedback | undefined> {
   const layers = new Map(
     allocation.connections.map((connection) => {
       const preferred = connection.pointsToConnect[0].layer
@@ -368,38 +406,110 @@ export function* priorityPairPlans(
       ] as const
     }),
   )
-  // Keep preferred carriers first within each pair's domain. Searching all
-  // compatible carriers in the same domain pass prevents an impossible
-  // preferred surface from exhausting every topology before an available
-  // surface is considered, and reuses the computed domains across retries.
-  const original = planSharedPairCorridors(allocation, layers, true, {
-    preferPackageOnlyTuning: true,
-  })
-  let next = original.next()
+  const preferredLayers = new Map(
+    allocation.connections.map((connection) => {
+      const preferred = connection.pointsToConnect[0].layer
+      return [
+        connection.name,
+        (layers.get(connection.name) ?? []).filter(
+          (layer) =>
+            layer === preferred &&
+            (!allocation.allowedLayers ||
+              allocation.allowedLayers.includes(layer)),
+        ),
+      ] as const
+    }),
+  )
+  const pairs = allocation.differentialPairs ?? []
+  const commonPreferred =
+    pairs.length > 0 &&
+    pairs.every((pair) => {
+      const [first, ...others] = pair.connectionNames
+      return preferredLayers
+        .get(first)
+        ?.some((layer) =>
+          others.every((name) => preferredLayers.get(name)?.includes(layer)),
+        )
+    })
+  // Probe the first reserved and ordinary preferred topologies before a faster
+  // alternate can commit ordinary lanes. A blocked preference must not exhaust
+  // the topology bank: every compatible carrier follows cooperatively.
+  const original = (function* () {
+    if (commonPreferred)
+      yield* planSharedPairCorridors(allocation, preferredLayers, true, {
+        preferPackageOnlyTuning: true,
+        maxTopologyVariants: 2,
+      })
+    yield* planSharedPairCorridors(allocation, layers, true, {
+      preferPackageOnlyTuning: true,
+    })
+  })()
+  let active: Generator<Trace[] | undefined, void> = original
+  let next = active.next()
   let guidedTried = false
+  let selectiveAttempts = 0
+  const offered = new Set<string>()
   try {
-    while (!next.done) {
+    while (true) {
+      if (next.done) {
+        if (active === original) break
+        active = original
+        next = active.next()
+        continue
+      }
+      if (next.value && active === original) {
+        const key = JSON.stringify([
+          isProvisionalPairPlan(next.value),
+          next.value,
+        ])
+        if (offered.has(key)) {
+          next = active.next()
+          continue
+        }
+        offered.add(key)
+      }
       const ordinaryFailed = yield next.value
-      if (ordinaryFailed && !guidedTried && nativeApproachGuides.length) {
-        guidedTried = true
-        // Surface pairs must leave room for ordinary native pad breakouts.
-        // These owned wire prefixes guide just one topology probe; movable
-        // via lands/barrels remain unreserved, and un-guided alternatives
-        // continue afterward. Guidance never enters a returned route.
-        yield* planSharedPairCorridors(
+      const selective =
+        typeof ordinaryFailed === "object" &&
+        ordinaryFailed.kind === "native-approach-guidance"
+          ? ordinaryFailed.guides
+          : undefined
+      const legacy =
+        ordinaryFailed === true && !guidedTried && nativeApproachGuides.length
+      if (
+        (selective?.length &&
+          selectiveAttempts < MAX_SELECTIVE_NATIVE_APPROACH_GUIDE_EVENTS) ||
+        legacy
+      ) {
+        if (selective) selectiveAttempts++
+        else guidedTried = true
+        if (active !== original) active.return(undefined)
+        // Guides live only in this bounded paired search. The original stream
+        // resumes after exhaustion; selected escapes and output never inherit
+        // this transient hard copper. Existing boolean callers keep one probe.
+        active = planSharedPairCorridors(
           {
             ...allocation,
-            traces: [...(allocation.traces ?? []), ...nativeApproachGuides],
+            traces: [
+              ...(allocation.traces ?? []),
+              ...(selective ?? nativeApproachGuides),
+            ],
           },
           layers,
           true,
-          { preferPackageOnlyTuning: true, maxTopologyVariants: 1 },
+          {
+            preferPackageOnlyTuning: true,
+            maxTopologyVariants: selective ? 2 : 1,
+          },
         )
+        next = active.next()
+        continue
       }
-      next = original.next()
+      next = active.next()
     }
   } finally {
-    if (!next.done) original.return(undefined)
+    if (!next.done) active.return(undefined)
+    if (active !== original) original.return(undefined)
   }
 }
 

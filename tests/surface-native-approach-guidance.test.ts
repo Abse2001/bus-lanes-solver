@@ -77,14 +77,15 @@ test("an ordinary failure gets one guided topology probe and then resumes the un
   const input = smallInput()
   const guide = ownedEscape("D", "guide_D", 2)
   guide.route = guide.route.slice(0, 2)
-  const first = { ...ownedEscape("P", "first", 0), route: [] }
-  const guided = { ...ownedEscape("P", "guided", 0), route: [] }
-  const second = { ...ownedEscape("P", "second", 0), route: [] }
+  const first = ownedEscape("P", "first", 0)
+  const guided = ownedEscape("P", "guided", 0.2)
+  const second = ownedEscape("P", "second", 0.4)
   const calls: Array<{ input: SimpleRouteJson; options: unknown }> = []
   const stub = spyOn(pairPlanner, "planSharedPairCorridors").mockImplementation(
     function* (actual, _layers, _fresh, options) {
       calls.push({ input: structuredClone(actual), options })
-      if (options?.maxTopologyVariants === 1) yield [guided]
+      if (actual.traces?.includes(guide)) yield [guided]
+      else if (options?.maxTopologyVariants === 2) yield [first]
       else {
         yield [first]
         yield [second]
@@ -103,7 +104,9 @@ test("an ordinary failure gets one guided topology probe and then resumes the un
     expect(calls[1].input.traces).toEqual([guide])
     expect(work.next(true).value).toEqual([second])
     expect(work.next().done).toBe(true)
-    expect(calls).toHaveLength(2)
+    expect(calls).toHaveLength(3)
+    expect(calls[2].input).toEqual(input)
+    expect(calls[2].options).toEqual({ preferPackageOnlyTuning: true })
     expect(input).toEqual(before)
 
     calls.length = 0
@@ -111,7 +114,7 @@ test("an ordinary failure gets one guided topology probe and then resumes the un
     expect(feasible.next().value).toEqual([first])
     expect(feasible.next().value).toEqual([second])
     expect(feasible.next().done).toBe(true)
-    expect(calls).toHaveLength(1)
+    expect(calls).toHaveLength(2)
   } finally {
     stub.mockRestore()
   }

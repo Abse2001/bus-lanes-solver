@@ -61,9 +61,9 @@ test("a blocked preferred surface cannot starve a clear compatible pair carrier"
   const available = new Map(
     input.connections.map((connection) => [connection.name, ["bottom", "top"]]),
   )
-  // Exhausting preferred-only variants first takes 51 yields in this fixture.
-  // A single domain pass reaches the clear top carrier without that retry bank.
-  const plan = firstPlan(priorityPairPlans(input, available), 16)
+  // The bounded reserved/ordinary preferred probe costs 40 yields here; the
+  // clear compatible carrier must follow without the full topology retry bank.
+  const plan = firstPlan(priorityPairPlans(input, available), 44)
   expect(plan).toBeDefined()
   expect(plan).toHaveLength(2)
   expect(pairLengthReports(input, plan!)[0].matched).toBe(true)
