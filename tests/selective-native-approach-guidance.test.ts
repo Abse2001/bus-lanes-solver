@@ -16,6 +16,8 @@ import { routeFreshSurfaceBuses } from "../lib/route-fresh-surface-buses"
 import { busLengthReports, pairLengthReports } from "../lib/route-lengths"
 import { runBoundedRouting } from "../lib/run-bounded-routing"
 import { deriveSelectiveNativeApproachGuide } from "../lib/selective-native-approach-guidance"
+import { retargetGeneratedEscape } from "../lib/retarget-generated-escape"
+import { fixedCopper } from "../lib/vector-scene"
 import type { FlexibleSignalState } from "../lib/flexible-signal-state"
 import type { SimpleRouteJson, Trace } from "../lib/types"
 import {
@@ -86,8 +88,27 @@ function emptyFailure(state: FlexibleSignalState): SignalSiteDomainFailure {
   }
 }
 
-function jointFailure() {
+function jointFailure(carrierLayer?: string) {
   const fixture = jointCpuConflictFixture()
+  if (carrierLayer)
+    fixture.variants = new Map(
+      [...fixture.variants].map(([name, options]) => [
+        name,
+        options.map((option) => {
+          const escapes = option.escapes.map((escape) =>
+            retargetGeneratedEscape(escape, carrierLayer),
+          )
+          return {
+            escapes,
+            escapeCopper: fixedCopper({
+              ...fixture.native,
+              obstacles: [],
+              traces: escapes,
+            }),
+          }
+        }),
+      ]),
+    )
   const domains = [...fixture.variants].map(([name, options]) => ({
     name,
     options,
@@ -106,7 +127,9 @@ function jointFailure() {
     1000000,
     (proof) => {
       failure = {
-        kind: "incompatible-native-site-domains",
+        kind: "incompatible-offered-native-site-domains",
+        searchComplete: true,
+        budgetUnknown: false,
         names: domains.map((domain) => domain.name),
         domains,
         proof: { ...proof, kind: "arc-consistency" },
@@ -179,6 +202,16 @@ test("the default fresh surface stream completes the blocked native wire without
   validator.solve()
   expect(validator.solved).toBe(true)
   expect(validator.error).toBeNull()
+  const output = validator.getOutput()
+  expect(output.traces).toHaveLength(
+    result.input.traces!.length + result.traces.length,
+  )
+  expect(
+    output
+      .traces!.slice(-result.traces.length)
+      .map((trace) => trace.connection_name)
+      .sort(),
+  ).toEqual(["D", "N", "P", "fixed_power"])
   const joined = result.traces.map((trace) =>
     joinSignalEscapes(
       trace,
@@ -357,6 +390,32 @@ test("an interrupted finite repair search cannot produce a joint guide", () => {
       (endpoint) => endpoint.completeNativeSiteRepair?.status === "unknown",
     ),
   ).toBe(true)
+})
+
+test("joint feedback cannot repair a top-only option with a bottom carrier handoff", () => {
+  const { state, failure, originals, physicalInput } = jointFailure("top")
+  const before = structuredClone({ state, failure, originals, physicalInput })
+  expect(
+    failure.kind === "incompatible-offered-native-site-domains" &&
+      failure.domains.every((domain) =>
+        domain.options.every((option) =>
+          option.escapes.every(
+            (escape) =>
+              escape.route.at(-1)?.route_type === "wire" &&
+              (escape.route.at(-1) as { layer: string }).layer === "top",
+          ),
+        ),
+      ),
+  ).toBe(true)
+  const result = deriveSelectiveNativeApproachGuide(
+    state,
+    failure,
+    originals,
+    [],
+    { physicalInput },
+  )
+  expect(result.guide).toBeUndefined()
+  expect({ state, failure, originals, physicalInput }).toEqual(before)
 })
 
 test("cancelling or bounding a native-site search emits no completed domain failure", () => {

@@ -8,7 +8,7 @@ import {
   getCopperLayerNames,
 } from "@tscircuit/fanout-solver"
 import { signalWidth, signalDogboneOptions } from "./repair-bus-dogbones"
-import type { FlexibleSignalState } from "./flexible-signal-state"
+import { signalLayers, type FlexibleSignalState } from "./flexible-signal-state"
 import type { SignalSiteDomainFailure } from "./negotiate-signal-sites"
 import type { Connection, Terminal, Via, Wire } from "./types"
 type NativeTerminal = Terminal & { port_selector?: string }
@@ -148,10 +148,11 @@ function ownedFullApproach(
   }
 }
 
-/** Derive one bounded search preference from completed native site failure.
+/** Derive a preference from a completed unary failure or offered-site conflict.
  * Removing a selected pair is diagnostic only; native supplied copper remains
  * hard in every counterfactual. Every returned guide is original owned copper,
- * and a joint proposal must repair its finite escape-site contradiction core. */
+ * and a joint proposal must repair its finite escape-site contradiction core.
+ * Limited offered domains do not establish physical native infeasibility. */
 export function deriveSelectiveNativeApproachGuide(
   state: FlexibleSignalState,
   failure: SignalSiteDomainFailure,
@@ -165,7 +166,9 @@ export function deriveSelectiveNativeApproachGuide(
     native.differentialPairs?.flatMap((pair) => pair.connectionNames),
   )
   const joint =
-    failure.kind === "incompatible-native-site-domains" ? failure : undefined
+    failure.kind === "incompatible-offered-native-site-domains"
+      ? failure
+      : undefined
   const names = joint?.names ?? [
     failure.kind === "empty-native-site-domain" ? failure.connection.name : "",
   ]
@@ -206,7 +209,11 @@ export function deriveSelectiveNativeApproachGuide(
         ),
       ) ||
     (failure.kind === "empty-native-site-domain" &&
-      (failure.searchComplete !== true || failure.budgetUnknown !== false))
+      (failure.searchComplete !== true || failure.budgetUnknown !== false)) ||
+    (joint &&
+      (typeof joint.searchComplete !== "boolean" ||
+        typeof joint.budgetUnknown !== "boolean" ||
+        joint.searchComplete === joint.budgetUnknown))
   )
     return { proof }
   const generated = [...state.escapes, ...state.retained, ...state.traces]
@@ -299,7 +306,21 @@ export function deriveSelectiveNativeApproachGuide(
             ).length
         )
           continue
+        const carrierLayer = (full.route.at(-1) as Wire).layer
+        if (!signalLayers(native, connection).includes(carrierLayer)) continue
         const repaired = domain.options.flatMap((option) => {
+          // Substitution preserves a complete offered site: both approaches
+          // must hand off to the same permitted carrier as the original.
+          if (
+            option.escapes.length !== connection.pointsToConnect.length ||
+            option.escapes.some((escape) => {
+              const handoff = escape.route.at(-1)
+              return (
+                handoff?.route_type !== "wire" || handoff.layer !== carrierLayer
+              )
+            })
+          )
+            return []
           const owned = option.escapes.filter((escape) => {
             const start = escape.route[0]
             return (
@@ -455,9 +476,9 @@ type Result =
       assignment: Array<{ name: string; option: number }>
     }
 
-/** This finite CSP uses only offered native escapes. No carrier path, truncated
- * pool, length policy, or prior routing failure participates. A bounded scan
- * interrupted before proof returns unknown, never failure. */
+/** This finite CSP uses only offered native escapes, which may be a limited
+ * site policy. No carrier path, candidate-route pool, or prior routing failure
+ * participates. An interrupted scan returns unknown, never a contradiction. */
 function finiteSiteCompatibility(
   native: SimpleRouteJson,
   variants: ReadonlyMap<string, Site[]>,

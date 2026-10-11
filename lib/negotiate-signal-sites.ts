@@ -42,7 +42,11 @@ export type SignalSiteDomainFailure =
       budgetUnknown: false
     }
   | {
-      kind: "incompatible-native-site-domains"
+      /** Heuristic contradiction of offered sites, never native infeasibility. */
+      kind: "incompatible-offered-native-site-domains"
+      /** False when any contributing site search exhausted its work budget. */
+      searchComplete: boolean
+      budgetUnknown: boolean
       names: string[]
       domains: Array<{
         name: string
@@ -55,9 +59,13 @@ interface SignalSiteOptions {
   allowExpandedSites?: boolean
   /** Widen only carrier layers with no reachable cheap site/carrier choice. */
   expandOnlyWhenBlocked?: boolean
+  /** Try the cheap joint domains before widening an alternate carrier. */
+  deferAlternateCarrierExpansion?: boolean
+  /** Emitted only after all offered native-site domains have completed. */
+  onDeferredCarrierExpansion?: () => void
   maxCandidateSearchNodes?: number
   retainExistingRoutes?: boolean
-  /** Internal feedback concerns completed native-site domains, never carriers. */
+  /** Feedback concerns finite offered native sites, never carrier failures. */
   onSiteDomainFailure?: (failure: SignalSiteDomainFailure) => void
 }
 
@@ -326,6 +334,8 @@ export function* negotiateSignalSites(
     projectors = new Map<string, GridHistoryProjector>()
   const clearance =
     native.minTraceToPadEdgeClearance ?? native.defaultObstacleMargin ?? 0.075
+  let deferredAlternateCarrierExpansion = false
+  let nativeSiteSearchIncomplete = false
   for (const connection of base.connections) {
     const previous = options.retainExistingRoutes
       ? existingSignalSite(
@@ -506,6 +516,14 @@ export function* negotiateSignalSites(
           choices.some((choice) => choice.layer === layer))
       )
         continue
+      if (
+        options.deferAlternateCarrierExpansion &&
+        !reachableLocalCarriers.has(layer) &&
+        reachableLocalCarriers.size > 0
+      ) {
+        deferredAlternateCarrierExpansion = true
+        continue
+      }
       const expanded = yield* expandedSignalSiteChoices(
         single,
         connection,
@@ -554,8 +572,10 @@ export function* negotiateSignalSites(
         })
       return null
     }
+    nativeSiteSearchIncomplete ||= siteSearchIncomplete
     variants.set(connection.name, choices)
   }
+  if (deferredAlternateCarrierExpansion) options.onDeferredCarrierExpansion?.()
   if (options.onSiteDomainFailure) {
     const domains = [...variants].map(([name, choices]) => ({
       name,
@@ -582,7 +602,9 @@ export function* negotiateSignalSites(
           ),
         ]
         options.onSiteDomainFailure!({
-          kind: "incompatible-native-site-domains",
+          kind: "incompatible-offered-native-site-domains",
+          searchComplete: !nativeSiteSearchIncomplete,
+          budgetUnknown: nativeSiteSearchIncomplete,
           names,
           domains,
           proof: { kind: "arc-consistency", ...failure },

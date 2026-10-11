@@ -249,18 +249,45 @@ export function* routeFreshSurfaceSeeds(
       }
       const guidanceState = state
       let domainFailure: SignalSiteDomainFailure | undefined
-      if (ordinaryNames.size)
+      let deferredCarrierExpansion = false
+      if (ordinaryNames.size) {
+        const siteOptions = {
+          allowExpandedSites: true,
+          expandOnlyWhenBlocked: true,
+          maxCandidateSearchNodes: 12000,
+          onSiteDomainFailure: (failure: SignalSiteDomainFailure) => {
+            domainFailure = failure
+          },
+        }
+        const attemptLimit =
+          paired.length && !isProvisionalPairPlan(paired) ? 250000 : 1500000
         state = yield* runBoundedRouting(
-          negotiateSignalSites(state, ordinaryNames, false, false, {
-            allowExpandedSites: true,
-            expandOnlyWhenBlocked: true,
-            maxCandidateSearchNodes: 12000,
-            onSiteDomainFailure: (failure) => {
-              domainFailure = failure
+          negotiateSignalSites(guidanceState, ordinaryNames, false, false, {
+            ...siteOptions,
+            deferAlternateCarrierExpansion: true,
+            onDeferredCarrierExpansion: () => {
+              deferredCarrierExpansion = true
             },
           }),
-          paired.length && !isProvisionalPairPlan(paired) ? 250000 : 1500000,
+          attemptLimit,
         )
+        if (!state && deferredCarrierExpansion) {
+          // Preserve the established cheap first choice. Only a failed attempt
+          // that actually omitted a carrier domain needs this broader retry.
+          // Feedback from the partial first domain cannot guide a new pair.
+          domainFailure = undefined
+          state = yield* runBoundedRouting(
+            negotiateSignalSites(
+              guidanceState,
+              ordinaryNames,
+              false,
+              false,
+              siteOptions,
+            ),
+            attemptLimit,
+          )
+        }
+      }
       if (!state) {
         const derived =
           domainFailure &&
