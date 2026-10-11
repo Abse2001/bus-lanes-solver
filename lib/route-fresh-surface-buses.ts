@@ -676,7 +676,9 @@ export function* priorityPairPlans(
         if (selective) selectiveAttempts++
         else guidedTried = true
         if (active !== original) active.return(undefined)
-        // Guides live only in this bounded paired search. The original stream
+        // Selective feedback searches the existing topology bank with the
+        // accumulated guides. A two-variant prefix can exhaust while a later
+        // family still clears the protected approaches. The original stream
         // resumes after exhaustion; selected escapes and output never inherit
         // this transient hard copper. Existing boolean callers keep one probe.
         active = planSharedPairCorridors(
@@ -691,7 +693,7 @@ export function* priorityPairPlans(
           true,
           {
             preferPackageOnlyTuning: true,
-            maxTopologyVariants: selective ? 2 : 1,
+            maxTopologyVariants: selective ? undefined : 1,
           },
         )
         next = active.next()

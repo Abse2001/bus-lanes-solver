@@ -7,7 +7,7 @@ import {
 import type { Trace } from "../lib/types"
 import { nativeWireBarrierFixture } from "./selective-guidance-fixtures"
 
-test("24 bounded selective probes preserve the suspended original pair stream", () => {
+test("24 selective guide updates preserve the suspended original pair stream", () => {
   const { native, originals } = nativeWireBarrierFixture()
   const guide = { ...originals[0], route: originals[0].route.slice(0, 2) }
   const before = structuredClone({ native, guide })
@@ -26,7 +26,10 @@ test("24 bounded selective probes preserve the suspended original pair stream", 
       try {
         if (guided) {
           probes++
-          expect(options).toMatchObject({ maxTopologyVariants: 2 })
+          expect(options).toMatchObject({
+            preferPackageOnlyTuning: true,
+            maxTopologyVariants: undefined,
+          })
           yield [trace(`guided_${probes}`, probes / 100)]
         } else {
           expect(actual).toEqual(native)
