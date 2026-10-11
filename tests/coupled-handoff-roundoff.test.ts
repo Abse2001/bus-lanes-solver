@@ -1,77 +1,66 @@
 import { expect, test } from "bun:test"
-import { routeAlternateSignalDogbones } from "../lib/alternate-signal-dogbones"
 import { routeCoupledPair } from "../lib/coupled-pair-routing"
-import { independentBusGroups } from "../lib/route-independent-buses"
 import { fixedCopper } from "../lib/vector-scene"
 import type { SimpleRouteJson, Trace } from "../lib/types"
-import { loadAm3352Sample } from "../scripts/am3352-samples"
 
-test.each(["control", "above"] as const)(
-  "roundoff in aligned RAM columns does not reverse the %s pair corridor",
-  async (placement) => {
-    const { input: native } = await loadAm3352Sample(placement)
-    const targetLayers = new Map(
-      native.connections.map((c) => {
-        const bus = native.buses!.findIndex((b) =>
-          b.connectionNames.includes(c.name),
-        )
-        return [c.name, bus < 0 ? "bottom" : `inner${bus + 1}`]
-      }),
-    )
-    const escaped = routeAlternateSignalDogbones(
-      native,
+function alignedPackageBus(direction: number): SimpleRouteJson {
+  const connections = [0, 0.8, 1.6].map((x, i) => ({
+    name: `D${i}`,
+    pointsToConnect: [
+      { x, y: 0, layer: "bottom" },
+      { x, y: direction * 10, layer: "bottom" },
+    ],
+  }))
+  return {
+    layerCount: 2,
+    minTraceWidth: 0.1,
+    defaultObstacleMargin: 0.1,
+    bounds: { minX: -4, maxX: 5, minY: -13, maxY: 13 },
+    connections,
+    // Component ownership and a third bus member select the package-derived
+    // outer corridor, the same branch as the aligned AM3352 RAM columns.
+    obstacles: connections.flatMap((c) =>
+      c.pointsToConnect.map((p, end) => ({
+        type: "rect",
+        shape: "circle" as const,
+        componentId: `U${end}`,
+        center: { x: p.x, y: p.y },
+        width: 0.3,
+        height: 0.3,
+        layers: ["top", "bottom"],
+        connectedTo: [c.name],
+      })),
+    ),
+    buses: [
       {
-        targetLayers,
-        viaDiameter: native.minViaPadDiameter!,
-        viaHoleDiameter: native.minViaHoleDiameter!,
-        traceWidth: native.minTraceWidth,
-        clearance: native.minTraceToPadEdgeClearance!,
-        boardEdgeClearance: native.minBoardEdgeClearance,
-        holeToHoleClearance: native.minViaHoleEdgeToViaHoleEdgeClearance,
-        allowBlindAndBuriedVias: false,
+        busId: "DATA",
+        connectionNames: connections.map((c) => c.name),
+        maxLengthSkew: 0.5,
       },
-      0,
-    )
-    const busNames = new Set(native.buses!.flatMap((b) => b.connectionNames))
-    const input: SimpleRouteJson = {
-      ...native,
-      connections: escaped.connections.filter((c) =>
-        busNames.has(c.name),
-      ) as SimpleRouteJson["connections"],
-      traces: [...native.traces!, ...escaped.traces] as Trace[],
-    }
-    const group = independentBusGroups(input)!.find((g) => {
-      const pair = g.differentialPairs![0]
-      const members = pair.connectionNames.map(
-        (n) => g.connections.find((c) => c.name === n)!,
-      )
-      return (
-        Math.abs(
-          members.reduce(
-            (sum, c) => sum + c.pointsToConnect[1].x - c.pointsToConnect[0].x,
-            0,
-          ),
-        ) < 1e-8
-      )
-    })!
-    expect(group).toBeDefined()
+    ],
+    differentialPairs: [
+      { connectionNames: ["D0", "D1"], traceGap: 0.1, lengthTolerance: 0.1 },
+    ],
+  }
+}
+
+test.each([1, -1])(
+  "roundoff in aligned package columns does not reverse the %s travel corridor",
+  (direction) => {
+    const input = alignedPackageBus(direction)
     const corridors: number[][] = []
     for (const delta of [-1e-12, 1e-12]) {
-      const perturbed = structuredClone(group)
+      const perturbed = structuredClone(input)
       for (const c of perturbed.connections) c.pointsToConnect[1].x += delta
       const generator = routeCoupledPair(
         perturbed,
         perturbed.differentialPairs![0],
         fixedCopper(perturbed),
-        {
-          copper: [],
-          penalty: 0,
-          variant: 3,
-        },
+        { copper: [], penalty: 0, variant: 2 },
       )
       let state = generator.next(),
         steps = 0
-      while (!state.done && steps++ < 30000) state = generator.next()
+      while (!state.done && steps++ < 8000) state = generator.next()
       if (!state.done) generator.return(null)
       expect(state.done).toBe(true)
       expect(state.value).toHaveLength(2)
@@ -84,8 +73,8 @@ test.each(["control", "above"] as const)(
         ),
       )
     }
-    // Before the fix, a change of 2e-12 mm selected opposite RAM edges,
-    // moving the shared corridor by more than ten millimeters.
+    // The old Math.sign(crossDelta) expression moves these handoffs by more
+    // than 0.6 mm when a 2e-12 mm rounding residue changes sign.
     for (const [i, coordinate] of corridors[0].entries()) {
       expect(coordinate).toBeCloseTo(corridors[1][i], 5)
     }

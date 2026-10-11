@@ -185,6 +185,12 @@ bun run typecheck
 bun run format:check
 ```
 
+Normal tests retain fast routing smoke cases, visual snapshots, and focused
+geometry, DRC, matching, and fanout-provenance regressions. Full AM3352 routing
+searches run on demand: comment `/benchmark` on an open PR to compare main and
+the PR, including completion and P50/P80/P90/P95 times. See
+[PR benchmarks](docs/pr-benchmarks.md) for the report and timeout options.
+
 The repository follows the [handbook bootstrapping guide](https://github.com/tscircuit/handbook/blob/main/guides/bootstrapping-repos.md): Bun, vanilla TypeScript package exports, Biome, CI and a Vite/React Cosmos site. `vercel.json` exports Cosmos for deployment.
 
 ## AM3352 placement benchmark
@@ -261,16 +267,17 @@ also checked along the complete joined copper. Matching measures full pad-to-pad
 XY copper, including every owned escape and approach; via depth is not inferred.
 
 Each sample runs in a fresh process, serially, with a default 3600-second routing budget.
-CI uses `./benchmark.sh --timeout-seconds 3600 --require-all-solved` to include the
-additional envelope searches. All eleven cases are always
+All eleven cases are always
 attempted and their results written to `benchmark-results.json`. Failed searches
 and timeouts are failures in the completion score. By default the command records
 these measured outcomes and exits nonzero for invalid fixtures, worker crashes,
 or invalid completed copper. Use `./benchmark.sh --require-all-solved` for a
-strict gate that also exits nonzero when any sample remains unrouted. CI runs the
-same eleven-case measurement and uploads the result JSON.
+strict gate that also exits nonzero when any sample remains unrouted. The
+on-demand `/benchmark` workflow runs the same eleven placements for both main
+and the PR and uploads paired JSON reports and worker logs. These long searches
+are excluded from ordinary push and pull-request CI.
 
-The current standard benchmark completes **11/11** samples at a 3600-second
+The published reference benchmark completed **11/11** samples at a 3600-second
 routing budget. The fresh single-inner1 control takes 1906.120 seconds, including
 matching. Full runtimes, carrier counts and per-bus/pair copper skews are recorded
 in [the verified eleven-sample report](docs/routed-am3352-placements/README.md).

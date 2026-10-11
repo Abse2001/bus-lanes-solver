@@ -2,7 +2,11 @@ import { mkdir } from "node:fs/promises"
 import { join, resolve } from "node:path"
 import { BusLanesPipelineSolver } from "../lib"
 import { am3352Carrier } from "./am3352-carrier"
-import { am3352SamplePlacements, loadAm3352Sample } from "./am3352-samples"
+import {
+  am3352Hash,
+  am3352SamplePlacements,
+  loadAm3352Sample,
+} from "./am3352-samples"
 import {
   validateAm3352OutputShape,
   validateAm3352Sample,
@@ -17,6 +21,8 @@ const option = (name: string) => {
   return args[index + 1]
 }
 const workerName = option("--worker")
+// PR comparisons share this trusted harness and fixture set across revisions.
+const solverModulePath = option("--solver")
 const outputPath = option("--output") ?? "benchmark-results.json"
 const routeOption = option("--routes-directory")
 const routesDirectory = routeOption ? resolve(routeOption) : undefined
@@ -27,6 +33,7 @@ for (let i = 0; i < args.length; i++) {
   if (
     [
       "--worker",
+      "--solver",
       "--timeout-seconds",
       "--output",
       "--routes-directory",
@@ -62,6 +69,7 @@ interface BenchmarkReport {
   fixedPowerDogbones: number
   inputUnchanged: boolean
   fixedPowerPreserved: boolean
+  inputSha256: string | null
   failureCode: string | null
   error: string | null
   validation: ValidationReport | null
@@ -88,6 +96,7 @@ if (!workerName) {
         placement.name,
         "--timeout-seconds",
         String(timeoutSeconds),
+        ...(solverModulePath ? ["--solver", resolve(solverModulePath)] : []),
         ...(routesDirectory ? ["--routes-directory", routesDirectory] : []),
       ],
       { stdout: "pipe", stderr: "pipe" },
@@ -130,6 +139,7 @@ if (!workerName) {
       fixedPowerDogbones: 0,
       inputUnchanged: false,
       fixedPowerPreserved: false,
+      inputSha256: null,
       failureCode: null,
       error,
       validation: null,
@@ -214,6 +224,7 @@ let report: BenchmarkReport = {
   fixedPowerDogbones: 0,
   inputUnchanged: false,
   fixedPowerPreserved: false,
+  inputSha256: null,
   failureCode: null,
   error: null,
   validation: null,
@@ -226,10 +237,15 @@ try {
   if (!report.validation.fixedDrc.valid)
     throw Error("Pre-dogboned power copper failed DRC")
   const before = JSON.stringify(input)
+  report.inputSha256 = am3352Hash(input)
   const fixedBefore = JSON.stringify(input.traces ?? [])
-  const solver = new BusLanesPipelineSolver(input, {
-    singleCarrier: { fixedConnections: metadata.powerConnections },
-  })
+  const solverModule = solverModulePath
+    ? await import(resolve(solverModulePath))
+    : { BusLanesPipelineSolver }
+  const solver: BusLanesPipelineSolver =
+    new solverModule.BusLanesPipelineSolver(input, {
+      singleCarrier: { fixedConnections: metadata.powerConnections },
+    })
   const solveStart = performance.now()
   while (!solver.solved && !solver.failed) {
     if (performance.now() - solveStart >= timeoutSeconds * 1000) break
