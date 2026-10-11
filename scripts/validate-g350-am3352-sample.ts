@@ -5,6 +5,7 @@ import {
   type SimpleRouteJson,
 } from "../lib"
 import { exteriorPairSpacingReports } from "../lib/exterior-pair-spacing"
+import { boardOutlineViolations } from "../lib/board-outline"
 import { distance } from "../lib/geometry"
 
 /** Independent pad-to-pad acceptance; missing paths cannot count as matching. */
@@ -74,6 +75,8 @@ export function validateG350Am3352Sample(
     clearance: input.minTraceToPadEdgeClearance ?? 0.1016,
     allowBlindAndBuriedVias: false,
   } as unknown as Parameters<typeof validateRoutedCopperDrc>[0])
+  const outlineIssues = boardOutlineViolations(input, output.traces ?? [])
+  const outline = { valid: outlineIssues.length === 0, issues: outlineIssues }
   const buses = busLengthReports(input, traces).filter(
     (b) => b.toleranceMm !== null,
   )
@@ -91,6 +94,7 @@ export function validateG350Am3352Sample(
       fixedPreserved &&
       allowedLayers &&
       drc.valid &&
+      outline.valid &&
       matched &&
       coupling.every((r) => r.applicable && r.matched),
     complete,
@@ -103,6 +107,7 @@ export function validateG350Am3352Sample(
       .filter((c) => !connectedNames.includes(c.name))
       .map((c) => c.name),
     drc,
+    outline,
     buses,
     pairs,
     coupling,

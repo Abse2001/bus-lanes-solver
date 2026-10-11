@@ -68,6 +68,7 @@ export async function runG350Am3352Repro(
     inputSha256: before,
     captureSha256: g350Am3352Metadata.filesSha256["native-input.json"],
     drc: validation?.drc ?? null,
+    outline: validation?.outline ?? null,
     buses:
       validation?.buses ??
       busLengthReports(input, []).filter((b) => b.toleranceMm !== null),

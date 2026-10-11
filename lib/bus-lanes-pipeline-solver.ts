@@ -46,6 +46,7 @@ import {
 import { BaseSolver } from "@tscircuit/solver-utils"
 import { getCopperLayerNames } from "@tscircuit/fanout-solver"
 import { BusLanesSolver } from "./bus-lanes-solver"
+import { boardOutlineViolations } from "./board-outline"
 import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
 
 export interface BusLanesPipelineOptions extends SolverOptions {
@@ -329,6 +330,13 @@ export class BusLanesPipelineSolver extends BaseSolver {
     } catch (error) {
       this.stats = { ...this.stats, optimizationCleanupError: String(error) }
     }
+    if (
+      !this.acceptsBoardOutline([
+        ...(this.input.traces ?? []),
+        ...this.acceptedTraces!,
+      ])
+    )
+      return
     this.traces = structuredClone(this.acceptedTraces!)
     this.solved = true
     this.failed = false
@@ -337,6 +345,28 @@ export class BusLanesPipelineSolver extends BaseSolver {
     this.phase = "solved"
     this.progress = 1
     this.stats = { ...this.stats, optimizationStoppedEarly: early }
+  }
+
+  /** Final joins and accepted-snapshot restoration bypass carrier validation.
+   * Check their actual copper widths and via lands before publishing output. */
+  private acceptsBoardOutline(traces: readonly Trace[]) {
+    if (this.input.outline === undefined) return true
+    let message: string | undefined
+    try {
+      if (!boardOutlineViolations(this.input, traces).length) return true
+      this.failureCode = "board_outline_clearance"
+      message = "Copper violates board outline clearance"
+    } catch (error) {
+      this.failureCode = "invalid_outline"
+      message = String(error)
+    }
+    this.failed = true
+    this.solved = false
+    this.error = message
+    this.phase = "failed"
+    this.traces = []
+    this.acceptedTraces = undefined
+    return false
   }
 
   private sharedPackages?: Generator<void, RepairedBusDogbones | null>
@@ -364,6 +394,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
     this.MAX_ITERATIONS =
       (options.maxSearchIterations ?? searchBudget) *
       Math.max(1, input.layerCount)
+    if (!this.acceptsBoardOutline(this.input.traces ?? [])) return
     if (options.goal === "connectivity") {
       if (options.fanout === "none")
         throw Error("Connectivity routing requires local terminal vias")

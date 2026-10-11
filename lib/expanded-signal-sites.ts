@@ -289,7 +289,7 @@ export function* expandedSignalSites(
         pointsToConnect: [pad, { ...point, layer: pad.layer }],
       }
       const scene = new VectorScene(input, local, width, fixed)
-      const search = new GridVisibilitySearch(
+      let search = new GridVisibilitySearch(
         scene,
         pad,
         point,
@@ -308,6 +308,39 @@ export function* expandedSignalSites(
         while (!search.solved && !search.failed && steps++ < 4000) {
           search.step()
           yield
+        }
+        if (!search.solved) {
+          // A valid BGA centerline channel can be narrower than the ordinary
+          // raster pitch. Keep successful coarse paths, but retry a failed
+          // owned native approach on a finer, package-local grid. The same
+          // surface-length and continuous copper checks still govern it.
+          search.cancel()
+          search = new GridVisibilitySearch(
+            scene,
+            pad,
+            point,
+            [],
+            0,
+            undefined,
+            {
+              checkReachability: true,
+              allTerminalAttachments: true,
+              step: Math.max(0.01, input.minTraceWidth / 10),
+              bounds: {
+                minX: Math.max(input.bounds.minX, pad.x - surfaceLimit),
+                maxX: Math.min(input.bounds.maxX, pad.x + surfaceLimit),
+                minY: Math.max(input.bounds.minY, pad.y - surfaceLimit),
+                maxY: Math.min(input.bounds.maxY, pad.y + surfaceLimit),
+              },
+              maxLength: surfaceLimit,
+              paretoLength: true,
+            },
+          )
+          steps = 0
+          while (!search.solved && !search.failed && steps++ < 4000) {
+            search.step()
+            yield
+          }
         }
         if (!search.solved) continue
         let top = reduceOrdinaryTurns(search.result, scene).map((p) => ({

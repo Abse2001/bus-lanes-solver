@@ -1,4 +1,5 @@
 import { CopperIndex } from "./copper-index"
+import { getBoardOutline, type BoardOutline } from "./board-outline"
 import {
   distance,
   segmentDistance,
@@ -297,12 +298,14 @@ export class VectorScene {
   readonly copper: Copper[]
   readonly owners: Set<string>
   readonly margin: number
+  readonly boardOutline: BoardOutline | undefined
   constructor(
     readonly input: SimpleRouteJson,
     readonly connection: Connection,
     readonly width: number,
     all: Copper[],
   ) {
+    this.boardOutline = getBoardOutline(input)
     this.owners = new Set(
       [
         connection.name,
@@ -334,6 +337,8 @@ export class VectorScene {
           p.y > r.maxY - m + 1e-9,
       )
     )
+      return false
+    if (this.boardOutline && !this.boardOutline.capsuleIsClear(a, b, m))
       return false
     const minX = Math.min(a.x, b.x) - this.margin,
       maxX = Math.max(a.x, b.x) + this.margin,
@@ -367,6 +372,12 @@ export class VectorScene {
     const result: Point[] = [],
       k = Math.SQRT2 - 1,
       epsilon = 1e-5
+    if (this.boardOutline)
+      result.push(
+        ...this.boardOutline.verticesForClearance(
+          this.width / 2 + (this.input.minBoardEdgeClearance ?? 0),
+        ),
+      )
     for (const c of this.copper) {
       if (c.rect) {
         const r = c.rect,

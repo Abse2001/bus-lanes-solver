@@ -51,6 +51,7 @@ import { spreadTuningLanes } from "./spread-tuning-lanes"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { tuneLengths } from "./length-tuning"
 import { layerColor } from "./layer-colors"
+import { boardOutlineViolations, getBoardOutline } from "./board-outline"
 /** Routes on an implicit clearance-offset visibility graph in board-world mm.
  * Every step expands a geometric vertex or commits a complete lane. */
 export class BusLanesSolver extends BaseSolver {
@@ -155,9 +156,20 @@ export class BusLanesSolver extends BaseSolver {
   }
   private initialize() {
     const input = this.input
-    if (input.outline?.length) {
-      this.fail("unsupported_outline", "Custom board outlines are unsupported")
-      return
+    if (input.outline !== undefined) {
+      try {
+        getBoardOutline(input)
+      } catch (e) {
+        this.fail("invalid_outline", String(e))
+        return
+      }
+      if (boardOutlineViolations(input, input.traces ?? []).length) {
+        this.fail(
+          "board_outline_clearance",
+          "Fixed copper violates board outline clearance",
+        )
+        return
+      }
     }
     const names = new Set<string>()
     for (const c of input.connections) {
@@ -691,6 +703,14 @@ export class BusLanesSolver extends BaseSolver {
     return
   }
   private validateOutput() {
+    if (
+      this.input.outline !== undefined &&
+      boardOutlineViolations(this.input, [
+        ...(this.input.traces ?? []),
+        ...this.traces,
+      ]).length
+    )
+      throw Error("Final board outline clearance violation")
     if (this.options.smoothTuning && !routeAnglesAreConventional(this.traces))
       throw Error("Final route has a nonconventional corner")
     for (const c of this.input.connections) {

@@ -412,6 +412,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
   private hardEdgeKnown: Uint8Array
   private hardEdgeBlocked: Uint8Array
   private copperBuckets: CopperBuckets
+  private outlineGridClear = false
   private goal = -1
   private startPath: Point[] = []
   private endPath: Point[] = []
@@ -505,6 +506,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       scene.width,
       scene.input.minBoardEdgeClearance,
       scene.input.bounds,
+      ...(scene.boardOutline ? [scene.boardOutline.points] : []),
       scene.copper.map((c) => [c.a.x, c.a.y, c.b.x, c.b.y, c.radius, c.rect]),
     ])
     let cachedGrid = grids.get(gridKey)
@@ -522,6 +524,33 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     if (grid?.paretoLength && Number.isFinite(this.maxLength))
       this.lengthFrontier = new LengthSearchFrontier()
     let componentIndex = cachedGrid?.components
+    if (scene.boardOutline) {
+      const corners = [
+        { x: this.xs[0], y: this.ys[0] },
+        { x: this.xs.at(-1)!, y: this.ys[0] },
+        { x: this.xs.at(-1)!, y: this.ys.at(-1)! },
+        { x: this.xs[0], y: this.ys.at(-1)! },
+      ]
+      const clearance =
+        scene.width / 2 + (scene.input.minBoardEdgeClearance ?? 0)
+      this.outlineGridClear = corners.every((p, i) =>
+        scene.boardOutline!.capsuleIsClear(
+          p,
+          corners[(i + 1) % corners.length],
+          clearance,
+        ),
+      )
+      if (!cachedGrid && !this.outlineGridClear)
+        for (let y = 0; y < this.ny; y++)
+          for (let x = 0; x < this.nx; x++)
+            if (
+              !scene.boardOutline.pointIsClear(
+                { x: this.xs[x], y: this.ys[y] },
+                clearance,
+              )
+            )
+              this.blocked[x + y * this.nx] = 1
+    }
     if (!cachedGrid) {
       // Adjacent samples of a long segment overlap. Test each cell at most
       // once per copper item, including clear cells in its bounding halo.
@@ -666,6 +695,13 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         this.stepSize,
         this.softMargin,
         scene.connection.pointsToConnect[0].layer,
+        ...(scene.boardOutline
+          ? [
+              scene.boardOutline.points,
+              scene.width,
+              scene.input.minBoardEdgeClearance,
+            ]
+          : []),
       ])
       const softMemo = softGrids.get(scene.input) ?? new Map<string, SoftGrid>()
       softGrids.set(scene.input, softMemo)
@@ -1017,6 +1053,20 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     buckets: CopperBuckets | undefined,
     margin = this.scene.margin,
   ): boolean {
+    if (
+      this.scene.boardOutline &&
+      (!this.outlineGridClear ||
+        Math.min(fromX, toX) < this.xs[0] ||
+        Math.max(fromX, toX) > this.xs.at(-1)! ||
+        Math.min(fromY, toY) < this.ys[0] ||
+        Math.max(fromY, toY) > this.ys.at(-1)!) &&
+      !this.scene.boardOutline.capsuleIsClear(
+        { x: fromX, y: fromY },
+        { x: toX, y: toY },
+        this.scene.width / 2 + (this.scene.input.minBoardEdgeClearance ?? 0),
+      )
+    )
+      return false
     if (!buckets) return true
     const minX = Math.min(fromX, toX),
       maxX = Math.max(fromX, toX)

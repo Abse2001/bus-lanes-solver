@@ -28,7 +28,11 @@ export function* planSharedPairCorridors(
   input: SimpleRouteJson,
   terminalLayers: ReadonlyMap<string, string[]>,
   freshDogbones = false,
-  options: { preferPackageOnlyTuning?: boolean } = {},
+  options: {
+    preferPackageOnlyTuning?: boolean
+    /** Bound an additional guidance probe without replacing the main search. */
+    maxTopologyVariants?: number
+  } = {},
 ): Generator<Trace[] | undefined> {
   const pairs = input.differentialPairs ?? []
   const bounded = input.buses?.some((bus) => bus.maxLength !== undefined)
@@ -61,98 +65,18 @@ export function* planSharedPairCorridors(
   // Prefer corrections inside package approaches. A secondary provisional
   // shape may still help ordinary lanes connect; final pipeline acceptance
   // independently enforces physical coupling outside those approaches.
-  const searches = alternatives.flatMap((variant) =>
-    (freshDogbones && options.preferPackageOnlyTuning
-      ? [false, true]
-      : [false]
-    ).map((allowProvisionalPairTuning) => ({
-      variant,
-      allowProvisionalPairTuning,
-    })),
-  )
-  for (const { variant, allowProvisionalPairTuning } of searches) {
-    for (const [index, pair] of pairs.entries()) {
-      const members = pair.connectionNames.map(
-        (name) => input.connections.find((c) => c.name === name)!,
-      )
-      const layers = terminalLayers
-        .get(members[0].name)
-        ?.filter((layer) =>
-          members.every((c) => terminalLayers.get(c.name)?.includes(layer)),
-        ) ?? [members[0].pointsToConnect[0].layer]
-      for (const layer of layers.filter(
-        (layer) => !input.allowedLayers || input.allowedLayers.includes(layer),
-      )) {
-        const reserved = typeof variant === "number" && variant >= 100
-        const sceneKey = JSON.stringify([index, layer, reserved])
-        const local = scenes.get(sceneKey) ?? {
-          ...input,
-          connections: input.connections.map((c) =>
-            pair.connectionNames.includes(c.name)
-              ? {
-                  ...c,
-                  pointsToConnect: c.pointsToConnect.map((p) => ({
-                    ...p,
-                    layer,
-                  })),
-                }
-              : c,
-          ),
-        }
-        scenes.set(sceneKey, local)
-        const search = runBoundedRouting(
-          routeCoupledPair(
-            local,
-            pair,
-            reserved
-              ? [...fixed, ...reserveBusPackageExits(local, pair)]
-              : fixed,
-            {
-              copper: [],
-              penalty: 0,
-              preferPackageOnlyTuning: options.preferPackageOnlyTuning,
-              allowProvisionalPairTuning,
-              ...(typeof variant === "number"
-                ? { variant: reserved ? variant - 100 : variant }
-                : { handoffOffsets: variant }),
-            },
-          ),
-          6000,
-        )
-        let state = search.next()
-        try {
-          while (!state.done) {
-            yield undefined
-            state = search.next()
-          }
-        } finally {
-          if (!state.done) search.return(null)
-        }
-        if (!state.value) continue
-        if (
-          bounded &&
-          state.value.some(
-            (trace) =>
-              length(trace.route) >
-              maximumCarrierLength(input, trace.connection_name!) + 1e-7,
-          )
-        )
-          continue
-        const key = JSON.stringify([
-          allowProvisionalPairTuning,
-          state.value.map((t) => t.route),
-        ])
-        if (geometry[index].has(key)) continue
-        geometry[index].add(key)
-        domains[index].push({
-          id: serial++,
-          layer,
-          provisional: allowProvisionalPairTuning,
-          traces: state.value,
-          length: state.value.reduce((sum, t) => sum + length(t.route), 0),
-        })
-      }
-    }
+  const searches = alternatives
+    .slice(0, options.maxTopologyVariants ?? alternatives.length)
+    .flatMap((variant) =>
+      (freshDogbones && options.preferPackageOnlyTuning
+        ? [false, true]
+        : [false]
+      ).map((allowProvisionalPairTuning) => ({
+        variant,
+        allowProvisionalPairTuning,
+      })),
+    )
+  function* offerPlans(): Generator<Trace[]> {
     if (bounded)
       for (const choices of domains) choices.sort((a, b) => a.length - b.length)
     const plans: Choice[][] = []
@@ -229,5 +153,119 @@ export function* planSharedPairCorridors(
       if (provisional) provisionalPlans.add(traces)
       yield traces
     }
+  }
+  for (const { variant, allowProvisionalPairTuning } of searches) {
+    function* growDomain(
+      index: number,
+      pair: NonNullable<SimpleRouteJson["differentialPairs"]>[number],
+      layer: string,
+    ): Generator<Trace[] | undefined> {
+      const reserved = typeof variant === "number" && variant >= 100
+      const sceneKey = JSON.stringify([index, layer, reserved])
+      const local = scenes.get(sceneKey) ?? {
+        ...input,
+        connections: input.connections.map((c) =>
+          pair.connectionNames.includes(c.name)
+            ? {
+                ...c,
+                pointsToConnect: c.pointsToConnect.map((p) => ({
+                  ...p,
+                  layer,
+                })),
+              }
+            : c,
+        ),
+      }
+      scenes.set(sceneKey, local)
+      const search = runBoundedRouting(
+        routeCoupledPair(
+          local,
+          pair,
+          reserved ? [...fixed, ...reserveBusPackageExits(local, pair)] : fixed,
+          {
+            copper: [],
+            penalty: 0,
+            preferPackageOnlyTuning: options.preferPackageOnlyTuning,
+            allowProvisionalPairTuning,
+            ...(typeof variant === "number"
+              ? { variant: reserved ? variant - 100 : variant }
+              : { handoffOffsets: variant }),
+          },
+        ),
+        6000,
+      )
+      let state = search.next()
+      try {
+        while (!state.done) {
+          yield undefined
+          state = search.next()
+        }
+      } finally {
+        if (!state.done) search.return(null)
+      }
+      if (!state.value) return
+      if (
+        bounded &&
+        state.value.some(
+          (trace) =>
+            length(trace.route) >
+            maximumCarrierLength(input, trace.connection_name!) + 1e-7,
+        )
+      )
+        return
+      const key = JSON.stringify([
+        allowProvisionalPairTuning,
+        state.value.map((t) => t.route),
+      ])
+      if (geometry[index].has(key)) return
+      geometry[index].add(key)
+      domains[index].push({
+        id: serial++,
+        layer,
+        provisional: allowProvisionalPairTuning,
+        traces: state.value,
+        length: state.value.reduce((sum, t) => sum + length(t.route), 0),
+      })
+      // A completed compatible tuple must not wait for an unrelated slow
+      // carrier search. Fresh plans stay cancellable and resume the full
+      // remaining domain stream when their caller needs another candidate.
+      if (freshDogbones) yield* offerPlans()
+    }
+    const jobs = pairs.flatMap((pair, index) => {
+      const members = pair.connectionNames.map(
+        (name) => input.connections.find((c) => c.name === name)!,
+      )
+      const layers = terminalLayers
+        .get(members[0].name)
+        ?.filter((layer) =>
+          members.every((c) => terminalLayers.get(c.name)?.includes(layer)),
+        ) ?? [members[0].pointsToConnect[0].layer]
+      return layers
+        .filter(
+          (layer) =>
+            !input.allowedLayers || input.allowedLayers.includes(layer),
+        )
+        .map((layer) => growDomain(index, pair, layer))
+    })
+    if (freshDogbones) {
+      // Advance compatible carriers cooperatively in preferred order. A slow
+      // preferred layer for one pair must not consume its entire local budget
+      // before the other pairs and an available alternate carrier can finish.
+      const pending = new Set(jobs)
+      try {
+        while (pending.size)
+          for (const job of pending) {
+            const state = job.next()
+            if (state.done) pending.delete(job)
+            else yield state.value
+          }
+      } finally {
+        for (const job of pending) job.return(undefined)
+      }
+    } else {
+      for (const job of jobs) yield* job
+    }
+    // With no pair domains, retain the ordinary-only empty seed.
+    if (!freshDogbones || !pairs.length) yield* offerPlans()
   }
 }

@@ -31,6 +31,8 @@ import {
 
 interface SignalSiteOptions {
   allowExpandedSites?: boolean
+  /** Widen a terminal domain only when every cheap site/carrier choice failed. */
+  expandOnlyWhenBlocked?: boolean
   maxCandidateSearchNodes?: number
   retainExistingRoutes?: boolean
 }
@@ -384,6 +386,9 @@ export function* negotiateSignalSites(
       yield
     }
     const choices: SiteOption[] = previous ? [previous.option] : []
+    // A cached physical site can survive after its carrier becomes blocked.
+    // Only a reachable carrier may suppress the blocked-only fallback.
+    let hasReachableLocalCarrier = previous?.trace !== undefined
     for (const a of ends[0])
       for (const b of ends[1])
         for (const layer of signalLayers(native, connection)) {
@@ -445,7 +450,8 @@ export function* negotiateSignalSites(
               search.step()
               yield
             }
-            if (search.solved)
+            if (search.solved) {
+              hasReachableLocalCarrier = true
               choices.push({
                 connection: local,
                 escapes,
@@ -455,6 +461,7 @@ export function* negotiateSignalSites(
                 length: length(search.result),
                 maxLength,
               })
+            }
           } finally {
             search.cancel()
           }
@@ -462,11 +469,13 @@ export function* negotiateSignalSites(
     for (const layer of carrierLayers) {
       if (
         options.allowExpandedSites === false ||
+        (options.expandOnlyWhenBlocked && hasReachableLocalCarrier) ||
         !connection.pointsToConnect.every((point) =>
           native.allowedLayers?.includes(point.layer),
         ) ||
         connection.pointsToConnect.every((point) => point.layer === layer) ||
         (!expandNonNativeSites &&
+          !options.expandOnlyWhenBlocked &&
           choices.some((choice) => choice.layer === layer))
       )
         continue

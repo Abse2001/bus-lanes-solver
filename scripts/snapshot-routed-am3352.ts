@@ -99,6 +99,7 @@ export function routedGraphics(
   const allTraces = [...metadata.fixedFanoutTraces, ...solver.traces]
   const points = [
     ...allTraces.flatMap((t) => t.route),
+    ...(solver.input.outline ?? []),
     ...solver.input.obstacles.flatMap((p) => [
       { x: p.center.x - p.width / 2, y: p.center.y - p.height / 2 },
       { x: p.center.x + p.width / 2, y: p.center.y + p.height / 2 },
@@ -162,6 +163,15 @@ export function routedGraphics(
   }
   for (const [i, layer] of signalLayers.entries()) {
     const dx = i * (width + 3)
+    if (solver.input.outline?.length)
+      graphics.lines!.push({
+        points: [...solver.input.outline, solver.input.outline[0]].map((p) => ({
+          x: p.x + dx,
+          y: p.y,
+        })),
+        strokeWidth: 0.08,
+        strokeColor: "#c2ccd6",
+      })
     graphics.rects!.push({
       center: {
         x: (bounds.minX + bounds.maxX) / 2 + dx,

@@ -194,6 +194,11 @@ export function* routeFreshSurfaceSeeds(
   const pairEscapes = originalEscapes.filter((trace) =>
     timingPairs.has(trace.connection_name!),
   )
+  const ordinaryNames = new Set(
+    timing.connections
+      .filter((connection) => !timingPairs.has(connection.name))
+      .map((connection) => connection.name),
+  )
   const timingAllocation: SimpleRouteJson = {
     ...timing,
     connections: allocation.connections.filter((connection) =>
@@ -201,7 +206,11 @@ export function* routeFreshSurfaceSeeds(
     ),
     traces: [...(native.traces ?? []), ...pairEscapes],
   }
-  const plans = priorityPairPlans(timingAllocation, terminalLayers)
+  const plans = priorityPairPlans(
+    timingAllocation,
+    terminalLayers,
+    ordinaryNativeApproachGuides(native, originalEscapes, ordinaryNames),
+  )
   let plan = plans.next()
   let greatest: FlexibleSignalState | null = null
   try {
@@ -212,11 +221,6 @@ export function* routeFreshSurfaceSeeds(
         continue
       }
       const paired: Trace[] = plan.value
-      const ordinaryNames = new Set(
-        timing.connections
-          .filter((connection) => !timingPairs.has(connection.name))
-          .map((connection) => connection.name),
-      )
       const selectedEscapes = pairEscapes.map((escape) => {
         const carrier = paired.find(
           (trace) => trace.connection_name === escape.connection_name,
@@ -239,13 +243,14 @@ export function* routeFreshSurfaceSeeds(
       if (ordinaryNames.size)
         state = yield* runBoundedRouting(
           negotiateSignalSites(state, ordinaryNames, false, false, {
-            allowExpandedSites: false,
+            allowExpandedSites: true,
+            expandOnlyWhenBlocked: true,
             maxCandidateSearchNodes: 12000,
           }),
           paired.length && !isProvisionalPairPlan(paired) ? 250000 : 1500000,
         )
       if (!state) {
-        plan = plans.next()
+        plan = plans.next(true)
         continue
       }
       if (firstNativeControl) {
@@ -346,29 +351,112 @@ function carrierCount(state: FlexibleSignalState) {
   return state.retained.length + state.traces.length
 }
 
-function* priorityPairPlans(
+export function* priorityPairPlans(
   allocation: SimpleRouteJson,
   terminalLayers: ReadonlyMap<string, string[]>,
-): Generator<Trace[] | undefined> {
-  const preferred = new Map(
-    allocation.connections.map((connection) => [
-      connection.name,
-      [connection.pointsToConnect[0].layer],
-    ]),
+  nativeApproachGuides: Trace[] = [],
+): Generator<Trace[] | undefined, void, boolean | undefined> {
+  const layers = new Map(
+    allocation.connections.map((connection) => {
+      const preferred = connection.pointsToConnect[0].layer
+      const available = terminalLayers.get(connection.name) ?? [preferred]
+      return [
+        connection.name,
+        [...new Set([preferred, ...available])].filter((layer) =>
+          available.includes(layer),
+        ),
+      ] as const
+    }),
   )
-  yield* planSharedPairCorridors(allocation, preferred, true, {
+  // Keep preferred carriers first within each pair's domain. Searching all
+  // compatible carriers in the same domain pass prevents an impossible
+  // preferred surface from exhausting every topology before an available
+  // surface is considered, and reuses the computed domains across retries.
+  const original = planSharedPairCorridors(allocation, layers, true, {
     preferPackageOnlyTuning: true,
   })
-  if (
-    allocation.connections.some((connection) =>
-      terminalLayers
-        .get(connection.name)
-        ?.some((layer) => layer !== connection.pointsToConnect[0].layer),
-    )
+  let next = original.next()
+  let guidedTried = false
+  try {
+    while (!next.done) {
+      const ordinaryFailed = yield next.value
+      if (ordinaryFailed && !guidedTried && nativeApproachGuides.length) {
+        guidedTried = true
+        // Surface pairs must leave room for ordinary native pad breakouts.
+        // These owned wire prefixes guide just one topology probe; movable
+        // via lands/barrels remain unreserved, and un-guided alternatives
+        // continue afterward. Guidance never enters a returned route.
+        yield* planSharedPairCorridors(
+          {
+            ...allocation,
+            traces: [...(allocation.traces ?? []), ...nativeApproachGuides],
+          },
+          layers,
+          true,
+          { preferPackageOnlyTuning: true, maxTopologyVariants: 1 },
+        )
+      }
+      next = original.next()
+    }
+  } finally {
+    if (!next.done) original.return(undefined)
+  }
+}
+
+/** Derive transient guidance exclusively from solver-owned ordinary native
+ * approaches. Supplied copper, paired approaches, via lands and carrier wires
+ * are never part of this additional search preference. */
+export function ordinaryNativeApproachGuides(
+  native: SimpleRouteJson,
+  originalEscapes: Trace[],
+  ordinaryNames: ReadonlySet<string>,
+): Trace[] {
+  const suppliedIds = new Set(native.traces?.map((trace) => trace.pcb_trace_id))
+  const pairedNames = new Set(
+    native.differentialPairs?.flatMap((pair) => pair.connectionNames),
   )
-    yield* planSharedPairCorridors(allocation, terminalLayers, true, {
-      preferPackageOnlyTuning: true,
-    })
+  return originalEscapes.flatMap((escape) => {
+    const name = escape.connection_name
+    const viaIndex = escape.route.findIndex(
+      (point) => point.route_type === "via",
+    )
+    const first = escape.route[0]
+    if (
+      !name ||
+      !ordinaryNames.has(name) ||
+      pairedNames.has(name) ||
+      suppliedIds.has(escape.pcb_trace_id) ||
+      viaIndex < 1 ||
+      first?.route_type !== "wire"
+    )
+      return []
+    const connection = native.connections.find(
+      (candidate) => candidate.name === name,
+    )
+    if (
+      !connection?.pointsToConnect.some(
+        (point) =>
+          point.layer === first.layer &&
+          Math.hypot(point.x - first.x, point.y - first.y) < 1e-8,
+      )
+    )
+      return []
+    const prefix = escape.route.slice(0, viaIndex)
+    if (
+      prefix.some(
+        (point) => point.route_type !== "wire" || point.layer !== first.layer,
+      )
+    )
+      return []
+    return [
+      {
+        ...escape,
+        route: prefix.map((point) => ({ ...point })),
+        curvedSegments: undefined,
+        coupledSection: undefined,
+      },
+    ]
+  })
 }
 
 function scopeInput(
