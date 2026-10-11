@@ -1,0 +1,394 @@
+[
+  {
+    "name": "DDR_ODT",
+    "socBall": "G1",
+    "ramBall": "K1",
+    "ramFunction": "ODT",
+    "socPin": "pin7",
+    "ramPin": "pin10"
+  },
+  {
+    "name": "DDR_D8",
+    "socBall": "J1",
+    "ramBall": "C8",
+    "ramFunction": "DQ10",
+    "socPin": "pin9",
+    "ramPin": "pin67"
+  },
+  {
+    "name": "DDR_D9",
+    "socBall": "K1",
+    "ramBall": "A7",
+    "ramFunction": "DQ12",
+    "socPin": "pin10",
+    "ramPin": "pin49"
+  },
+  {
+    "name": "DDR_D2",
+    "socBall": "N1",
+    "ramBall": "E3",
+    "ramFunction": "DQ0",
+    "socPin": "pin13",
+    "ramPin": "pin37"
+  },
+  {
+    "name": "DDR_D6",
+    "socBall": "P3",
+    "ramBall": "F8",
+    "ramFunction": "DQ3",
+    "socPin": "pin50",
+    "ramPin": "pin70"
+  },
+  {
+    "name": "DDR_CSn0",
+    "socBall": "H2",
+    "ramBall": "L2",
+    "ramFunction": "CSn",
+    "socPin": "pin26",
+    "ramPin": "pin27"
+  },
+  {
+    "name": "DDR_BA0",
+    "socBall": "C4",
+    "ramBall": "M2",
+    "ramFunction": "BA0",
+    "socPin": "pin57",
+    "ramPin": "pin28"
+  },
+  {
+    "name": "DDR_A3",
+    "socBall": "C3",
+    "ramBall": "N2",
+    "ramFunction": "A3",
+    "socPin": "pin39",
+    "ramPin": "pin29"
+  },
+  {
+    "name": "DDR_A5",
+    "socBall": "B1",
+    "ramBall": "P2",
+    "ramFunction": "A5",
+    "socPin": "pin2",
+    "ramPin": "pin30"
+  },
+  {
+    "name": "DDR_A7",
+    "socBall": "E2",
+    "ramBall": "R2",
+    "ramFunction": "A7",
+    "socPin": "pin23",
+    "ramPin": "pin31"
+  },
+  {
+    "name": "DDR_RESETn",
+    "socBall": "G2",
+    "ramBall": "T2",
+    "ramFunction": "RESETn",
+    "socPin": "pin25",
+    "ramPin": "pin32"
+  },
+  {
+    "name": "DDR_D10",
+    "socBall": "K2",
+    "ramBall": "C3",
+    "ramFunction": "DQ9",
+    "socPin": "pin28",
+    "ramPin": "pin35"
+  },
+  {
+    "name": "DDR_D11",
+    "socBall": "K3",
+    "ramBall": "A2",
+    "ramFunction": "DQ13",
+    "socPin": "pin46",
+    "ramPin": "pin17"
+  },
+  {
+    "name": "DDR_DQM1",
+    "socBall": "J2",
+    "ramBall": "D3",
+    "ramFunction": "UDM",
+    "socPin": "pin27",
+    "ramPin": "pin36"
+  },
+  {
+    "name": "DDR_D0",
+    "socBall": "M3",
+    "ramBall": "F2",
+    "ramFunction": "DQ2",
+    "socPin": "pin48",
+    "ramPin": "pin22"
+  },
+  {
+    "name": "DDR_DQS0",
+    "socBall": "P1",
+    "ramBall": "F3",
+    "ramFunction": "LDQS",
+    "socPin": "pin14",
+    "ramPin": "pin38"
+  },
+  {
+    "name": "DDR_DQSn0",
+    "socBall": "P2",
+    "ramBall": "G3",
+    "ramFunction": "LDQSn",
+    "socPin": "pin32",
+    "ramPin": "pin39"
+  },
+  {
+    "name": "DDR_D4",
+    "socBall": "N3",
+    "ramBall": "F7",
+    "ramFunction": "DQ1",
+    "socPin": "pin49",
+    "ramPin": "pin54"
+  },
+  {
+    "name": "DDR_RASn",
+    "socBall": "G4",
+    "ramBall": "J3",
+    "ramFunction": "RASn",
+    "socPin": "pin61",
+    "ramPin": "pin41"
+  },
+  {
+    "name": "DDR_CASn",
+    "socBall": "F1",
+    "ramBall": "K3",
+    "ramFunction": "CASn",
+    "socPin": "pin6",
+    "ramPin": "pin42"
+  },
+  {
+    "name": "DDR_WEn",
+    "socBall": "B2",
+    "ramBall": "L3",
+    "ramFunction": "WEn",
+    "socPin": "pin20",
+    "ramPin": "pin43"
+  },
+  {
+    "name": "DDR_BA2",
+    "socBall": "B3",
+    "ramBall": "M3",
+    "ramFunction": "BA2",
+    "socPin": "pin38",
+    "ramPin": "pin44"
+  },
+  {
+    "name": "DDR_A0",
+    "socBall": "F3",
+    "ramBall": "N3",
+    "ramFunction": "A0",
+    "socPin": "pin42",
+    "ramPin": "pin45"
+  },
+  {
+    "name": "DDR_A2",
+    "socBall": "E4",
+    "ramBall": "P3",
+    "ramFunction": "A2",
+    "socPin": "pin59",
+    "ramPin": "pin46"
+  },
+  {
+    "name": "DDR_A9",
+    "socBall": "C1",
+    "ramBall": "R3",
+    "ramFunction": "A9",
+    "socPin": "pin3",
+    "ramPin": "pin47"
+  },
+  {
+    "name": "DDR_A13",
+    "socBall": "H3",
+    "ramBall": "T3",
+    "ramFunction": "A13",
+    "socPin": "pin44",
+    "ramPin": "pin48"
+  },
+  {
+    "name": "DDR_D12",
+    "socBall": "K4",
+    "ramBall": "D7",
+    "ramFunction": "DQ8",
+    "socPin": "pin64",
+    "ramPin": "pin52"
+  },
+  {
+    "name": "DDR_DQSn1",
+    "socBall": "L2",
+    "ramBall": "B7",
+    "ramFunction": "UDQSn",
+    "socPin": "pin29",
+    "ramPin": "pin50"
+  },
+  {
+    "name": "DDR_DQS1",
+    "socBall": "L1",
+    "ramBall": "C7",
+    "ramFunction": "UDQS",
+    "socPin": "pin11",
+    "ramPin": "pin51"
+  },
+  {
+    "name": "DDR_D13",
+    "socBall": "L3",
+    "ramBall": "C2",
+    "ramFunction": "DQ11",
+    "socPin": "pin47",
+    "ramPin": "pin19"
+  },
+  {
+    "name": "DDR_DQM0",
+    "socBall": "M2",
+    "ramBall": "E7",
+    "ramFunction": "LDM",
+    "socPin": "pin30",
+    "ramPin": "pin53"
+  },
+  {
+    "name": "DDR_D1",
+    "socBall": "M4",
+    "ramBall": "H8",
+    "ramFunction": "DQ5",
+    "socPin": "pin66",
+    "ramPin": "pin72"
+  },
+  {
+    "name": "DDR_D7",
+    "socBall": "P4",
+    "ramBall": "H7",
+    "ramFunction": "DQ7",
+    "socPin": "pin68",
+    "ramPin": "pin56"
+  },
+  {
+    "name": "DDR_CK",
+    "socBall": "D2",
+    "ramBall": "J7",
+    "ramFunction": "CK",
+    "socPin": "pin22",
+    "ramPin": "pin57"
+  },
+  {
+    "name": "DDR_CKn",
+    "socBall": "D1",
+    "ramBall": "K7",
+    "ramFunction": "CKn",
+    "socPin": "pin4",
+    "ramPin": "pin58"
+  },
+  {
+    "name": "DDR_A10",
+    "socBall": "F4",
+    "ramBall": "L7",
+    "ramFunction": "A10",
+    "socPin": "pin60",
+    "ramPin": "pin59"
+  },
+  {
+    "name": "DDR_A12",
+    "socBall": "E3",
+    "ramBall": "N7",
+    "ramFunction": "A12",
+    "socPin": "pin41",
+    "ramPin": "pin61"
+  },
+  {
+    "name": "DDR_A1",
+    "socBall": "H1",
+    "ramBall": "P7",
+    "ramFunction": "A1",
+    "socPin": "pin8",
+    "ramPin": "pin62"
+  },
+  {
+    "name": "DDR_A11",
+    "socBall": "F2",
+    "ramBall": "R7",
+    "ramFunction": "A11",
+    "socPin": "pin24",
+    "ramPin": "pin63"
+  },
+  {
+    "name": "DDR_A14",
+    "socBall": "H4",
+    "ramBall": "T7",
+    "ramFunction": "A14",
+    "socPin": "pin62",
+    "ramPin": "pin64"
+  },
+  {
+    "name": "DDR_D14",
+    "socBall": "L4",
+    "ramBall": "A3",
+    "ramFunction": "DQ15",
+    "socPin": "pin65",
+    "ramPin": "pin33"
+  },
+  {
+    "name": "DDR_D15",
+    "socBall": "M1",
+    "ramBall": "B8",
+    "ramFunction": "DQ14",
+    "socPin": "pin12",
+    "ramPin": "pin66"
+  },
+  {
+    "name": "DDR_D3",
+    "socBall": "N2",
+    "ramBall": "H3",
+    "ramFunction": "DQ4",
+    "socPin": "pin31",
+    "ramPin": "pin40"
+  },
+  {
+    "name": "DDR_D5",
+    "socBall": "N4",
+    "ramBall": "G2",
+    "ramFunction": "DQ6",
+    "socPin": "pin67",
+    "ramPin": "pin23"
+  },
+  {
+    "name": "DDR_BA1",
+    "socBall": "E1",
+    "ramBall": "N8",
+    "ramFunction": "BA1",
+    "socPin": "pin5",
+    "ramPin": "pin77"
+  },
+  {
+    "name": "DDR_A4",
+    "socBall": "C2",
+    "ramBall": "P8",
+    "ramFunction": "A4",
+    "socPin": "pin21",
+    "ramPin": "pin78"
+  },
+  {
+    "name": "DDR_A6",
+    "socBall": "D5",
+    "ramBall": "R8",
+    "ramFunction": "A6",
+    "socPin": "pin76",
+    "ramPin": "pin79"
+  },
+  {
+    "name": "DDR_A8",
+    "socBall": "D4",
+    "ramBall": "T8",
+    "ramFunction": "A8",
+    "socPin": "pin58",
+    "ramPin": "pin80"
+  },
+  {
+    "name": "DDR_CKE",
+    "socBall": "G3",
+    "ramBall": "K9",
+    "ramFunction": "CKE",
+    "socPin": "pin43",
+    "ramPin": "pin90"
+  }
+]
