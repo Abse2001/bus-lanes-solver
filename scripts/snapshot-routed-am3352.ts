@@ -94,7 +94,13 @@ const carrierLayer = (trace: Trace) => {
  * All physical-layer panels share one physical scale and viewport per board. */
 export function routedGraphics(
   { solver, metadata }: Am3352SnapshotCandidate,
-  labels?: { title: string; status: string; skew: string },
+  labels?: {
+    title: string
+    status: string
+    skew: string
+    /** Pad-to-pad G350 paths may cross outer layers more than four times. */
+    layerWireSignalCounts?: Readonly<Record<string, number>>
+  },
 ) {
   const allTraces = [...metadata.fixedFanoutTraces, ...solver.traces]
   const points = [
@@ -202,13 +208,15 @@ export function routedGraphics(
           stroke: "none",
         })
     for (const trace of allTraces) addTrace(trace, layer, dx)
-    const signalCount = solver.traces.filter(
-      (t) => carrierLayer(t) === layer,
-    ).length
+    const signalCount = labels?.layerWireSignalCounts
+      ? (labels.layerWireSignalCounts[layer] ?? 0)
+      : solver.traces.filter((t) => carrierLayer(t) === layer).length
     graphics.texts!.push({
       x: bounds.minX + dx,
       y: bounds.maxY + 1.5,
-      text: `${layer} · ${signalCount} carriers`,
+      text: labels?.layerWireSignalCounts
+        ? `${layer} · ${signalCount} signals with wires`
+        : `${layer} · ${signalCount} carriers`,
       fontSize: 1.2,
       color: layerColors[layer],
       anchorSide: "bottom_left",

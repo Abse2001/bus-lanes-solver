@@ -7,6 +7,8 @@
       "!examples/data/**",
       "!examples/fanout-solver-outputs/**",
       "!docs/g350-am3352-solver-fix/**",
+      "!docs/g350-am3352-repro/benchmark-results.json",
+      "!docs/g350-am3352-repro/g350-report.json",
       "!cosmos-export/**",
       "!node_modules/**",
       "!dist/**",
