@@ -1,0 +1,234 @@
+name: PR benchmark comparison
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open pull request to compare with main
+        required: true
+        type: string
+      timeout_seconds:
+        description: Per-sample solver budget (1–3600 seconds)
+        required: true
+        default: "3600"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-benchmark-${{ github.event.issue.number || inputs.pr_number }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref_name == github.event.repository.default_branch) ||
+      (github.event.issue.pull_request &&
+       contains(github.event.comment.body, '/benchmark') &&
+       github.event.comment.user.type != 'Bot' &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      run: ${{ steps.request.outputs.run }}
+      matrix: ${{ steps.request.outputs.matrix }}
+      pr_number: ${{ steps.request.outputs.pr_number }}
+      main_sha: ${{ steps.request.outputs.main_sha }}
+      pr_sha: ${{ steps.request.outputs.pr_sha }}
+      pr_repository: ${{ steps.request.outputs.pr_repository }}
+      controller_sha: ${{ steps.request.outputs.controller_sha }}
+      timeout_seconds: ${{ steps.request.outputs.timeout_seconds }}
+      comment_id: ${{ steps.request.outputs.comment_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Authorize command and pin both revisions
+        id: request
+        uses: actions/github-script@v7
+        env:
+          INPUT_PR_NUMBER: ${{ inputs.pr_number }}
+          INPUT_TIMEOUT_SECONDS: ${{ inputs.timeout_seconds }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const { pathToFileURL } = require('node:url')
+            const { parseBenchmarkCommand } = await import(pathToFileURL(
+              `${process.env.GITHUB_WORKSPACE}/scripts/pr-benchmark/command.js`).href)
+            core.setOutput('run', 'false')
+            const body = context.eventName === 'issue_comment'
+              ? context.payload.comment.body
+              : `/benchmark --timeout-seconds ${process.env.INPUT_TIMEOUT_SECONDS}`
+            const command = parseBenchmarkCommand(body)
+            if (!command) return
+            const permission = await github.rest.repos.getCollaboratorPermissionLevel({
+              ...context.repo, username: context.actor,
+            })
+            if (!['admin', 'maintain', 'write'].includes(permission.data.permission)) {
+              core.notice('Benchmark commands require repository write access.')
+              return
+            }
+            const number = context.eventName === 'issue_comment'
+              ? context.issue.number : Number(process.env.INPUT_PR_NUMBER)
+            if (!Number.isSafeInteger(number) || number < 1) throw Error('Invalid PR number')
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: number })
+            if (pr.state !== 'open' || !pr.head.repo) throw Error('Benchmark an open PR with an available head repository')
+            const { data: main } = await github.rest.git.getRef({ ...context.repo, ref: 'heads/main' })
+            const mainSha = main.object.sha
+            const prSha = pr.head.sha
+            if (![mainSha, prSha, context.sha].every(sha => /^[a-f0-9]{40}$/i.test(sha))) throw Error('Invalid pinned SHA')
+            const samples = JSON.parse(fs.readFileSync('scripts/pr-benchmark/samples.json', 'utf8'))
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            const { data: comment } = await github.rest.issues.createComment({
+              ...context.repo, issue_number: number,
+              body: `## AM3352 benchmark comparison\n\nQueued main \`${mainSha}\` versus PR #${number} \`${prSha}\`.\n\nAll ${samples.length} placements; ${command.timeoutSeconds}s per solver/sample; paired revisions run sequentially on the same runner.\n\n[Workflow and raw artifacts](${runUrl})`,
+            })
+            core.setOutput('matrix', JSON.stringify({ sample: samples }))
+            core.setOutput('pr_number', String(number))
+            core.setOutput('main_sha', mainSha)
+            core.setOutput('pr_sha', prSha)
+            core.setOutput('pr_repository', pr.head.repo.full_name)
+            core.setOutput('controller_sha', context.sha)
+            core.setOutput('timeout_seconds', String(command.timeoutSeconds))
+            core.setOutput('comment_id', String(comment.id))
+            core.setOutput('run', 'true')
+
+  benchmark:
+    needs: prepare
+    if: needs.prepare.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Checkout trusted harness and fixtures
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.controller_sha }}
+          path: controller
+          persist-credentials: false
+      - name: Checkout main solver
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.main_sha }}
+          path: main
+          persist-credentials: false
+      - name: Checkout PR solver
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ needs.prepare.outputs.pr_repository }}
+          ref: ${{ needs.prepare.outputs.pr_sha }}
+          path: pr
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Install dependencies before measuring either solver
+        run: |
+          for checkout in controller main pr; do
+            (
+              cd "$checkout"
+              if [[ -f bun.lock || -f bun.lockb ]]; then
+                bun install --frozen-lockfile --ignore-scripts
+              else
+                bun install --ignore-scripts
+              fi
+            )
+          done
+      - name: Compare one placement sequentially on the same machine
+        env:
+          SAMPLE: ${{ matrix.sample }}
+          TIMEOUT_SECONDS: ${{ needs.prepare.outputs.timeout_seconds }}
+          MAIN_SHA: ${{ needs.prepare.outputs.main_sha }}
+          PR_SHA: ${{ needs.prepare.outputs.pr_sha }}
+          CONTROLLER_SHA: ${{ needs.prepare.outputs.controller_sha }}
+        run: |
+          bun controller/scripts/pr-benchmark/run-pair.ts \
+            --sample "$SAMPLE" --timeout-seconds "$TIMEOUT_SECONDS" \
+            --main main/lib/index.ts --pr pr/lib/index.ts \
+            --main-sha "$MAIN_SHA" --pr-sha "$PR_SHA" --controller-sha "$CONTROLLER_SHA" \
+            --output "results/$SAMPLE.json"
+      - name: Retain reports and worker logs, including failed searches
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-benchmark-${{ matrix.sample }}
+          path: results/
+          if-no-files-found: warn
+          retention-days: 14
+
+  comment:
+    needs: [prepare, benchmark]
+    if: always() && needs.prepare.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Checkout trusted reporting code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.controller_sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: pr-benchmark-*
+          path: reports
+      - name: Render main versus PR completion and timing percentiles
+        id: render
+        continue-on-error: true
+        env:
+          MAIN_SHA: ${{ needs.prepare.outputs.main_sha }}
+          PR_SHA: ${{ needs.prepare.outputs.pr_sha }}
+          CONTROLLER_SHA: ${{ needs.prepare.outputs.controller_sha }}
+          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          TIMEOUT_SECONDS: ${{ needs.prepare.outputs.timeout_seconds }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          mkdir -p reports
+          bun scripts/pr-benchmark/render.ts \
+            --reports reports --main-sha "$MAIN_SHA" --pr-sha "$PR_SHA" \
+            --controller-sha "$CONTROLLER_SHA" --pr-number "$PR_NUMBER" \
+            --timeout-seconds "$TIMEOUT_SECONDS" --run-url "$RUN_URL" --output comparison.md
+      - name: Update the standard result comment from a separate trusted runner
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          COMMENT_ID: ${{ needs.prepare.outputs.comment_id }}
+          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          PR_SHA: ${{ needs.prepare.outputs.pr_sha }}
+        with:
+          script: |
+            const fs = require('node:fs')
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            let body = fs.existsSync('comparison.md')
+              ? fs.readFileSync('comparison.md', 'utf8')
+              : `## AM3352 benchmark comparison\n\nComparison unavailable: the workflow failed before producing a valid report.\n\n[Workflow logs and raw artifacts](${runUrl})`
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: Number(process.env.PR_NUMBER) })
+            if (pr.head.sha !== process.env.PR_SHA)
+              body += `\n\n**PR head changed while this benchmark ran.** These results describe \`${process.env.PR_SHA}\`; run /benchmark again for the current revision.\n`
+            await github.rest.issues.updateComment({
+              ...context.repo, comment_id: Number(process.env.COMMENT_ID), body,
+            })
+      - name: Retain the exact posted comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-benchmark-comparison
+          path: comparison.md
+          if-no-files-found: warn
+          retention-days: 14
