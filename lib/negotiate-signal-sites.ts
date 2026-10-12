@@ -646,6 +646,20 @@ export function* negotiateSignalSites(
       },
     )
     if (!remaining) return null
+    if (!stopWithOneRemaining) {
+      // These survivors preserve the offered order and references. A removed
+      // native site cannot extend a complete assignment of the current bank;
+      // rerouting its carrier cannot restore its missing physical support.
+      // Partial seeds may omit that conflicting connection, so keep their
+      // established choice bank. No result is cached across fresh attempts.
+      for (const [index, name] of [...variants.keys()].entries()) {
+        const surviving = remaining[index]
+        variants.set(name, surviving)
+        const previous = existing.get(name)
+        if (previous && !surviving.includes(previous.option))
+          existing.delete(name)
+      }
+    }
   }
   const copperConflicts = new CopperConflictIndex()
   const overlap = (a: Copper[], b: Copper[]) =>
@@ -689,7 +703,15 @@ export function* negotiateSignalSites(
     let pool = pools.get(name)
     if (!pool) pools.set(name, (pool = []))
     pool.push(candidate)
-    if (pool.length > 48) pool.splice(8, 1)
+    if (pool.length > 48) {
+      const [evicted] = pool.splice(8, 1)
+      seen.delete(
+        JSON.stringify([
+          evicted.escapes.map((trace) => trace.route),
+          evicted.trace.route,
+        ]),
+      )
+    }
   }
   const select = (): Candidate[] | undefined => {
     if (base.connections.some((c) => !pools.get(c.name)?.length)) return
