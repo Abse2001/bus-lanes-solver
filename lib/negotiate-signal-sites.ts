@@ -53,6 +53,8 @@ export type SignalSiteDomainFailure =
         options: Array<{ escapes: Trace[]; escapeCopper: Copper[] }>
       }>
       proof: CandidateDomainFailure & { kind: "arc-consistency" }
+      /** Eligible wider sites skipped because this carrier had cheap reachability. */
+      deferredReachableSiteExpansions?: readonly DeferredCarrierExpansion[]
     }
 
 export interface DeferredCarrierExpansion {
@@ -64,6 +66,8 @@ interface SignalSiteOptions {
   allowExpandedSites?: boolean
   /** Widen only carrier layers with no reachable cheap site/carrier choice. */
   expandOnlyWhenBlocked?: boolean
+  /** A completed joint contradiction may retry only its implicated local banks. */
+  retryReachableSiteExpansions?: readonly DeferredCarrierExpansion[]
   /** Try the cheap joint domains before widening an alternate carrier. */
   deferAlternateCarrierExpansion?: boolean
   /** Emitted only after all offered native-site domains have completed. */
@@ -347,6 +351,12 @@ export function* negotiateSignalSites(
     native.minTraceToPadEdgeClearance ?? native.defaultObstacleMargin ?? 0.075
   const deferredCarrierExpansions: DeferredCarrierExpansion[] = []
   const deferredCarrierExpansionKeys = new Set<string>()
+  const deferredReachableSiteExpansions: DeferredCarrierExpansion[] = []
+  const retryReachableSiteExpansionKeys = new Set(
+    options.retryReachableSiteExpansions?.map(({ connectionName, layer }) =>
+      JSON.stringify([connectionName, layer]),
+    ),
+  )
   let deferredFineNativeApproachRetry = false
   let nativeSiteSearchIncomplete = false
   for (const connection of base.connections) {
@@ -520,7 +530,6 @@ export function* negotiateSignalSites(
     for (const layer of carrierLayers) {
       if (
         options.allowExpandedSites === false ||
-        (options.expandOnlyWhenBlocked && reachableLocalCarriers.has(layer)) ||
         !connection.pointsToConnect.every((point) =>
           native.allowedLayers?.includes(point.layer),
         ) ||
@@ -530,6 +539,19 @@ export function* negotiateSignalSites(
           choices.some((choice) => choice.layer === layer))
       )
         continue
+      if (
+        options.expandOnlyWhenBlocked &&
+        reachableLocalCarriers.has(layer) &&
+        !retryReachableSiteExpansionKeys.has(
+          JSON.stringify([connection.name, layer]),
+        )
+      ) {
+        deferredReachableSiteExpansions.push({
+          connectionName: connection.name,
+          layer,
+        })
+        continue
+      }
       if (
         options.deferAlternateCarrierExpansion &&
         !reachableLocalCarriers.has(layer) &&
@@ -642,6 +664,9 @@ export function* negotiateSignalSites(
           names,
           domains,
           proof: { kind: "arc-consistency", ...failure },
+          ...(deferredReachableSiteExpansions.length
+            ? { deferredReachableSiteExpansions }
+            : {}),
         })
       },
     )

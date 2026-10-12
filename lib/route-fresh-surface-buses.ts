@@ -49,27 +49,23 @@ export interface SurfaceSeedOptions {
 
 export const MAX_SELECTIVE_NATIVE_APPROACH_GUIDE_EVENTS = 24
 
-/** An unchanged contradictory native-site core cannot be repaired by widening
- * unrelated domains. Incomplete metadata or a partial certificate keeps the
- * existing expanded retry; this is never a native infeasibility assertion. */
-export function shouldRetryDeferredCarrierExpansion(
+/** Validate the producer's completed finite AC certificate and its full causal
+ * closure. This describes offered sites, never native physical infeasibility. */
+function certifiedNativeSiteCore(
   failure: SignalSiteDomainFailure | undefined,
-  deferred: readonly DeferredCarrierExpansion[] | undefined,
-): boolean {
+): Set<string> | undefined {
   if (
     !failure ||
     failure.kind !== "incompatible-offered-native-site-domains" ||
     failure.searchComplete !== true ||
     failure.budgetUnknown !== false ||
-    !Array.isArray(deferred) ||
-    !deferred.length ||
     !Array.isArray(failure.domains) ||
     !failure.domains.length ||
     !Array.isArray(failure.names) ||
     !failure.names.length ||
     failure.proof?.kind !== "arc-consistency"
   )
-    return true
+    return undefined
   const domains = failure.domains
   if (
     domains.some(
@@ -88,20 +84,9 @@ export function shouldRetryDeferredCarrierExpansion(
         ),
     )
   )
-    return true
+    return undefined
   const domainNames = new Set(domains.map((domain) => domain.name))
-  if (
-    domainNames.size !== domains.length ||
-    deferred.some(
-      (entry) =>
-        !entry ||
-        typeof entry.connectionName !== "string" ||
-        !domainNames.has(entry.connectionName) ||
-        typeof entry.layer !== "string" ||
-        !entry.layer,
-    )
-  )
-    return true
+  if (domainNames.size !== domains.length) return undefined
   const { removals, implicatedRemovals, emptyDomain, unsupportedBy } =
     failure.proof
   const validDomain = (index: number) =>
@@ -114,7 +99,7 @@ export function shouldRetryDeferredCarrierExpansion(
     !validDomain(emptyDomain) ||
     !validDomain(unsupportedBy)
   )
-    return true
+    return undefined
   const remaining = domains.map((domain) =>
     domain.options.map((_, index) => index),
   )
@@ -138,7 +123,7 @@ export function shouldRetryDeferredCarrierExpansion(
           !remaining[removal.first].includes(option),
       )
     )
-      return true
+      return undefined
     remaining[removal.first] = remaining[removal.first].filter(
       (option) => !removal.removed.includes(option),
     )
@@ -150,7 +135,7 @@ export function shouldRetryDeferredCarrierExpansion(
           remaining[removal.first].length !== 0
         : remaining[removal.first].length === 0
     )
-      return true
+      return undefined
   }
   // Match the producer's conservative closure, including every earlier
   // elimination of a variable or of its supporting variable. The last arc
@@ -172,7 +157,7 @@ export function shouldRetryDeferredCarrierExpansion(
     .sort((a, b) => a - b)
     .map((index) => removals[index])
   if (JSON.stringify(closure) !== JSON.stringify(implicatedRemovals))
-    return true
+    return undefined
   const coreNames = new Set(
     closure.flatMap((removal) => [
       domains[removal.first].name,
@@ -184,8 +169,73 @@ export function shouldRetryDeferredCarrierExpansion(
     coreNames.size !== failure.names.length ||
     failure.names.some((name) => !coreNames.has(name))
   )
+    return undefined
+  return coreNames
+}
+
+/** An unchanged contradictory native-site core cannot be repaired by widening
+ * unrelated domains. Incomplete metadata or a partial certificate keeps the
+ * existing expanded retry; this is never a native infeasibility assertion. */
+export function shouldRetryDeferredCarrierExpansion(
+  failure: SignalSiteDomainFailure | undefined,
+  deferred: readonly DeferredCarrierExpansion[] | undefined,
+): boolean {
+  const coreNames = certifiedNativeSiteCore(failure)
+  if (!coreNames || !Array.isArray(deferred) || !deferred.length) return true
+  if (failure?.kind !== "incompatible-offered-native-site-domains") return true
+  const domainNames = new Set(failure.domains.map((domain) => domain.name))
+  if (
+    deferred.some(
+      (entry) =>
+        !entry ||
+        typeof entry.connectionName !== "string" ||
+        !domainNames.has(entry.connectionName) ||
+        typeof entry.layer !== "string" ||
+        !entry.layer,
+    )
+  )
     return true
   return deferred.some((entry) => coreNames.has(entry.connectionName))
+}
+
+/** Cheap reachability is unary. After a completed joint contradiction, wider
+ * sites are tried only for eligible carrier banks in the validated causal core. */
+export function reachableSiteExpansionRetryTargets(
+  failure: SignalSiteDomainFailure | undefined,
+): readonly DeferredCarrierExpansion[] {
+  const coreNames = certifiedNativeSiteCore(failure)
+  if (
+    !coreNames ||
+    failure?.kind !== "incompatible-offered-native-site-domains"
+  )
+    return []
+  const deferred = failure.deferredReachableSiteExpansions
+  if (!Array.isArray(deferred)) return []
+  const domains = new Map(
+    failure.domains.map((domain) => [domain.name, domain]),
+  )
+  if (
+    deferred.some(
+      (entry) =>
+        !entry ||
+        typeof entry.connectionName !== "string" ||
+        !domains.has(entry.connectionName) ||
+        typeof entry.layer !== "string" ||
+        !entry.layer ||
+        !domains
+          .get(entry.connectionName)!
+          .options.some((option) =>
+            option.escapes.every(
+              (escape) =>
+                Array.isArray(escape?.route) &&
+                escape.route.at(-1)?.route_type === "wire" &&
+                (escape.route.at(-1) as Wire).layer === entry.layer,
+            ),
+          ),
+    )
+  )
+    return []
+  return deferred.filter((entry) => coreNames.has(entry.connectionName))
 }
 
 /** Choose fresh surface sites before committing independent control dogbones.
@@ -408,6 +458,7 @@ export function* routeFreshSurfaceSeeds(
         function* attempt(
           allowFineNativeApproachRetry: boolean,
           deferAlternateCarrierExpansion: boolean,
+          retryReachableSiteExpansions?: readonly DeferredCarrierExpansion[],
         ): Generator<void, FlexibleSignalState | null> {
           domainFailure = undefined
           deferredCarrierExpansion = false
@@ -417,6 +468,9 @@ export function* routeFreshSurfaceSeeds(
             negotiateSignalSites(guidanceState, ordinaryNames, false, false, {
               ...siteOptions,
               allowFineNativeApproachRetry,
+              ...(retryReachableSiteExpansions?.length
+                ? { retryReachableSiteExpansions }
+                : {}),
               ...(deferAlternateCarrierExpansion
                 ? { deferAlternateCarrierExpansion: true }
                 : {}),
@@ -437,20 +491,32 @@ export function* routeFreshSurfaceSeeds(
           fineAllowed = true
           state = yield* attempt(true, true)
         }
-        if (
+        const reachableSiteTargets = !state
+          ? reachableSiteExpansionRetryTargets(domainFailure)
+          : []
+        const retryDeferredCarrier =
           !state &&
           deferredCarrierExpansion &&
           shouldRetryDeferredCarrierExpansion(
             domainFailure,
             deferredCarrierExpansions,
           )
-        ) {
-          // Preserve the established cheap first choice. Only a failed attempt
-          // that actually omitted a carrier domain needs this broader retry.
-          // Feedback from the partial first domain cannot guide a new pair.
-          state = yield* attempt(fineAllowed, false)
+        if (!state && (retryDeferredCarrier || reachableSiteTargets.length)) {
+          // Keep the cheap successful path and the existing bounded retry
+          // stages. Unary reachability may still need wider same-carrier sites
+          // after a complete joint contradiction; unrelated carriers retain
+          // the certified disjoint-core skip and the blocked-only policy.
+          state = yield* attempt(
+            fineAllowed,
+            !retryDeferredCarrier,
+            reachableSiteTargets,
+          )
           if (!state && deferredFineNativeApproachRetry)
-            state = yield* attempt(true, false)
+            state = yield* attempt(
+              true,
+              !retryDeferredCarrier,
+              reachableSiteTargets,
+            )
         }
       }
       if (!state) {
