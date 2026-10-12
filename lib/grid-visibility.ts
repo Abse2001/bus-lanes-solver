@@ -518,17 +518,44 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       bounds?: SimpleRouteJson["bounds"]
     },
   ) {
-    super(
-      scene,
-      grid?.limitLengthBounds &&
-        grid.allTerminalAttachments === true &&
+    let limitLengthBounds = false,
+      nearestLengthCrop = false
+    if (grid?.limitLengthBounds) {
+      const allTerminalAttachments = grid.allTerminalAttachments === true
+      const prototype = allTerminalAttachments
+        ? undefined
+        : Object.getPrototypeOf(grid)
+      // Only the new nearest mode copies declarative data options. Inherited,
+      // hidden or accessor fields keep the original full-grid constructor.
+      const nearestDataOptions =
+        !allTerminalAttachments &&
+        (prototype === Object.prototype || prototype === null) &&
+        Reflect.ownKeys(grid).every((key) => {
+          const descriptor = Object.getOwnPropertyDescriptor(grid, key)!
+          return descriptor.enumerable && "value" in descriptor
+        }) &&
+        grid.nearestTerminalAttachments !== true &&
+        grid.paretoLength !== true &&
+        grid.checkReachability === true &&
+        !softCopper.length &&
+        penalty === 0
+      if (
+        (allTerminalAttachments || nearestDataOptions) &&
         !history &&
         Number.isFinite(grid.maxLength) &&
         grid.maxLength! >= 0 &&
         !grid.starts &&
         !grid.ends &&
         [start.x, start.y, end.x, end.y].every(Number.isFinite)
-        ? { ...grid, lengthBounds: { start, end, maxLength: grid.maxLength! } }
+      ) {
+        limitLengthBounds = true
+        nearestLengthCrop = !allTerminalAttachments
+      }
+    }
+    super(
+      scene,
+      limitLengthBounds
+        ? { ...grid, lengthBounds: { start, end, maxLength: grid!.maxLength! } }
         : grid,
     )
     const b = this.gridBounds
@@ -590,6 +617,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       scene.copper.map((c) => [c.a.x, c.a.y, c.b.x, c.b.y, c.radius, c.rect]),
     ])
     let cachedGrid = grids.get(gridKey)
+    const reusedGrid = cachedGrid
     const attachments =
       cachedGrid?.attachments ?? new Map<string, Attachment[]>()
     if (cachedGrid) {
@@ -969,6 +997,37 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       : attach(end)
     const a = this.startAttachments[0],
       z = this.endAttachments[0]
+    if (
+      nearestLengthCrop &&
+      (!a ||
+        !z ||
+        componentIndex!.at(a.id) === 0 ||
+        componentIndex!.at(a.id) !== componentIndex!.at(z.id))
+    ) {
+      // Cropped connectivity can remove a distant detour. It may only keep
+      // the original nearest-first preflight when its nearest cells connect;
+      // otherwise use the unchanged full search before any A* or early retry.
+      // No A* lease has been acquired. Release only this attempt's state;
+      // calling a subclass's public cancel here could precede its field setup.
+      if (this.softMemoLease) this.softMemoLease.active = false
+      this.scratchLease?.release()
+      this.lengthFrontier?.clear()
+      if (!reusedGrid && cachedGrid && grids.get(gridKey) === cachedGrid)
+        grids.delete(gridKey)
+      return Reflect.construct(
+        GridVisibilitySearch,
+        [
+          scene,
+          start,
+          end,
+          softCopper,
+          penalty,
+          history,
+          { ...grid, limitLengthBounds: false },
+        ],
+        new.target,
+      )
+    }
     if (!a || !z) {
       this.failed = true
       if (this.softMemoLease) this.softMemoLease.active = false

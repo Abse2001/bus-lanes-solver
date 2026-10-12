@@ -1,4 +1,7 @@
-import { pruneCandidateDomains } from "./prune-candidate-domains"
+import {
+  pruneCandidateDomains,
+  type CandidateDomainFailure,
+} from "./prune-candidate-domains"
 
 /** Select one mutually compatible candidate per connection. Arc consistency
  * runs before bounded backtracking; returned references keep the input order. */
@@ -7,8 +10,16 @@ export function solveSignalCandidatePool<T>(
   compatible: (first: T, second: T) => boolean,
   maxSearchNodes = 4000,
   maxSupportChecks = 1_000_000,
+  onArcEmptyDomain?: (failure: CandidateDomainFailure) => void,
 ): T[] | null {
-  const initial = pruneCandidateDomains(domains, compatible, maxSupportChecks)
+  const initial = onArcEmptyDomain
+    ? pruneCandidateDomains(
+        domains,
+        compatible,
+        maxSupportChecks,
+        onArcEmptyDomain,
+      )
+    : pruneCandidateDomains(domains, compatible, maxSupportChecks)
   if (!initial) return null
   let nodes = 0
   const selected: T[] = new Array(initial.length)

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test"
+import { fileURLToPath } from "node:url"
 import { GridVisibilitySearch } from "../lib/grid-visibility"
 import { fixedCopper, VectorScene, type Copper } from "../lib/vector-scene"
 import type { Point, SimpleRouteJson } from "../lib/types"
@@ -21,42 +22,57 @@ function complete(search: GridVisibilitySearch) {
   return result
 }
 
-test("a short native approach retains the exact board grid while avoiding a board-sized raster", () => {
-  const native = loadG350Am3352Sample()
-  const connection = native.connections.find(
-    (candidate) => candidate.name === "source_trace_9",
-  )!
-  const start = connection.pointsToConnect[0]
-  const end = { x: -4, y: 13.6, layer: "top" }
-  const input = { ...native, connections: [connection] }
-  const local = { ...connection, pointsToConnect: [start, end] }
-  const scene = new VectorScene(input, local, 0.1016, fixedCopper(input))
-  const run = (limitLengthBounds: boolean) =>
-    new GridVisibilitySearch(scene, start, end, [], 0, undefined, {
-      checkReachability: true,
-      allTerminalAttachments: true,
-      maxLength: 2,
-      paretoLength: true,
-      limitLengthBounds,
-    })
-  const reference = run(false)
-  const bounded = run(true)
-  const full = reference.getRoutingAccess()
-  const clipped = bounded.getRoutingAccess()
-  expect(native.obstacles).toHaveLength(854)
-  expect(clipped.cellCount).toBeLessThan(full.cellCount / 20)
-  const fullPoints = new Set(
-    Array.from({ length: full.cellCount }, (_, id) =>
-      JSON.stringify(full.point(id)),
-    ),
+test("a short native approach retains the exact board grid while avoiding a board-sized raster", async () => {
+  const child = Bun.spawn(
+    [
+      process.execPath,
+      fileURLToPath(
+        new URL(
+          "./fixtures/grid-native-length-bounds-first-case.ts",
+          import.meta.url,
+        ),
+      ),
+    ],
+    { stdout: "pipe", stderr: "pipe", env: process.env },
   )
-  for (let id = 0; id < clipped.cellCount; id++)
-    expect(fullPoints.has(JSON.stringify(clipped.point(id)))).toBe(true)
-  const original = complete(reference)
-  const candidate = complete(bounded)
-  expect(original.solved).toBe(true)
-  expect(candidate).toEqual(original)
-  expect(scene.pathVisible(candidate.route)).toBe(true)
+  let timedOut = false
+  const deadline = setTimeout(() => {
+    timedOut = true
+    child.kill("SIGKILL")
+  }, 5000)
+  try {
+    const [exitCode, output, errors] = await Promise.all([
+      child.exited,
+      new Response(child.stdout).text(),
+      new Response(child.stderr).text(),
+    ])
+    if (exitCode !== 0) {
+      process.stdout.write(output)
+      process.stderr.write(errors)
+    }
+    expect(timedOut).toBe(false)
+    expect(exitCode).toBe(0)
+    expect(errors).toBe("")
+    const summary = JSON.parse(output.trim())
+    expect(summary.caseCompleted).toBe(true)
+    expect(summary.nativeObstacleCount).toBe(854)
+    expect(summary.childDeadlineMs).toBe(5000)
+    expect(summary.nativeStepCap).toBe(4000)
+    expect(summary.originalAssertions).toBe(5 * summary.clippedCellCount + 7)
+    expect(summary.expectedOriginalAssertions).toBe(summary.originalAssertions)
+    expect(summary.membershipPointAttempts).toBe(summary.clippedCellCount)
+    expect(summary.membershipPointsValidated).toBe(summary.clippedCellCount)
+    expect(summary.originalSolved).toBe(true)
+    expect(summary.boundedCalls).toBe(summary.originalCalls)
+    expect(summary.elapsedMs).toBeLessThan(5000)
+    process.stdout.write(`GRID_NATIVE_CHILD ${JSON.stringify(summary)}\n`)
+  } finally {
+    clearTimeout(deadline)
+    if (child.exitCode === null) {
+      child.kill("SIGKILL")
+      await child.exited
+    }
+  }
 })
 
 test("finite-length clipping preserves endpoint attachment order, detours and bounded search work", () => {

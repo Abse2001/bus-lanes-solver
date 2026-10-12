@@ -35,6 +35,7 @@ import {
 } from "./repair-bus-dogbones"
 import { runBoundedRouting } from "./run-bounded-routing"
 import { fixedCopper } from "./vector-scene"
+import { viaCountConstraintsEnabled } from "./via-count-constraints"
 import type { SimpleRouteJson, SolverOptions, Trace, Wire } from "./types"
 
 export interface SurfaceRoutingSeed {
@@ -56,6 +57,7 @@ function certifiedNativeSiteCore(
 ): Set<string> | undefined {
   if (
     !failure ||
+    failure.viaCountConstraints !== undefined ||
     failure.kind !== "incompatible-offered-native-site-domains" ||
     failure.searchComplete !== true ||
     failure.budgetUnknown !== false ||
@@ -446,6 +448,12 @@ export function* routeFreshSurfaceSeeds(
       let deferredFineNativeApproachRetry = false
       if (ordinaryNames.size) {
         const siteOptions = {
+          ...(options.maxBusViaCountSkew !== undefined
+            ? { maxBusViaCountSkew: options.maxBusViaCountSkew }
+            : {}),
+          ...(options.maxPairViaCountSkew !== undefined
+            ? { maxPairViaCountSkew: options.maxPairViaCountSkew }
+            : {}),
           allowExpandedSites: true,
           expandOnlyWhenBlocked: true,
           maxCandidateSearchNodes: 12000,
@@ -522,6 +530,9 @@ export function* routeFreshSurfaceSeeds(
       if (!state) {
         const derived =
           domainFailure &&
+          !viaCountConstraintsEnabled(
+            domainFailure.viaCountConstraints ?? {},
+          ) &&
           guideEvents < MAX_SELECTIVE_NATIVE_APPROACH_GUIDE_EVENTS
             ? deriveSelectiveNativeApproachGuide(
                 guidanceState,

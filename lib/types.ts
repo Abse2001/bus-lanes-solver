@@ -92,6 +92,10 @@ export interface SimpleRouteJson {
   }>
 }
 export interface SolverOptions {
+  /** Optional additional matching constraint; undefined retains planar-only matching. */
+  maxBusViaCountSkew?: number
+  /** Optional additional transition-count bound within differential pairs. */
+  maxPairViaCountSkew?: number
   /** Candidate budget for tuning the original paired corridor. */
   originalCorridorTuningCandidates?: number
   smoothTuning?: boolean

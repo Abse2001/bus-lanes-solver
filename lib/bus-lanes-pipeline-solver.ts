@@ -47,6 +47,11 @@ import { BaseSolver } from "@tscircuit/solver-utils"
 import { getCopperLayerNames } from "@tscircuit/fanout-solver"
 import { BusLanesSolver } from "./bus-lanes-solver"
 import { boardOutlineViolations } from "./board-outline"
+import {
+  createViaCountConstraintChecker,
+  viaCountConstraintsEnabled,
+  type ViaCountConstraintChecker,
+} from "./via-count-constraints"
 import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
 
 export interface BusLanesPipelineOptions extends SolverOptions {
@@ -104,6 +109,15 @@ export class BusLanesPipelineSolver extends BaseSolver {
    * exception restores that private snapshot, never mutable work-in-progress. */
   protected *optimizeEnvelope(): Generator<void, void> {
     if (!this.options.smoothTuning) return
+    // Compaction splits one route into same-ID fragments; that view is
+    // deliberately unsupported by record accounting. Keep the qualified snapshot.
+    if (this.viaCounts) {
+      this.stats = {
+        ...this.stats,
+        envelopeOptimizationSkipped: "via_count_fragment_accounting",
+      }
+      return
+    }
     const before = signalEnvelope(this.acceptedTraces!)
     const started = performance.now()
     this.stats = {
@@ -212,6 +226,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
                 signalEnvelope(this.acceptedTraces!).areaMm2 - 1e-6
               ) {
                 improvedBest = true
+                if (!this.acceptsViaCounts(complete)) return
                 this.acceptedTraces = structuredClone(complete)
                 this.stats = {
                   ...this.stats,
@@ -292,6 +307,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
                   if (!validator.solved && !validator.failed)
                     validator.tryFinalAcceptance()
                 }
+                if (!this.acceptsViaCounts(complete)) return
                 this.acceptedTraces = structuredClone(complete)
                 this.stats = {
                   ...this.stats,
@@ -330,6 +346,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
     } catch (error) {
       this.stats = { ...this.stats, optimizationCleanupError: String(error) }
     }
+    if (!this.acceptsViaCounts(this.acceptedTraces!)) return
     if (
       !this.acceptsBoardOutline([
         ...(this.input.traces ?? []),
@@ -369,7 +386,26 @@ export class BusLanesPipelineSolver extends BaseSolver {
     return false
   }
 
+  private acceptsViaCounts(traces: readonly Trace[]) {
+    if (!this.viaCounts) return true
+    let message = "Final bus or pair via-count skew violation"
+    try {
+      if (this.viaCounts.matches(traces)) return true
+    } catch (error) {
+      message = String(error)
+    }
+    this.failed = true
+    this.solved = false
+    this.failureCode = "via_count_constraint"
+    this.error = message
+    this.phase = "failed"
+    this.traces = []
+    this.acceptedTraces = undefined
+    return false
+  }
+
   private sharedPackages?: Generator<void, RepairedBusDogbones | null>
+  private viaCounts?: ViaCountConstraintChecker
   private backwardPackages?: Generator<void, RepairedBusDogbones | null>
   private child?: BusLanesSolver
   private escapes: Trace[] = []
@@ -383,7 +419,24 @@ export class BusLanesPipelineSolver extends BaseSolver {
   constructor(input: SimpleRouteJson, options: BusLanesPipelineOptions = {}) {
     super()
     this.input = structuredClone(input)
-    this.options = { smoothTuning: true, denseSearch: true, ...options }
+    this.options = {
+      smoothTuning: true,
+      denseSearch: true,
+      ...options,
+      ...(options.maxBusViaCountSkew !== undefined
+        ? { maxBusViaCountSkew: options.maxBusViaCountSkew }
+        : {}),
+      ...(options.maxPairViaCountSkew !== undefined
+        ? { maxPairViaCountSkew: options.maxPairViaCountSkew }
+        : {}),
+    }
+    if (
+      viaCountConstraintsEnabled(this.options) &&
+      (options.goal === "connectivity" ||
+        (options.fanout !== "none" && nativeSingleCarrierEligible(this.input)))
+    )
+      throw Error("Via-count constraints are unsupported for this routing goal")
+    this.viaCounts = createViaCountConstraintChecker(this.input, this.options)
     // Surface routing negotiates carrier layers and owned approaches before
     // matching and control repair. Its aggregate work reserve includes those
     // stages; an explicitly supplied search budget remains authoritative.
@@ -1008,6 +1061,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
             throw Error(
               "Native single-carrier matching exhausted its routing plans",
             )
+          if (!this.acceptsViaCounts(result.value)) return
           this.acceptedTraces = structuredClone(result.value)
           this.finishAccepted(false)
         }
@@ -1208,6 +1262,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
           )
         )
           throw Error("Final absolute bus length violation")
+        if (!this.acceptsViaCounts(this.traces)) return
         this.acceptedTraces = structuredClone(this.traces)
         this.phase = "optimize_envelope"
         this.envelopeOptimization = this.optimizeEnvelope()

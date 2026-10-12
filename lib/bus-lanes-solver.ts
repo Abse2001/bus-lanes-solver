@@ -47,6 +47,10 @@ import {
   pairLengthReports,
 } from "./route-lengths"
 import { busLengthReports } from "./route-lengths"
+import {
+  createViaCountConstraintChecker,
+  type ViaCountConstraintChecker,
+} from "./via-count-constraints"
 import { spreadTuningLanes } from "./spread-tuning-lanes"
 import { tuneSmoothLengths } from "./smooth-length-tuning"
 import { tuneLengths } from "./length-tuning"
@@ -79,6 +83,7 @@ export class BusLanesSolver extends BaseSolver {
   private reservePackageExits?: boolean
   private pairSearch?: Generator<void, Trace[] | null>
   private reportedRoutes?: Array<{ trace: Trace; route: Trace["route"] }>
+  private viaCounts?: ViaCountConstraintChecker
   private lengthStats?: {
     busLengths: ReturnType<typeof busLengthReports>
     pairLengths: ReturnType<typeof pairLengthReports>
@@ -92,6 +97,7 @@ export class BusLanesSolver extends BaseSolver {
     super()
     this.input = structuredClone(input)
     this.options = options
+    this.viaCounts = createViaCountConstraintChecker(this.input, options)
     this.MAX_ITERATIONS = options.maxSearchIterations ?? 200000
   }
   /** Rematch freshly computed carrier geometry after a pipeline refinement.
@@ -784,6 +790,8 @@ export class BusLanesSolver extends BaseSolver {
       throw Error("Final absolute bus length violation")
     if (pairCouplingReports(this.input, this.traces).some((p) => !p.matched))
       throw Error("Final pair spacing or uncoupled length violation")
+    if (this.viaCounts && !this.viaCounts.matches(this.traces))
+      throw Error("Final bus or pair via-count skew violation")
     this.phase = "solved"
     this.solved = true
   }

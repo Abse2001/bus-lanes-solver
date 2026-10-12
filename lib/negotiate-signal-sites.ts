@@ -24,7 +24,15 @@ import {
 import { retargetGeneratedEscape } from "./retarget-generated-escape"
 import { RouteConflictIndex } from "./route-conflict-index"
 import { maximumCarrierLength } from "./route-lengths"
+import {
+  finalizeCarrierArcPair,
+  type CarrierShapeWorkCache,
+} from "./finalize-carrier-arc-pair"
 import { solveSignalCandidatePool } from "./solve-signal-candidate-pool"
+import {
+  createViaCountConstraintChecker,
+  type ViaCountOptions,
+} from "./via-count-constraints"
 import type { Connection, Terminal, Trace, Wire } from "./types"
 import {
   type Copper,
@@ -40,6 +48,7 @@ export type SignalSiteDomainFailure =
       /** The offered finite policy completed; it does not exhaust all copper. */
       searchComplete: true
       budgetUnknown: false
+      viaCountConstraints?: ViaCountOptions
     }
   | {
       /** Heuristic contradiction of offered sites, never native infeasibility. */
@@ -55,6 +64,7 @@ export type SignalSiteDomainFailure =
       proof: CandidateDomainFailure & { kind: "arc-consistency" }
       /** Eligible wider sites skipped because this carrier had cheap reachability. */
       deferredReachableSiteExpansions?: readonly DeferredCarrierExpansion[]
+      viaCountConstraints?: ViaCountOptions
     }
 
 export interface DeferredCarrierExpansion {
@@ -62,7 +72,7 @@ export interface DeferredCarrierExpansion {
   layer: string
 }
 
-interface SignalSiteOptions {
+interface SignalSiteOptions extends ViaCountOptions {
   allowExpandedSites?: boolean
   /** Widen only carrier layers with no reachable cheap site/carrier choice. */
   expandOnlyWhenBlocked?: boolean
@@ -341,6 +351,29 @@ export function* negotiateSignalSites(
     connections: native.connections.filter((c) => remove.has(c.name)),
     traces: [...(native.traces ?? []), ...fixedEscapes, ...stable],
   }
+  const viaCounts = createViaCountConstraintChecker(native, options)
+  const knownViaCounts = new Map<string, number>()
+  if (viaCounts) {
+    for (const trace of stable) {
+      const name = trace.connection_name!
+      if (knownViaCounts.has(name))
+        throw Error(
+          "Unsupported via-count accounting: duplicated retained lane",
+        )
+      knownViaCounts.set(
+        name,
+        viaCounts.total(name, [
+          ...fixedEscapes.filter((escape) => escape.connection_name === name),
+          trace,
+        ]),
+      )
+    }
+    for (const [name, count] of knownViaCounts)
+      if (!viaCounts.acceptsKnown(name, count, knownViaCounts))
+        throw Error("Retained bus or pair via-count skew violation")
+  }
+  const optionViaCount = (option: SiteOption) =>
+    viaCounts!.total(option.connection.name, option.escapes)
   if (!base.connections.length) return null
   const hard = fixedCopper(base),
     variants = new Map<string, SiteOption[]>()
@@ -360,7 +393,7 @@ export function* negotiateSignalSites(
   let deferredFineNativeApproachRetry = false
   let nativeSiteSearchIncomplete = false
   for (const connection of base.connections) {
-    const previous = options.retainExistingRoutes
+    let previous = options.retainExistingRoutes
       ? existingSignalSite(
           base,
           native,
@@ -372,6 +405,16 @@ export function* negotiateSignalSites(
           hard,
         )
       : undefined
+    if (
+      previous &&
+      viaCounts &&
+      !viaCounts.acceptsKnown(
+        connection.name,
+        optionViaCount(previous.option),
+        knownViaCounts,
+      )
+    )
+      previous = undefined
     if (previous) existing.set(connection.name, previous)
     // Surface carriers still need an adjacent site candidate. Generate the
     // local site on another physical layer, then collapse its owned via for
@@ -477,6 +520,15 @@ export function* negotiateSignalSites(
             retargetGeneratedEscape(trace, layer),
           )
           if (
+            viaCounts &&
+            !viaCounts.acceptsKnown(
+              connection.name,
+              viaCounts.total(connection.name, escapes),
+              knownViaCounts,
+            )
+          )
+            continue
+          if (
             generatedEscapeHolesConflict(native, [escapes[0]], [escapes[1]]) ||
             generatedEscapeHolesConflict(native, escapes, base.traces)
           )
@@ -503,7 +555,13 @@ export function* negotiateSignalSites(
             [],
             0,
             undefined,
-            { checkReachability: true, maxLength },
+            {
+              checkReachability: true,
+              maxLength,
+              ...(Number.isFinite(maxLength) && maxLength >= 0
+                ? { limitLengthBounds: true }
+                : {}),
+            },
           )
           try {
             let steps = 0
@@ -573,6 +631,16 @@ export function* negotiateSignalSites(
         layer,
         8,
         {
+          ...(viaCounts && knownViaCounts.size
+            ? {
+                acceptEscapePair: (escapes: Trace[]) =>
+                  viaCounts.acceptsKnown(
+                    connection.name,
+                    viaCounts.total(connection.name, escapes),
+                    knownViaCounts,
+                  ),
+              }
+            : {}),
           allowFineNativeApproachRetry: options.allowFineNativeApproachRetry,
           onDeferredFineNativeApproachRetry: () => {
             connectionDeferredFineNativeApproachRetry = true
@@ -583,6 +651,15 @@ export function* negotiateSignalSites(
         },
       )
       for (const option of expanded) {
+        if (
+          viaCounts &&
+          !viaCounts.acceptsKnown(
+            connection.name,
+            viaCounts.total(connection.name, option.escapes),
+            knownViaCounts,
+          )
+        )
+          continue
         const maxLength = maximumCarrierLength(
           { ...native, traces: [...(native.traces ?? []), ...option.escapes] },
           connection.name,
@@ -620,6 +697,9 @@ export function* negotiateSignalSites(
           connection,
           searchComplete: true,
           budgetUnknown: false,
+          ...(viaCounts
+            ? { viaCountConstraints: { ...viaCounts.policy } }
+            : {}),
         })
       return null
     }
@@ -642,6 +722,13 @@ export function* negotiateSignalSites(
     }))
     const index = new CopperConflictIndex()
     const compatible = (a: SiteOption, b: SiteOption) =>
+      (!viaCounts ||
+        viaCounts.compatible(
+          a.connection.name,
+          optionViaCount(a),
+          b.connection.name,
+          optionViaCount(b),
+        )) &&
       !generatedEscapeHolesConflict(native, a.escapes, b.escapes) &&
       !index.firstConflict(a.escapeCopper, b.escapeCopper, clearance - 1e-8)
     const remaining = pruneCandidateDomains(
@@ -666,6 +753,9 @@ export function* negotiateSignalSites(
           proof: { kind: "arc-consistency", ...failure },
           ...(deferredReachableSiteExpansions.length
             ? { deferredReachableSiteExpansions }
+            : {}),
+          ...(viaCounts
+            ? { viaCountConstraints: { ...viaCounts.policy } }
             : {}),
         })
       },
@@ -694,6 +784,7 @@ export function* negotiateSignalSites(
     signatures = new Map<string, Set<string>>(),
     compatibility = new Map<string, boolean>()
   let candidateId = 0
+  const shapeWork: CarrierShapeWorkCache = new Map()
   const compatible = (a: Candidate, b: Candidate) => {
     const key = a.id < b.id ? `${a.id},${b.id}` : `${b.id},${a.id}`
     const cached = compatibility.get(key)
@@ -703,6 +794,13 @@ export function* negotiateSignalSites(
         2 +
       clearance
     const clash =
+      (viaCounts &&
+        !viaCounts.compatible(
+          a.connection.name,
+          optionViaCount(a),
+          b.connection.name,
+          optionViaCount(b),
+        )) ||
       (a.layer === b.layer &&
         conflicts.firstConflict(
           a.trace.route,
@@ -740,13 +838,61 @@ export function* negotiateSignalSites(
   }
   const select = (): Candidate[] | undefined => {
     if (base.connections.some((c) => !pools.get(c.name)?.length)) return
-    return (
-      solveSignalCandidatePool(
-        base.connections.map((c) => [...pools.get(c.name)!].reverse()),
-        compatible,
-        options.maxCandidateSearchNodes ?? 4000,
-      ) ?? undefined
+    const domains = base.connections.map((c) =>
+      [...pools.get(c.name)!].reverse(),
     )
+    let failure: CandidateDomainFailure | undefined
+    const selected = solveSignalCandidatePool(
+      domains,
+      compatible,
+      options.maxCandidateSearchNodes ?? 4000,
+      1_000_000,
+      (proof) => {
+        failure = {
+          ...proof,
+          removals: proof.removals.map((row) => ({
+            ...row,
+            removed: [...row.removed],
+            support: [...row.support],
+          })),
+          implicatedRemovals: proof.implicatedRemovals.map((row) => ({
+            ...row,
+            removed: [...row.removed],
+            support: [...row.support],
+          })),
+        }
+      },
+    )
+    if (selected) return selected
+    if (!failure || stopWithOneRemaining || viaCounts) return
+    for (const { original, trace } of finalizeCarrierArcPair(
+      native,
+      base.traces,
+      domains,
+      failure,
+      shapeWork,
+    )) {
+      if (!pools.get(original.connection.name)?.includes(original)) continue
+      const copper = [...original.escapeCopper, ...routeCopper(trace)]
+      const others = [...routed.values()].filter(
+        (other) => other.connection.name !== original.connection.name,
+      )
+      const hits = others.filter(
+        (other) =>
+          overlap(copper, other.copper) ||
+          generatedEscapeHolesConflict(native, original.escapes, other.escapes),
+      )
+      addCandidate({
+        ...original,
+        id: candidateId++,
+        trace,
+        copper,
+        hits,
+        score: length(trace.route) + hits.length * 100,
+      })
+    }
+    // The next already-scheduled selection considers the augmented bank.
+    return undefined
   }
 
   const routed = new Map<string, Candidate>()
@@ -774,6 +920,14 @@ export function* negotiateSignalSites(
   const finish = (): FlexibleSignalState => {
     const chosen = [...routed.values()],
       escapes = [...fixedEscapes, ...chosen.flatMap((option) => option.escapes)]
+    if (viaCounts) {
+      const known = new Map(knownViaCounts)
+      for (const option of chosen)
+        known.set(option.connection.name, optionViaCount(option))
+      for (const [name, count] of known)
+        if (!viaCounts.acceptsKnown(name, count, known))
+          throw Error("Negotiated bus or pair via-count skew violation")
+    }
     const connections = base.connections.map(
       (c) =>
         routed.get(c.name)?.connection ?? variants.get(c.name)![0].connection,
@@ -812,6 +966,13 @@ export function* negotiateSignalSites(
         const [a, b] = local.pointsToConnect
         const forcedHits = others.filter(
           (other) =>
+            (viaCounts &&
+              !viaCounts.compatible(
+                option.connection.name,
+                optionViaCount(option),
+                other.connection.name,
+                optionViaCount(other),
+              )) ||
             overlap(option.escapeCopper, other.copper) ||
             generatedEscapeHolesConflict(native, option.escapes, other.escapes),
         ).length
@@ -850,6 +1011,13 @@ export function* negotiateSignalSites(
             copper = [...option.escapeCopper, ...routeCopper(trace)]
           const hits = others.filter(
               (other) =>
+                (viaCounts &&
+                  !viaCounts.compatible(
+                    option.connection.name,
+                    optionViaCount(option),
+                    other.connection.name,
+                    optionViaCount(other),
+                  )) ||
                 overlap(copper, other.copper) ||
                 generatedEscapeHolesConflict(
                   native,

@@ -25,6 +25,8 @@ export interface ExpandedSignalSiteChoice {
 /** Internal diagnostics distinguish a bounded search exit from a failed search.
  * Cancellation never reports a completed bounded search. */
 export interface ExpandedSignalSiteSearchOptions {
+  /** Optional caller constraint on actual owned transitions, before carrier work. */
+  acceptEscapePair?: (escapes: Trace[]) => boolean
   onSearchIncomplete?: () => void
   /** Preserve the coarse policy unless a failed caller explicitly widens it. */
   allowFineNativeApproachRetry?: boolean
@@ -109,6 +111,20 @@ export function* expandedSignalSiteChoices(
   )
   if (ends.some((sites) => !sites.length)) return []
   const available = ends.map((sites) => [...sites])
+  if (options.acceptEscapePair) {
+    const supported = available.map((sites, end) =>
+      sites.filter((site) =>
+        available[1 - end].some((other) =>
+          options.acceptEscapePair!(
+            end ? [other.escape, site.escape] : [site.escape, other.escape],
+          ),
+        ),
+      ),
+    )
+    if (supported.some((sites) => !sites.length)) return []
+    available[0] = supported[0]
+    available[1] = supported[1]
+  }
   const choices: ExpandedSignalSiteChoice[] = []
   const fixed = fixedCopper(input),
     width = signalWidth(input, connection)
@@ -160,6 +176,11 @@ export function* expandedSignalSiteChoices(
       const used = end ? b : a
       available[end].splice(available[end].indexOf(used), 1)
       if (generatedEscapeHolesConflict(input, [a.escape], [b.escape])) continue
+      if (
+        options.acceptEscapePair &&
+        !options.acceptEscapePair([a.escape, b.escape])
+      )
+        continue
       let route = reduceOrdinaryTurns(search.result, scene).map((p) => ({
         ...p,
         route_type: "wire" as const,
