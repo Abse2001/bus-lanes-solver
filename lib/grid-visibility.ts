@@ -242,9 +242,15 @@ export class GridHistoryProjector {
   protected origin: Point
   protected xs: Float64Array
   protected ys: Float64Array
+  private gridOffsetX = 0
+  private gridOffsetY = 0
   constructor(
     readonly scene: VectorScene,
-    grid?: { step?: number; bounds?: SimpleRouteJson["bounds"] },
+    grid?: {
+      step?: number
+      bounds?: SimpleRouteJson["bounds"]
+      lengthBounds?: { start: Point; end: Point; maxLength: number }
+    },
   ) {
     this.packageGrid = scene.input.obstacles.some((o) => o.componentId)
     // Dense package searches use a half-trace-width grid; callers can select
@@ -258,23 +264,83 @@ export class GridHistoryProjector {
       (this.packageGrid
         ? routingBounds(scene, this.stepSize)
         : scene.input.bounds)
-    this.gridBounds = b
     this.origin = { x: b.minX, y: b.minY }
     this.nx = Math.ceil((b.maxX - b.minX) / this.stepSize) + 1
     this.ny = Math.ceil((b.maxY - b.minY) / this.stepSize) + 1
+    if (this.cellCount > 8_000_000)
+      throw Error("Dense grid search budget exceeded")
+    if (grid?.lengthBounds) {
+      const { start, end, maxLength } = grid.lengthBounds
+      // Every point on a feasible path is at most maxLength from either end.
+      // Retain the exact original coordinates and the complete four-cell
+      // terminal-attachment halo, including its deterministic tie ordering.
+      const range = (a: number, z: number, origin: number, count: number) => {
+        const first = Math.min(
+          count - 1,
+          Math.max(
+            0,
+            Math.floor((Math.min(a, z) - maxLength - origin) / this.stepSize) -
+              5,
+          ),
+        )
+        const last = Math.max(
+          first,
+          Math.min(
+            count - 1,
+            Math.ceil((Math.max(a, z) + maxLength - origin) / this.stepSize) +
+              5,
+          ),
+        )
+        return [first, last] as const
+      }
+      const [firstX, lastX] = range(start.x, end.x, b.minX, this.nx)
+      const [firstY, lastY] = range(start.y, end.y, b.minY, this.ny)
+      this.gridOffsetX = firstX
+      this.gridOffsetY = firstY
+      this.nx = lastX - firstX + 1
+      this.ny = lastY - firstY + 1
+    }
     this.xs = Float64Array.from(
       { length: this.nx },
-      (_, x) => this.origin.x + x * this.stepSize,
+      (_, x) => this.origin.x + (x + this.gridOffsetX) * this.stepSize,
     )
     this.ys = Float64Array.from(
       { length: this.ny },
-      (_, y) => this.origin.y + y * this.stepSize,
+      (_, y) => this.origin.y + (y + this.gridOffsetY) * this.stepSize,
     )
-    if (this.cellCount > 8_000_000)
-      throw Error("Dense grid search budget exceeded")
+    this.gridBounds = grid?.lengthBounds
+      ? {
+          minX: this.xs[0],
+          maxX: this.xs.at(-1)!,
+          minY: this.ys[0],
+          maxY: this.ys.at(-1)!,
+        }
+      : b
   }
   get cellCount() {
     return this.nx * this.ny
+  }
+  protected nearestCell(point: Point) {
+    return {
+      x:
+        Math.round((point.x - this.origin.x) / this.stepSize) -
+        this.gridOffsetX,
+      y:
+        Math.round((point.y - this.origin.y) / this.stepSize) -
+        this.gridOffsetY,
+    }
+  }
+  protected floorCell(coordinate: number, axis: "x" | "y") {
+    return (
+      Math.floor((coordinate - this.origin[axis]) / this.stepSize) -
+      (axis === "x" ? this.gridOffsetX : this.gridOffsetY)
+    )
+  }
+  protected ceilCell(coordinate: number, axis: "x" | "y") {
+    return (
+      Math.ceil((coordinate - this.origin[axis]) / this.stepSize) -
+      (axis === "x" ? this.gridOffsetX : this.gridOffsetY)
+    )
   }
   penalizeIntersection(
     history: Float32Array,
@@ -308,8 +374,7 @@ export class GridHistoryProjector {
           x: start.x + ((end.x - start.x) * i) / samples,
           y: start.y + ((end.y - start.y) * i) / samples,
         }
-        const cx = Math.round((p.x - this.origin.x) / this.stepSize),
-          cy = Math.round((p.y - this.origin.y) / this.stepSize),
+        const { x: cx, y: cy } = this.nearestCell(p),
           n = Math.ceil(radius / this.stepSize)
         for (let dy = -n; dy <= n; dy++)
           for (let dx = -n; dx <= n; dx++) {
@@ -440,6 +505,8 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     grid?: {
       step?: number
       maxLength?: number
+      /** Clip a single-terminal search without changing its original grid phase. */
+      limitLengthBounds?: boolean
       /** Preserve cost/length alternatives for hard length budgets. */
       paretoLength?: boolean
       allTerminalAttachments?: boolean
@@ -451,7 +518,19 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       bounds?: SimpleRouteJson["bounds"]
     },
   ) {
-    super(scene, grid)
+    super(
+      scene,
+      grid?.limitLengthBounds &&
+        grid.allTerminalAttachments === true &&
+        !history &&
+        Number.isFinite(grid.maxLength) &&
+        grid.maxLength! >= 0 &&
+        !grid.starts &&
+        !grid.ends &&
+        [start.x, start.y, end.x, end.y].every(Number.isFinite)
+        ? { ...grid, lengthBounds: { start, end, maxLength: grid.maxLength! } }
+        : grid,
+    )
     const b = this.gridBounds
     // Physical soft clearance keeps legal parallel BGA lanes available.
     this.softMargin = scene.margin
@@ -502,6 +581,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       this.nx,
       this.ny,
       this.stepSize,
+      ...(grid?.limitLengthBounds ? [this.origin] : []),
       scene.margin,
       scene.width,
       scene.input.minBoardEdgeClearance,
@@ -564,16 +644,10 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         entry: CopperEntry,
       ) => {
         const copper = entry.copper
-        const loX = Math.max(0, Math.floor((minX - b.minX) / this.stepSize))
-        const hiX = Math.min(
-          this.nx - 1,
-          Math.ceil((maxX - b.minX) / this.stepSize),
-        )
-        const loY = Math.max(0, Math.floor((minY - b.minY) / this.stepSize))
-        const hiY = Math.min(
-          this.ny - 1,
-          Math.ceil((maxY - b.minY) / this.stepSize),
-        )
+        const loX = Math.max(0, this.floorCell(minX, "x"))
+        const hiX = Math.min(this.nx - 1, this.ceilCell(maxX, "x"))
+        const loY = Math.max(0, this.floorCell(minY, "y"))
+        const hiY = Math.min(this.ny - 1, this.ceilCell(maxY, "y"))
         const circle =
           !copper.rect && copper.a.x === copper.b.x && copper.a.y === copper.b.y
         const threshold = scene.margin - 1e-8
@@ -693,6 +767,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         this.nx,
         this.ny,
         this.stepSize,
+        ...(grid?.limitLengthBounds ? [this.origin] : []),
         this.softMargin,
         scene.connection.pointsToConnect[0].layer,
         ...(scene.boardOutline
@@ -744,16 +819,10 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           minY: number,
           maxY: number,
         ) => {
-          const loX = Math.max(0, Math.floor((minX - b.minX) / this.stepSize))
-          const hiX = Math.min(
-            this.nx - 1,
-            Math.ceil((maxX - b.minX) / this.stepSize),
-          )
-          const loY = Math.max(0, Math.floor((minY - b.minY) / this.stepSize))
-          const hiY = Math.min(
-            this.ny - 1,
-            Math.ceil((maxY - b.minY) / this.stepSize),
-          )
+          const loX = Math.max(0, this.floorCell(minX, "x"))
+          const hiX = Math.min(this.nx - 1, this.ceilCell(maxX, "x"))
+          const loY = Math.max(0, this.floorCell(minY, "y"))
+          const hiY = Math.min(this.ny - 1, this.ceilCell(maxY, "y"))
           if (hiX < loX) return
           for (let y = loY; y <= hiY; y++) {
             const offset = y * this.nx
@@ -780,15 +849,11 @@ export class GridVisibilitySearch extends GridHistoryProjector {
           const radius = entry.copper.radius + this.softMargin + halo
           const loY = Math.max(
             0,
-            Math.floor(
-              (Math.min(entry.ay, entry.by) - radius - b.minY) / this.stepSize,
-            ),
+            this.floorCell(Math.min(entry.ay, entry.by) - radius, "y"),
           )
           const hiY = Math.min(
             this.ny - 1,
-            Math.ceil(
-              (Math.max(entry.ay, entry.by) + radius - b.minY) / this.stepSize,
-            ),
+            this.ceilCell(Math.max(entry.ay, entry.by) + radius, "y"),
           )
           for (let y = loY; y <= hiY; y++) {
             let lo = 0,
@@ -806,11 +871,11 @@ export class GridVisibilitySearch extends GridHistoryProjector {
               x1 = entry.ax + entry.dx * hi
             const loX = Math.max(
               0,
-              Math.floor((Math.min(x0, x1) - radius - b.minX) / this.stepSize),
+              this.floorCell(Math.min(x0, x1) - radius, "x"),
             )
             const hiX = Math.min(
               this.nx - 1,
-              Math.ceil((Math.max(x0, x1) + radius - b.minX) / this.stepSize),
+              this.ceilCell(Math.max(x0, x1) + radius, "x"),
             )
             if (hiX < loX) continue
             const offset = y * this.nx
@@ -847,8 +912,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     const attach = (p: Point): Attachment[] => {
       const key = JSON.stringify(p)
       if (attachments.has(key)) return structuredClone(attachments.get(key)!)
-      const x = Math.round((p.x - b.minX) / this.stepSize),
-        y = Math.round((p.y - b.minY) / this.stepSize)
+      const { x, y } = this.nearestCell(p)
       const candidates: Array<{ id: number; path: Point[] }> = []
       for (let dy = -4; dy <= 4; dy++)
         for (let dx = -4; dx <= 4; dx++) {

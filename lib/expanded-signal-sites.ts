@@ -334,6 +334,7 @@ export function* expandedSignalSites(
             allTerminalAttachments: true,
             maxLength: surfaceLimit,
             paretoLength: true,
+            ...(!fine ? { limitLengthBounds: true } : {}),
             ...(fine
               ? {
                   step: Math.max(0.01, input.minTraceWidth / 10),
