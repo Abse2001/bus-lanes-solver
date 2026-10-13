@@ -7,6 +7,10 @@ import { minimumLengthTargets } from "./route-lengths"
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { extendCoupledSectionEnds } from "./extend-coupled-section"
 import { fixedRouteLength, maximumCarrierLength } from "./route-lengths"
+import {
+  coupledHandoffExceedsLengthLimit,
+  coupledPairApproachTrims,
+} from "./coupled-handoff-length-bound"
 import { coupledPairCache } from "./coupled-pair-cache"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { tuningPathIsSelfClear } from "./length-tuning"
@@ -472,6 +476,14 @@ export function* routeCoupledPair(
         })
         for (const flip of flips) {
           const ordered = flip ? rails.toReversed() : rails
+          // Reject only approaches that cannot fit the existing bus cap,
+          // including the maximum shortening of every completion bevel.
+          if (
+            ordered.some((rail, i) =>
+              coupledHandoffExceedsLengthLimit(input, members[i], rail, width),
+            )
+          )
+            continue
           const main = members.map((c, i) => makeTrace(c, ordered[i]))
           for (const escapeOrders of [
             [
@@ -636,7 +648,7 @@ export function* routeCoupledPair(
               differentialPairs: [pair],
             }
             let finished: Trace[] | undefined
-            for (const trim of [1.5, 0.75, 0.375, 0.1875]) {
+            for (const trim of coupledPairApproachTrims) {
               const shaped = chamferOrdinaryCorners(
                 pairInput,
                 traces,
