@@ -45,13 +45,23 @@ test("a short native approach retains the exact board grid while avoiding a boar
   const clipped = bounded.getRoutingAccess()
   expect(native.obstacles).toHaveLength(854)
   expect(clipped.cellCount).toBeLessThan(full.cellCount / 20)
-  const fullPoints = new Set(
-    Array.from({ length: full.cellCount }, (_, id) =>
-      JSON.stringify(full.point(id)),
+  const fullXPoints = new Set(
+    Array.from({ length: full.nx }, (_, column) =>
+      JSON.stringify(full.point(column).x),
     ),
   )
-  for (let id = 0; id < clipped.cellCount; id++)
-    expect(fullPoints.has(JSON.stringify(clipped.point(id)))).toBe(true)
+  const fullYPoints = new Set(
+    Array.from({ length: full.ny }, (_, row) =>
+      JSON.stringify(full.point(row * full.nx).y),
+    ),
+  )
+  for (let id = 0; id < clipped.cellCount; id++) {
+    const point = clipped.point(id)
+    expect(
+      fullXPoints.has(JSON.stringify(point.x)) &&
+        fullYPoints.has(JSON.stringify(point.y)),
+    ).toBe(true)
+  }
   const original = complete(reference)
   const candidate = complete(bounded)
   expect(original.solved).toBe(true)
