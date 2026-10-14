@@ -1,0 +1,87 @@
+{
+  "authorizedByRoot": true,
+  "toolSessionId": 25380,
+  "toolSessionCollected": true,
+  "toolExitCode": 0,
+  "toolWrapperExitCode": 0,
+  "scope": "ROOT_D7_DEFAULT_COMMITTED_TEST_SUITE",
+  "head": "282ad795cce867f7db294a5d8ad6c3516ad29f0c",
+  "postauditPath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/d7-default-committed-suite-next/POSTAUDIT.json",
+  "postauditSha256": "999a754c663bc6bd1ad97a2f5682450a2a6b4ead93e75e9cfe0ede133b7970bd",
+  "execution": {
+    "startedAt": "2026-10-14T08:15:53.480771+00:00",
+    "command": [
+      "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+      "test"
+    ],
+    "policy": {
+      "wallSeconds": 360,
+      "rssBytes": 2147483648,
+      "sharedBytes": 32212254720,
+      "sampleSeconds": 0.05,
+      "termGraceSeconds": 5
+    },
+    "memoryBefore": {
+      "current": 22923898880,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "exitCode": 0,
+    "diagnosticStopped": false,
+    "stopReasons": [],
+    "accepted": false,
+    "currentGuardPid": 376973,
+    "pid": 377040,
+    "pgid": 377040,
+    "freshLeaderIdentity": {
+      "pid": 377040,
+      "pgid": 377040,
+      "sid": 377040,
+      "start": 16826473,
+      "state": "R",
+      "rss": 90112,
+      "argv": [
+        "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+        "test"
+      ]
+    },
+    "endedAt": "2026-10-14T08:18:07.645416+00:00",
+    "wallSeconds": 134.1644380640064,
+    "cleanupOwnedGroupEmpty": true,
+    "peakOwnedRssBytes": 809111552,
+    "peakSharedBytes": 23716130816,
+    "memoryAfter": {
+      "current": 22926819328,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "oomDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "signalErrors": [],
+    "signalErrorCount": 0
+  },
+  "sourceAndDependenciesHeld": true,
+  "passed": true,
+  "counts": {
+    "pass": 640,
+    "fail": 0
+  },
+  "originalDefaultBunDiscovery": true,
+  "accepted49": false,
+  "fabricationReady": false
+}
