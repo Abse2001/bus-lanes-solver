@@ -76,6 +76,33 @@ export class BoardOutline {
     )
   }
 
+  /** Allocation-free grid query. Compute each edge distance once while retaining
+   * the public containment and clearance predicates' exact arithmetic. */
+  pointIsClearXY(x: number, y: number, clearance: number) {
+    if (this.containsPoint !== originalContainsPoint || this.pointIsClear !== originalPointIsClear)
+      return this.pointIsClear({ x, y }, clearance)
+    if (!Number.isFinite(clearance) || clearance < 0 || !Number.isFinite(x) || !Number.isFinite(y))
+      return false
+    let inside = false, boundary = false
+    for (let index = 0; index < this.edges.length; index++) {
+      const edge = this.edges[index], a = edge[0], b = edge[1]
+      const dx = b.x - a.x, dy = b.y - a.y, ex = x - a.x, ey = y - a.y
+      let d: number
+      if (dx === 0 && dy === 0) d = Math.sqrt(ex * ex + ey * ey)
+      else {
+        const t = Math.max(0, Math.min(1, (ex * dx + ey * dy) / (dx * dx + dy * dy || 1)))
+        const rx = ex - t * dx, ry = ey - t * dy
+        d = Math.sqrt(rx * rx + ry * ry)
+      }
+      // The original every() rejects NaN as well as insufficient clearance.
+      if (!(d + epsilon >= clearance)) return false
+      if (d <= epsilon) boundary = true
+      else if (!boundary && a.y > y !== b.y > y &&
+        x < a.x + ((b.x - a.x) * (y - a.y)) / (b.y - a.y)) inside = !inside
+    }
+    return boundary || inside
+  }
+
   /** Continuous capsule clearance checks every perimeter edge, including
    * concave cutouts between endpoints that both lie inside the board. */
   capsuleIsClear(a: Point, b: Point, clearance: number) {
@@ -120,6 +147,10 @@ export class BoardOutline {
       .filter((p) => this.pointIsClear(p, clearance))
   }
 }
+
+// Preserve custom/subclass predicates on the scalar entry point as well.
+const originalContainsPoint = BoardOutline.prototype.containsPoint
+const originalPointIsClear = BoardOutline.prototype.pointIsClear
 
 const outlines = new WeakMap<Point[], { key: string; polygon: BoardOutline }>()
 export function getBoardOutline(

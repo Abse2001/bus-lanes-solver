@@ -624,9 +624,8 @@ export class GridVisibilitySearch extends GridHistoryProjector {
         for (let y = 0; y < this.ny; y++)
           for (let x = 0; x < this.nx; x++)
             if (
-              !scene.boardOutline.pointIsClear(
-                { x: this.xs[x], y: this.ys[y] },
-                clearance,
+              !scene.boardOutline.pointIsClearXY(
+                this.xs[x], this.ys[y], clearance,
               )
             )
               this.blocked[x + y * this.nx] = 1
