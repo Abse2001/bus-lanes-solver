@@ -216,7 +216,7 @@ export class RouteCandidatePool {
     searchBudget = 50000,
   ): Candidate[] | null {
     const key =
-      `${searchBudget}:` +
+      `${searchBudget}:${domains.length}:` +
       domains.map((domain) => domain.map((c) => c.id).join(",")).join(";")
     if (this.assignments.has(key)) return this.assignments.get(key)!
     const result = this.computeCompatible(domains, searchBudget)
