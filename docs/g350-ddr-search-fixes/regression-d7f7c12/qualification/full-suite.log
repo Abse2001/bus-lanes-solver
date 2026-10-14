@@ -1,0 +1,1030 @@
+bun test v1.3.14 (0d9b296a)
+
+tests/route-fresh-surface-buses.test.ts:
+(pass) fresh surface routing stages both byte buses, a standalone pair, and a control [502.80ms]
+(pass) fresh surface routing stages both byte buses, a standalone pair, and a control despite an unavailable preferred bottom plane [88.75ms]
+(pass) the pipeline stages explicitly requested native pad planes [306.42ms]
+
+tests/am3352-snapshot-export.test.ts:
+(pass) AM3352 snapshot export requires exactly the declared benchmark samples [337.39ms]
+(pass) unsolved and incomplete AM3352 states never write snapshot artifacts [290.00ms]
+(pass) complete endpoint counts with invalid DRC or skew never produce AM3352 review images [582.29ms]
+
+tests/compact-unconstrained-lanes.test.ts:
+(pass) controls compact around fixed copper while matched lanes and terminal geometry stay immutable [13.69ms]
+
+tests/prepared-copper.test.ts:
+(pass) prepared copper preserves threshold decisions for capsules, points and rectangles [40.89ms]
+
+tests/coupled-handoff-roundoff.test.ts:
+(pass) roundoff in aligned package columns does not reverse the %s travel corridor [3188.31ms]
+(pass) roundoff in aligned package columns does not reverse the %s travel corridor [641.76ms]
+
+tests/simplify-small-connectors.test.ts:
+(pass) simplification preserves tiny octilinear connector corners and returning segments [0.17ms]
+
+tests/g350-path-integrity.test.ts:
+(pass) six full-stack transitions are continuous without an arbitrary via-count limit [6.05ms]
+(pass) fine raster chords and sampled smooth curves remain valid physical wire bodies [11.10ms]
+(pass) 22-plus fine approach points inside a via landing are genuine contiguous copper [1.73ms]
+(pass) projected top/bottom crossings are not same-layer shortcuts [0.45ms]
+(pass) same-net backtracking can spoof matching despite the ordinary native DRC passing [0.87ms]
+(pass) curve metadata does not conceal crossing chords or returning wire arms [0.25ms]
+(pass) separate same-layer runs cannot bypass their intervening layer route [0.22ms]
+(pass) omitted via dimensions still expose a landing bypass without altering saved fields [2.44ms]
+(pass) nonlocal overlapping via lands cannot bypass a long carrier detour [1.06ms]
+(pass) layer changes and malformed via handoffs reject independently of endpoint count [0.32ms]
+(pass) unknown primitive kinds, nonfinite points and malformed dimensions are unsafe to parse [3.40ms]
+(pass) joined trace identifiers cannot collide with each other or immutable supplied copper [0.28ms]
+(pass) curve ending indices must identify real unique same-layer chords [0.62ms]
+
+tests/repair-lane-closures.test.ts:
+(pass) bounded five-lane routing orders explore every first lane [1.37ms]
+(pass) an extra single-removal witness stays fixed when the four-lane subset can be repaired [128.77ms]
+(pass) a hard conditional replacement opens a sealed pocket without moving terminals or fixed copper [5.79ms]
+(pass) paired copper is never withdrawn to repair an ordinary lane closure [12.12ms]
+(pass) zero search budget preserves all inputs and does not accept incomplete copper [0.54ms]
+(pass) closing a repair generator releases every active grid scratch lease [8.69ms]
+(pass) three missing lanes on separate layers are repaired without changing their terminal layers [12.90ms]
+(pass) independent layer repairs share one search budget and never return a partial solution [5.11ms]
+(pass) malformed existing copper cannot bypass continuous checks with non-finite coordinates or a narrower width [0.62ms]
+
+tests/smooth-tuning-budget.test.ts:
+(pass) independent folded pockets do not consume later lanes' candidate budgets [123.00ms]
+(pass) folded fallback preserves a completed small ordinary correction [407.50ms]
+
+tests/rounded-paired-meanders.test.ts:
+(pass) rounded paired meanders fit added length into a narrow bank without self contacts [413.00ms]
+(pass) direct rounded-lobe height matches emitted copper across rotations and offsets [16.29ms]
+
+tests/single-layer-connectivity.test.ts:
+(pass) native connectivity preserves fixed copper and exposes unmatched timing and routed graphics [29.05ms]
+(pass) exhausted negotiation never publishes provisional routes [41.57ms]
+
+tests/matched-route-validation.test.ts:
+(pass) already matched candidates still pass the complete output validator [9.27ms]
+(pass) candidate validation rejects missing violations without repairing or accepting them [1.97ms]
+(pass) candidate validation rejects layer violations without repairing or accepting them [0.89ms]
+(pass) candidate validation rejects short violations without repairing or accepting them [0.68ms]
+(pass) candidate validation rejects corner violations without repairing or accepting them [0.61ms]
+(pass) candidate validation rejects crossing violations without repairing or accepting them [2.34ms]
+
+tests/pr-benchmark-command.test.ts:
+(pass) benchmark comments select only a bounded duration for the complete dataset [1.51ms]
+
+tests/coupled-handoff-length-bound.test.ts:
+(pass) G350's observed impossible strobe handoff is rejected before escape search [0.52ms]
+(pass) a handoff slightly over the raw budget remains eligible after the existing bevel [0.53ms]
+(pass) fixed terminal copper aliases count against the tightest current planar cap [0.18ms]
+(pass) an initially unbounded call cannot cache a stale result when a cap is later added [0.21ms]
+
+tests/surface-native-pocket.test.ts:
+(pass) a native surface terminal releases the trace closing its only planar passage [13.66ms]
+
+tests/native-signal-geometry.test.ts:
+(pass) native acceptance rejects ordinary non-octilinear copper even without a sharp turn [0.45ms]
+(pass) native acceptance rejects duplicate, misplaced and cross-plane curve tags [0.12ms]
+
+tests/copper-conflict-index.test.ts:
+(pass) copper broad phase preserves exact first-hit order across layers, vias and rectangles [43.66ms]
+(pass) copper broad phase keeps exact near-tangent clearance decisions [0.49ms]
+
+tests/native-carrier-router.test.ts:
+(pass) native carrier uses two plated vias, retains pad ownership and obeys whole-copper limits [19.43ms]
+(pass) native carrier cannot bypass an inner-layer barrier through TOP [63.97ms]
+(pass) via placement checks copper on unused physical planes [20.99ms]
+
+tests/inner-carrier-bridge.test.ts:
+(pass) single inner carrier connects native pads with two manufactured, conventional escapes [95.99ms]
+(pass) a blocked inner carrier cannot be bypassed by routing the signal across the native pad layer [74.50ms]
+
+tests/am3352-routing-quality.test.ts:
+(pass) quality audit measures detours and little turns without an old-layout ceiling [0.68ms]
+(pass) quality audit rejects ordinary sharp turns and validates full-route curve indices [1.12ms]
+(pass) pair gap audit uses emitted shared sections rather than a fixed endpoint trim [3.43ms]
+(pass) declared pair coupling cannot pass the audit without two valid shared sections [15.75ms]
+(pass) pair separation fails even when lengths match and no uncoupled budget was supplied [1.83ms]
+
+tests/normalize-surface-jitter.test.ts:
+(pass) surface normalization preserves supplied copper with a colliding generated identifier [0.93ms]
+(pass) fractional native surface terminals stay exact and become octilinear through three cleanup passes [12.98ms]
+(pass) surface chord correction cannot cut through hard copper or invent curve tags [0.37ms]
+
+tests/seed-existing-sites.test.ts:
+(pass) an existing non-adjacent site survives compact-only pocket negotiation unchanged [10.92ms]
+(pass) legacy compact negotiation retains its default fresh-route behavior [4.36ms]
+(pass) new hard paired copper invalidates an old carrier instead of seeding it [116.15ms]
+(pass) an old non-adjacent site remains available when new paired copper requires a new carrier [12.66ms]
+(pass) a blocked native escape is rejected even when the existing carrier remains clear [5.00ms]
+(pass) a drill-only hard conflict invalidates an otherwise clear existing site [5.68ms]
+(pass) an existing route that violates the current layer rule is not seeded [3.59ms]
+(pass) an existing route that violates the current length rule is not seeded [4.06ms]
+(pass) owned wires cannot change layers without an explicit via handoff [3.81ms]
+(pass) an owned via requires a declared physical span, coincident layer handoffs, and physical dimensions [24.50ms]
+
+tests/route-independent-buses.test.ts:
+(pass) independent layers complete with both members of each pair kept together [18.13ms]
+(pass) layer decomposition rejects cross-layer buses and unconstrained controls [0.31ms]
+
+tests/am3352-sbc-local-escapes.test.ts:
+(pass) full SBC keeps a pad on top when bottom components block every local via site [2762.90ms]
+(pass) blocked bottom escapes cannot fall back to a forbidden top layer [667.38ms]
+(pass) native-layer fallback keeps differential partners on the same layer [2557.29ms]
+
+tests/grid-terminal-attachments.test.ts:
+(pass) a grid-isolated nearest start attachment falls back to another continuously clear connector [6.05ms]
+(pass) a grid-isolated nearest goal attachment falls back to another continuously clear connector [1.22ms]
+(pass) alternate terminal connectors count toward the complete length budget [1.02ms]
+(pass) terminal alternatives cannot cross a continuous board-wide copper barrier [0.84ms]
+(pass) attachment retries preserve request-local scratch ownership after completion or cancellation [1.20ms]
+
+tests/soft-edge-cache.test.ts:
+(pass) changed soft copper invalidates both directions while preserving unaffected edges [652.95ms]
+(pass) overlapping searches own separate soft visibility arrays [5.55ms]
+(pass) oversized soft copper leaves cached answers private from concurrent and later searches [567.78ms]
+(pass) canceled searches release their memo and cannot mutate its next owner [4.11ms]
+
+tests/joint-reachable-site-recovery.test.ts:
+(pass) the real fresh caller widens a completed same-carrier contradiction and finishes both physical timing routes [937.09ms]
+(pass) healthy fresh routing preserves the exact cheap prefix and output without reachable-site retry [496.77ms]
+(pass) explicit expansion denial wins over retry targets and cancellation emits no completed joint certificate [13.12ms]
+(pass) reachable-site targets require complete trusted native AC metadata and exclude noncore domains [16.50ms]
+
+tests/pipeline-board-outline.test.ts:
+(pass) the matched pipeline publishes only complete copper inside its preserved polygon [68.23ms]
+(pass) completed accepted-snapshot restoration refuses a refinement crossing the polygon cutout [15.47ms]
+(pass) interrupted accepted-snapshot restoration refuses a refinement crossing the polygon cutout [9.28ms]
+(pass) pipeline rejects malformed polygons and immutable edge-violating vias before any search [2.18ms]
+
+tests/rebuild-partial-network.test.ts:
+(pass) partial reconstruction requires explicit opt-in and never invents missing copper [5.70ms]
+
+tests/terminal-via-clearance.test.ts:
+(pass) independent tuning cannot cut back through its own via land [0.51ms]
+(pass) a newly generated escape cannot grandfather a bend inside its own via land [0.88ms]
+
+tests/empty-soft-copper.test.ts:
+(pass) empty layer-filtered soft copper preserves memoized zero-cost search decisions [144.43ms]
+(pass) a same-layer degenerate rectangle still receives exact clearance checks [1.90ms]
+
+tests/signal-self-short-audit.test.ts:
+(pass) native self-short audit checks controls without a length-matched bus [1.67ms]
+(pass) untimed control audit materializes through-via lands that bypass earlier copper [0.65ms]
+
+tests/routing-footprint.test.ts:
+(pass) footprints include wire and via radii, separated by copper layer [1.00ms]
+(pass) middle-region score follows package centers under translation and rotation [7.18ms]
+(pass) overall bounds retain immutable power copper outside the signal envelope [0.31ms]
+
+tests/grid-exact-clearance.test.ts:
+(pass) legal exact-clearance channels remain routable after translation [2.91ms]
+
+tests/grid-components.test.ts:
+(pass) occupancy components retain diagonal reachability and isolate full walls [2.22ms]
+(pass) components do not wrap across row boundaries [0.21ms]
+(pass) free-run components agree with exhaustive eight-neighbor reachability [129.44ms]
+
+tests/smooth-tuning-endpoint-pocket.test.ts:
+(pass) a compact smooth bank uses a terminal pocket when the remaining approach has no tuning clearance [53.86ms]
+
+tests/coupled-pair-cache.test.ts:
+(pass) computed pair alternatives are reused without sharing mutable trace output [76.08ms]
+(pass) a changed physical obstacle invalidates computed pair alternatives [124.35ms]
+(pass) congestion searches compute their own pair alternatives [87.58ms]
+(pass) warm retries preserve compact matched candidates and final checks include fixed copper [162.63ms]
+(pass) a changed fixed copper scene invalidates computed alternatives [157.14ms]
+(pass) member layer changes on the same request never reuse traces on the old layer [96.19ms]
+
+tests/extend-package-coupling.test.ts:
+(pass) pair remains together up to the native package region, with endpoints and matching preserved [12.41ms]
+(pass) local native fanout vias extend the region, but an interconnect does not [0.32ms]
+(pass) missing native package regions cannot silently redefine the paired corridor [0.70ms]
+(pass) source package approaches use the same coupling repair in reverse [11.48ms]
+(pass) fixed copper can prevent an extension without moving or removing that copper [1.34ms]
+(pass) the exterior audit rejects a separated trunk even if its declared shared section passes [24.44ms]
+(pass) simplification preserves a collinear shared-section start [14.83ms]
+(pass) repair stays local when another approach still needs corner cleanup [8.44ms]
+(pass) native fanout regions include FanoutSolver's peripheral clearance guard [0.34ms]
+(pass) an approach can join its local fanout via outside the native pad field [27.77ms]
+
+tests/surface-site-domain-fallback.test.ts:
+(pass) a blocked local domain receives a bounded expanded fallback without changing explicit denial [110.68ms]
+(pass) reachable local choices preserve the cheap routing geometry [26.83ms]
+(pass) the initial surface seed caller uses blocked-only expansion to keep a connected timing checkpoint [111.07ms]
+
+tests/candidate-signature-lifecycle.test.ts:
+(pass) actual negotiation readmits evicted physical geometry while preserving held signatures and the 48-candidate pool [389.57ms]
+
+tests/tighten-pair-approaches.test.ts:
+(pass) parallel approaches close onto pair pitch without moving endpoints or changing headings [6.81ms]
+
+tests/retarget-generated-escape.test.ts:
+(pass) generated escape returns to its source surface without a via [1.12ms]
+(pass) a new carrier keeps a generated through-via's full physical span [0.20ms]
+(pass) a blind generated escape cannot retarget beyond its physical span [0.16ms]
+(pass) an implicit barrel span cannot be silently shortened by changing its destination [0.11ms]
+(pass) surface collapse rejects an implicit wire-to-via segment rather than losing its copper [0.86ms]
+
+tests/native-domain-survivors.test.ts:
+(pass) real manufactured AC removes only the unsupported CPU landing and preserves surviving references and order [3.27ms]
+(pass) capped physical support checks retain unproved choices while healthy domains remain byte-identical [1.44ms]
+(pass) the real complete negotiator never reseeds or reroutes an AC-removed cached native site [12.67ms]
+(pass) partial negotiation preserves the cached unsupported site instead of consuming complete-assignment survivors [5.69ms]
+(pass) healthy retained carriers produce the same physical output with native AC enabled or absent [6.87ms]
+
+tests/copper-clearance-predicate.test.ts:
+(pass) short-circuit copper clearance preserves exact contact decisions [24.37ms]
+
+tests/pipeline-layer-retries.test.ts:
+(pass) layer retries can split buses and retain every immutable power dogbone [1229.66ms]
+(pass) initial allocation prefers requested layers; retries respect allowed layers [1157.02ms]
+(pass) global carrier layers constrain every generated escape on every retry, including clock and controls [1177.59ms]
+(pass) global carrier layers cannot move a bus or existing handoff onto an excluded layer [2.54ms]
+
+tests/surface-native-approach-guidance.test.ts:
+(pass) native guidance excludes supplied copper, paired nets and all manufactured via geometry [5.70ms]
+(pass) an ordinary failure gets one guided topology probe and then resumes the unchanged original stream [1.48ms]
+(pass) native wire guidance protects a top breakout when carrier attachments are on bottom [95.30ms]
+
+tests/fresh-pair-domain-emission.test.ts:
+(pass) a fresh legal joint tuple is offered before a slow remaining carrier starts [3.21ms]
+(pass) fresh ordinary-only planning preserves its empty pair seed [0.26ms]
+(pass) a slow blocked preferred carrier cannot starve a clear alternate, and cancellation closes it [1.31ms]
+
+tests/point-rectangle-raster.test.ts:
+(pass) point rectangle raster clearance retains exact contact and strict threshold decisions [12.19ms]
+(pass) all native G350 top rectangle fields retain raster decisions at pad sides and corners [34.87ms]
+(pass) malformed and nonfinite rectangles and nonpoint queries retain the original fallback [1.31ms]
+
+tests/bevel-pair-approaches.test.ts:
+(pass) compact acute pair bevels preserve shared interiors and reduce matching corrections [5.81ms]
+(pass) acute bevel insertion remaps later curves without changing their geometry [0.46ms]
+
+tests/inter-package-tuning-window.test.ts:
+(pass) a completed handoff retains its physical package when nearer the remote pad field [1.40ms]
+(pass) physical ownership follows reversed route endpoints instead of connection order [0.25ms]
+(pass) native terminal ownership takes precedence over a stale emitted wire annotation [0.25ms]
+(pass) legacy terminals without native ports use source aliases to find their pad fields [0.39ms]
+
+tests/route-surface-bridge-four-via.test.ts:
+(pass) opt-in four-via surface routing crosses alternating walls and rejoins owned approaches [98.49ms]
+
+tests/am3352-ca-repro.test.ts:
+(pass) CA reproduction changes only bus constraints on the native powered fixture [30.73ms]
+(pass) CA reproduction refuses a missing signal or duplicate bus [41.46ms]
+(pass) an unfinished CA reproduction cannot invoke its routed-artifact exporter [442.80ms]
+(pass) declared complete-CA benchmark preserves all three exact timing buses [197.68ms]
+
+tests/selective-pair-plan-continuation.test.ts:
+(pass) selective feedback retains the two-family yield prefix and reaches a third family before the original fallback [8.22ms]
+(pass) new selective feedback closes the obsolete bank and retains exactly the complete updated guide set [1.18ms]
+(pass) no applicable feedback preserves original ordering and legacy boolean guidance still probes one family [1.76ms]
+
+tests/insert-surface-signal.test.ts:
+(pass) frozen multinet insertion preserves supplied power, paired rails and all accepted owned escapes [14.09ms]
+(pass) a bounded ordinary exchange restores its original width, allowed carrier layer and complete bus constraints [75.10ms]
+(pass) failed constrained restoration and cancellation leave the frozen checkpoint unchanged [26.36ms]
+
+tests/folded-tuning.test.ts:
+(pass) folded cells add exact length with smooth, separated offset rails under rotation and reflection [486.27ms]
+(pass) additional folds fit the same correction in a shorter, taller pocket [1.39ms]
+(pass) the tuner uses a folded cell inside a blocked pocket without widening the route [462.93ms]
+
+tests/surface-routing-seeds.test.ts:
+(pass) a failed surface control preserves the greatest physical seed without accepting it as complete [17.16ms]
+
+tests/fanout-provenance.test.ts:
+(pass) all eight saved fanouts retain their recorded provenance and copper geometry [998.06ms]
+
+tests/envelope-vacancy.test.ts:
+(pass) vacant envelope reports usable interior space, not board area [5.81ms]
+(pass) vacancy includes fixed power and obstacle clearance on the correct layer [3.27ms]
+(pass) vacancy is invariant under rigid rotation and translation [1.73ms]
+
+tests/negotiate-surface-routes.test.ts:
+(pass) whole surface candidate negotiation restores crossing ordinary signals while paired and supplied copper stay immutable [63.91ms]
+(pass) cancelled or exhausted surface negotiation leaves its physical checkpoint unchanged [9.55ms]
+(pass) frozen timed members retain their entire routed copper while untimed signals negotiate around them [62.89ms]
+(pass) a previous ordinary candidate crossing newly frozen copper is searched again [72.91ms]
+(pass) a previous via within native endpoint tolerance (0 mm) is replaced before surface negotiation accepts it [72.74ms]
+(pass) a previous via within native endpoint tolerance (0.000001 mm) is replaced before surface negotiation accepts it [69.42ms]
+(pass) an untimed surface route can cross alternating plane barriers using four manufactured transitions [118.57ms]
+(pass) bounded atomic surface repairs resolve a five-net star while retaining supplied copper and the checkpoint [142.76ms]
+
+tests/grid-copper-buckets.test.ts:
+(pass) dense grid copper queries preserve exhaustive continuous clearance [124.80ms]
+(pass) sparse grid copper queries preserve exhaustive continuous clearance [132.03ms]
+
+tests/coupled-handoff-length-canonical-parity.test.ts:
+(pass) canonical pair result and generator yield count match at cap undefined [165.80ms]
+(pass) canonical pair result and generator yield count match at cap 100 [125.79ms]
+(pass) no cap and Infinity prune nothing even for distant finite handoffs [0.59ms]
+
+tests/compact-matching-groups.test.ts:
+(pass) matching groups shrink together within full-copper bounds [32.02ms]
+
+tests/shared-pair-spacing.test.ts:
+(pass) 45-degree offset pair corners retain coupling [17.21ms]
+(pass) a rail cannot leave its mate in the middle of a shared section [9.53ms]
+(pass) independent equal-length rails cannot pass without a shared corridor [4.90ms]
+(pass) unequal handoff indices do not falsely flag parallel copper [5.18ms]
+(pass) solver success rejects separated equal-length paired output [4.34ms]
+
+tests/vector-routing.test.ts:
+(pass) vector obstacle detours are octilinear, continuous and translation invariant [9.03ms]
+(pass) finds an off-lattice narrow opening using obstacle vertices [1.47ms]
+(pass) clear channels avoid constructing an obstacle visibility graph [7.10ms]
+
+tests/remap-curved-segments.test.ts:
+(pass) curve annotations survive edits elsewhere in the route [0.32ms]
+(pass) removed curves and new arbitrary diagonals are not annotated [0.04ms]
+(pass) coalesced collinear curve chords retain their geometry provenance [0.14ms]
+
+tests/interior-tuning-banks.test.ts:
+(pass) interior banks keep paired lanes inside the approaches instead of opening outward U corridors [24.28ms]
+(pass) interior allocation rejects blocked banks without moving fixed copper [5.59ms]
+
+tests/matched-turn-cleanup.test.ts:
+(pass) reference turn cleanup preserves matched length and endpoints [2.29ms]
+
+tests/run-bounded-routing.test.ts:
+(pass) bounded routing propagates completed results and closes exhausted searches [4.33ms]
+(pass) parent cancellation closes the active child search [0.17ms]
+
+tests/surface-preferred-pair-warmup.test.ts:
+(pass) surface priority preserves a slower legal preferred carrier before a fast alternate [2.93ms]
+(pass) preferred domains from reserved and ordinary topologies combine before a fast alternate [2.10ms]
+(pass) a blocked preferred warm-up spends only two topologies before reaching the alternate [14.98ms]
+(pass) cancelling preferred warm-up closes its active bounded search [0.73ms]
+(pass) pairs without a common permitted preference skip warm-up [0.48ms]
+(pass) warm-up duplicate offers preserve distinct provisional policy [0.99ms]
+(pass) cross-stream deduplication retains changed coupling and curve annotations [0.34ms]
+
+tests/flexible-terminal-layers.test.ts:
+(pass) a small remainder can use another reachable terminal layer [15.27ms]
+(pass) a small remainder cannot leave its sole permitted terminal layer [0.81ms]
+(pass) flexible crossing lanes retain clearance without adding interconnect vias [38.70ms]
+
+tests/grid-native-length-bounds.test.ts:
+(pass) a short native approach retains the exact board grid while avoiding a board-sized raster [1088.00ms]
+(pass) finite-length clipping preserves endpoint attachment order, detours and bounded search work [425.02ms]
+(pass) the opt-in is inert for an unbounded, nearest-only or multi-terminal search [3.58ms]
+(pass) clipping may reject an impossible long detour before expanding its finite-length frontier [2.48ms]
+(pass) clipping retains the original dense-grid work guard [0.38ms]
+(pass) clipping never reinterprets an existing full-grid congestion history [2.75ms]
+
+tests/route-angle-validation.test.ts:
+(pass) octilinear ordinary bends and sampled gentle curves are conventional [1.03ms]
+(pass) sharp ordinary and annotated curve handoffs are rejected [0.11ms]
+(pass) duplicate vertices cannot conceal a sharp curved handoff [0.09ms]
+(pass) angle checks restart after a via or a layer transition [0.10ms]
+
+tests/align-pair-transitions.test.ts:
+(pass) staggered pair jogs align across reflections and 45-degree rotations without changing length, headings, or shared copper [56.06ms]
+(pass) alignment leaves a clearance-blocked staggered transition unchanged [0.76ms]
+(pass) alignment cannot slide a bend across the immutable shared endpoint [0.34ms]
+
+tests/paired-network.test.ts:
+(pass) wide handoff clearance is reserved without obstructing its own rails [42.79ms]
+(pass) joint network returns native coupled rails without synthetic connections or extra vias [199.05ms]
+(pass) cancelling a joint network permits a fresh run [254.06ms]
+(pass) native bus width overrides are retained by the virtual network [229.71ms]
+
+tests/pipeline-preserves-fanout-handoffs.test.ts:
+(pass) automatic dogbones apply only to unrouted component pads, never existing handoffs [43.77ms]
+
+tests/reachable-signal-dogbones.test.ts:
+(pass) reachable dogbones clear a sealed preferred site after 0 quarter turns [45.06ms]
+(pass) reachable dogbones clear a sealed preferred site after 1 quarter turns [25.78ms]
+(pass) reachable dogbones clear a sealed preferred site after 2 quarter turns [18.39ms]
+(pass) reachable dogbones clear a sealed preferred site after 3 quarter turns [26.20ms]
+
+tests/surface-bus-shortcuts.test.ts:
+(pass) bus shortcuts lower the actual longest copper target and retain every matching fallback [337.51ms]
+(pass) an exhausted shortcut search preserves the original matching checkpoint [5.53ms]
+
+tests/platform-independent-turn-cleanup.test.ts:
+(pass) equal-length shortcuts choose the same bend on ARM and x86 [0.53ms]
+
+tests/expanded-signal-sites.test.ts:
+(pass) expanded terminal cells escape a blocked adjacent-cell field with fixed full-stack barrels [663.47ms]
+(pass) expanded cells retain an endpoint already on the carrier surface [256.94ms]
+(pass) expanded escapes reject invalid manufacturing dimensions without generating copper [4.71ms]
+(pass) atomic surface routing falls back when all adjacent bottom sites are blocked [23.67ms]
+(pass) a collective retry can widen reachable adjacent sites while the default stays local [368.42ms]
+
+tests/coupled-handoff-alternatives.test.ts:
+(pass) paired retries explore distinct package-derived handoffs without moving terminals [609.14ms]
+
+tests/pending-lane-certificates.test.ts:
+(pass) pending certificates cache only the current hard geometry and terminal layer [9.62ms]
+
+tests/tune-generated-pair-escapes.test.ts:
+(pass) residual pair skew can be corrected in a generated top stub without moving its barrel or coupled carriers [46.01ms]
+(pass) supplied fanouts remain ineligible even when their top stub has tuning room [0.52ms]
+
+tests/two-fanout-dataset.test.ts:
+(pass) two-fanout dataset rejects overlap, prefabricated carrier routes and wrong exits [180.31ms]
+
+tests/waypoint-routing.test.ts:
+(pass) computed waypoint routes preserve terminals, avoid fixed copper, and respect the combined length budget [3.11ms]
+
+tests/prepare-surface-timing-banks.test.ts:
+(pass) timing preparation restores a matched owned tuple and spends TOP approach space released by an untimed control [495.80ms]
+(pass) restoration rejects a carrier mixed with escapes from a different runtime site assignment [124.95ms]
+(pass) a donor clears current timing and supplied drill rules before it can be restored [163.23ms]
+(pass) supplied traces cannot be released through an owned identifier collision [133.52ms]
+(pass) a matched donor cannot put a manufactured barrel directly at a native pad [140.15ms]
+(pass) nonfinite lengths and incompatible absolute timing windows fail before search [140.41ms]
+(pass) the total preparation budget cancels child work without mutating runtime checkpoints [154.56ms]
+
+tests/retarget-multi-via-owned-approach.test.ts:
+(pass) a three-via owned target remains identical on its ending plane and rejoins a physical four-via native route [2.71ms]
+(pass) multi-via owned approaches reject a new ending plane without rewriting existing copper [0.61ms]
+(pass) multi-via retargeting rejects malformed handoffs, layer jumps, and manufactured span metadata without mutation [4.32ms]
+
+tests/align-coupled-section-boundaries.test.ts:
+(pass) shared boundary labels cover only the common parallel copper and remap later curves [7.27ms]
+(pass) curved boundary legs and unrelated headings are never relabeled as straight shared copper [0.37ms]
+
+tests/smooth-tuning-congestion.test.ts:
+(pass) negotiated tuning selects a less congested bank without changing its length or endpoints [667.00ms]
+(pass) a bank score cannot override hard copper clearance [486.49ms]
+
+tests/signal-candidate-domain-pruning.test.ts:
+(pass) unsupported route channels propagate through neighboring domains without changing input [0.76ms]
+(pass) contradictory channel requirements empty a domain before backtracking [0.15ms]
+(pass) arc-consistent odd-cycle domains still receive the full constraint search [0.86ms]
+(pass) selection preserves candidate references, connection order and metadata after MRV pivoting [0.18ms]
+(pass) support-check exhaustion retains unproven options and permits bounded selection [0.17ms]
+
+tests/smooth-tuning-exact.test.ts:
+(pass) scalar amplitude search preserves every original single and paired curve coordinate [87.96ms]
+
+tests/backward-facing-package-terminals.test.ts:
+(pass) package-facing classification comes from each native prepared AM3352 phase [1372.72ms]
+(pass) completed AM62L boundary fanouts face their connected package in every placement [45.11ms]
+(pass) classification follows geometry under rotation, reflection, translation, and terminal reordering [4.88ms]
+(pass) unowned terminals cannot be assigned to a package by proximity alone [0.34ms]
+(pass) native physical ports retain package ownership beyond the midpoint despite whole-net aliases [1.17ms]
+
+tests/pair-coupling.test.ts:
+(pass) indexed pair measurements exactly match exhaustive sampling across widths, layers and fixed fanouts [57.56ms]
+
+tests/shared-pair-corridor-plans.test.ts:
+(pass) joint pair plans preserve bus layers, explore common permitted layers, and leave input unchanged [29.55ms]
+
+tests/pr-benchmark-report.test.ts:
+(pass) the shared canonical manifest contains every AM3352 benchmark sample [0.20ms]
+(pass) completion fixtures agree with canonical inputs on signal, bus and differential-pair requirements [212.54ms]
+(pass) linear percentile interpolation handles boundaries, unsorted data, and empty sets [1.79ms]
+(pass) all accepted samples use solve duration and require the canonical signal counts [7.04ms]
+(pass) a lost fast completion receives a budget penalty and survivor comparisons use the same cases [1.73ms]
+(pass) completion requires every trusted validation and fixed-power preservation check [2.75ms]
+(pass) worker timeout, reported timeout, crash and invalid reports retain raw durations but receive penalties [0.62ms]
+(pass) invalid raw durations, signal counts and matching measurements cannot complete [1.13ms]
+(pass) reaching or exceeding the solve budget is timed out, while actual elapsed durations remain visible [1.33ms]
+(pass) missing canonical artifacts remain visible and suppress matched-duration comparisons [0.67ms]
+(pass) a missing revision worker preserves its paired result and suppresses matched-duration statistics [1.12ms]
+(pass) different input hashes invalidate both paired results and disable comparison [1.48ms]
+(pass) revision metadata must match independently supplied pinned commits [3.02ms]
+(pass) accepted reports require complete canonical group identities and unchanged tolerances [12.97ms]
+(pass) gain/loss accounting distinguishes successful validation from a fast failure [2.70ms]
+(pass) zero-duration successful baseline leaves percentage changes undefined [0.61ms]
+(pass) malformed numeric envelopes, duplicate samples, unexpected names and unsafe trusted links are rejected [2.88ms]
+(pass) failure details cannot inject Markdown, HTML, or mentions and unknown skew identifiers fail validation [1.99ms]
+(pass) loader parses nested JSON artifacts without executing code or following symlinks [27.03ms]
+
+tests/insert-native-surface-signal.test.ts:
+(pass) reserve a shortest native surface control and repair only its crossing ordinary lane [72.01ms]
+(pass) native reservation detects a blocker in an owned TOP approach even when its carrier is on BOTTOM [60.31ms]
+(pass) native reservation does not release paired rails that close the planar channel [2.44ms]
+(pass) native reservation requires explicit permission for the native carrier layer [0.84ms]
+(pass) native reservation rejects four blockers beyond the default three-lane repair cap [3.92ms]
+(pass) native reservation exhausts primitive and repair budgets without changing the accepted state [10.31ms]
+
+tests/g350-snapshot-acceptance.test.ts:
+(pass) incomplete G350 routing cannot write a review snapshot [27.10ms]
+
+tests/bus-max-length.test.ts:
+(pass) maximum bus length includes fixed copper and retains an exactly feasible route [5.67ms]
+(pass) validation cannot accept skew-matched routes above their absolute limit [0.73ms]
+(pass) invalid absolute limit %s is rejected [0.62ms]
+(pass) invalid absolute limit %s is rejected [0.08ms]
+(pass) invalid absolute limit %s is rejected [0.05ms]
+(pass) minimum bus length is tuned and independently validated including fixed copper [3.04ms]
+(pass) invalid or conflicting minimum %s is rejected [0.75ms]
+(pass) invalid or conflicting minimum %s is rejected [0.14ms]
+(pass) invalid or conflicting minimum %s is rejected [0.12ms]
+(pass) invalid or conflicting minimum %s is rejected [0.19ms]
+
+tests/grid-diagonal-via-clearance.test.ts:
+(pass) a continuously clear diagonal between circular vias does not require both orthogonal neighbor cells to be clear [6.83ms]
+(pass) a diagonal still fails when the continuous via-clearance envelopes close the corridor [1.25ms]
+
+tests/compact-envelope.test.ts:
+(pass) compacts envelopes with fixed copper and matched lengths (false,-1) [35.94ms]
+(pass) compacts envelopes with fixed copper and matched lengths (false,1) [27.30ms]
+(pass) compacts envelopes with fixed copper and matched lengths (true,-1) [23.17ms]
+(pass) compacts envelopes with fixed copper and matched lengths (true,1) [25.34ms]
+(pass) sampled tuning banks retain their exact shape and annotation indices [29.00ms]
+(pass) carrier extraction and reassembly preserve vias, escapes and curve indices [1.42ms]
+(pass) cancelling a pending compaction leaves accepted copper untouched [2.22ms]
+(pass) coordinated reduces matched copper within full-pad length bounds [27.12ms]
+(pass) flexible reduces matched copper within full-pad length bounds [44.49ms]
+(pass) guarded reduces matched copper within full-pad length bounds [30.39ms]
+(pass) cohort reduces matched copper within full-pad length bounds [18.88ms]
+(pass) guarded-cohort reduces matched copper within full-pad length bounds [16.70ms]
+(pass) flexible tuning keeps every sampled bend rigid (false) [89.81ms]
+(pass) flexible tuning keeps every sampled bend rigid (true) [71.14ms]
+(pass) coordinated compaction moves coupled rails together [17.49ms]
+(pass) guarded compaction keeps the existing terminal-via approach [6.81ms]
+
+tests/surface-carrier-domain-fallback.test.ts:
+(pass) a reachable native carrier does not suppress a missing carrier's manufactured sites [121.35ms]
+(pass) a deferred missing carrier preserves a successful cheap native route exactly [11.56ms]
+(pass) a bounded failed cheap joint attempt retains the missing-carrier retry [697.95ms]
+(pass) explicit denial and cancellation do not report deferred carrier work [6.19ms]
+(pass) a complete cheap fresh route returns without attempting deferred carrier expansion [11.23ms]
+(pass) fresh surface routing retries actual deferred carrier sites after a cheap joint conflict [9529.23ms]
+
+tests/refine-computed-routes.test.ts:
+(pass) computed-route refinement preserves caller geometry and validates a complete route [1.75ms]
+(pass) computed-route refinement cannot accept missing connectivity [0.66ms]
+(pass) computed-route refinement cannot accept a broken endpoint [1.31ms]
+(pass) computed-route refinement cannot accept a fixed-copper crossing [0.76ms]
+
+tests/am3352-sbc-package-first.test.ts:
+(pass) package-first sample verifies actual terminals, pad geometry and all timing rules [263.15ms]
+(pass) package-first routing cannot hide a changed BGA pad or narrower clearance [70.65ms]
+
+tests/shared-straight-section.test.ts:
+(pass) unequal approach vertices retain copper while selecting the true parallel overlap [1.26ms]
+(pass) nearby rails with the wrong separation do not qualify as a shared bank [0.06ms]
+(pass) opposite travel and curve chords cannot be reconstructed as parallel offsets [0.11ms]
+(pass) collinear splits do not shorten the available shared tuning interval [0.47ms]
+
+tests/fresh-pair-power-fanout.test.ts:
+(pass) an unrelated supplied power fanout keeps fresh pair corrections in their package approaches [437.28ms]
+(pass) fresh shared-pair planning offers a physical provisional topology after the package correction [231.90ms]
+
+tests/shared-layer-pipeline.test.ts:
+(pass) shared-layer pipeline routes unrelated bus and pair geometry in direction %s [135.18ms]
+(pass) shared-layer pipeline routes unrelated bus and pair geometry in direction %s [123.22ms]
+
+tests/iteration-zero-visualization.test.ts:
+(pass) AM62L fixed copper is visible at iteration zero and unchanged after a routing attempt [585.49ms]
+
+tests/rematch-trapped-signal-dogbones.test.ts:
+(pass) only the trapped fresh endpoint is rematched, with native widths and immutable copper [116.05ms]
+(pass) supplied connected pad copper is never redogboned [3.39ms]
+(pass) interrupting a local-site search releases its grid lease [6.29ms]
+(pass) pipeline budget exhaustion closes the site retry without exposing partial copper [2.83ms]
+
+tests/project-compaction-directions.test.ts:
+(pass) stationary translations cannot drift across a fixed clearance boundary [5.37ms]
+(pass) rounding correction preserves rigid arcs and fixed endpoint directions [1.06ms]
+
+tests/am3352-benchmark.test.ts:
+(pass) measurement benchmark retains all eleven timed-out AM3352 placements [10652.08ms]
+(pass) strict benchmark retains all eleven timed-out AM3352 placements [11324.75ms]
+(pass) fixture crashes fail measurement mode and retain every AM3352 placement [7168.49ms]
+
+tests/eject-blocking-lanes.test.ts:
+(pass) a bounded displacement moves an eligible lane to free the missing connection [18.12ms]
+(pass) fixed copper and coupled rails cannot be displaced [9.51ms]
+(pass) exhausted search budgets return no partial solution [5.20ms]
+
+tests/am3352-fanout-provenance.test.ts:
+(pass) fixed AM3352 and RAM power copper exactly replays the recorded FanoutSolver [507.12ms]
+
+tests/tune-generated-ordinary-escapes.test.ts:
+(pass) ordinary matching can spend caller-owned TOP approach length while holding the BOTTOM carrier and all barrels [149.13ms]
+
+tests/native-site-feedback-proof-guards.test.ts:
+(pass) nonempty offered-site conflict reports completed finite policy [8.28ms]
+(pass) nonempty offered-site conflict reports unfinished policy as a heuristic [15.49ms]
+(pass) a genuine common top substitution obeys bus carrier permissions [11.25ms]
+(pass) a genuine common bottom substitution obeys bus carrier permissions [4.08ms]
+
+tests/coupled-tuning-banks.test.ts:
+(pass) tuning banks derive their orientation from endpoints and preserve paired escapes [6.36ms]
+(pass) staggered shared handoffs are aligned before reconstructing a tuning bank [1.80ms]
+(pass) a bus tuning bank preserves a standalone pair sharing its layer [11.29ms]
+(pass) buses spanning planes open every bank once regardless of bus membership order [24.43ms]
+(pass) redundant paired vertices leave the allocated tuning bank unchanged [2.69ms]
+
+tests/grid-cache-invalidation.test.ts:
+(pass) reused grid geometry matches fresh searches after copper and clearance changes [42.26ms]
+
+tests/expanded-signal-sites-coarse-first.test.ts:
+(pass) fine recovery leaves a healthy opposite endpoint byte-identical to the frozen coarse baseline [2143.56ms]
+(pass) an actual A7 coarse failure reports precision once and the explicit fine replay manufactures a connection [5136.36ms]
+(pass) denying expansion and canceling native coarse generation emit no precision deferral [1193.99ms]
+
+tests/grid-multiple-terminals.test.ts:
+(pass) multiple sources select the shortest reachable terminal combination [12.98ms]
+(pass) multiple goals select the shortest reachable terminal combination [12.85ms]
+(pass) alternative endpoint connectors count toward the length budget [3.39ms]
+(pass) empty terminal domains fail without borrowing an active search's scratch [1.67ms]
+(pass) disconnected terminal domains fail before A* without disturbing a live search [1.85ms]
+(pass) a warmed reachability index does not advance ordinary attachment retries [9.00ms]
+
+tests/coupled-bus-tuning.test.ts:
+(pass) a pair length-matches its bus by adding shared smooth meanders [161.05ms]
+
+tests/extend-pair-approaches.test.ts:
+(pass) a paired bend with staggered rail vertices continues at the declared pitch [3.27ms]
+
+tests/board-outline-raster-scalar.test.ts:
+(pass) one-pass scalar outline clearance preserves winding, boundary and exact clearance decisions [46.16ms]
+(pass) native G350 scalar outline checks retain the board-grid phase and cutout contacts [19.15ms]
+(pass) scalar outline queries retain nonfinite, live-point and custom predicate behavior [1.69ms]
+
+tests/g350-copper-dimensions-and-render.test.ts:
+(pass) strict copper acceptance checks the declared width at every wire point [3.45ms]
+(pass) width serialization tolerance preserves pinned copper without accepting wider or thinner substitutes [0.74ms]
+(pass) optional via fields use legal pinned defaults while explicit wrong dimensions or spans reject [2.14ms]
+(pass) G350 graphics copies resolve full-stack lands and drills without changing saved optional fields [2.80ms]
+(pass) graphics normalization never repairs explicit dimensions or physical spans [0.20ms]
+(pass) generic AM3352 panel counts retain their single-carrier policy without a G350 override [1.45ms]
+(pass) strict acceptance cannot report matching for a DRC-passing retraced path [1.07ms]
+(pass) malformed serialized points reject before unsafe geometric audit loops [0.38ms]
+
+tests/deferred-core-retry-policy.test.ts:
+(pass) only a complete physical contradiction disjoint from every deferred domain skips widening [3.97ms]
+(pass) an earlier physical support removal forces retry even when the last emptied arc is disjoint [1.09ms]
+(pass) missing legacy metadata and unknown, capped, carrier, or unary failures retain retry [1.22ms]
+(pass) incomplete or malformed causal closure never certifies a disjoint deferred domain [3.98ms]
+(pass) incomplete or malformed deferral metadata retains the bounded retry [3.67ms]
+(pass) the fresh caller skips only certified disjoint retries and preserves legacy noargument feedback [6.11ms]
+(pass) real crossed Top domains emit every deferred native connection and carrier once before the joint cap [734.68ms]
+(pass) denied expansion, native-domain cancellation, and early failed construction emit no complete metadata [774.52ms]
+
+tests/am3352-sbc-byte-corridors.test.ts:
+(pass) byte0 relocation retains complete board obstacles and immutable copper [18.22ms]
+(pass) byte1 relocation retains complete board obstacles and immutable copper [24.47ms]
+
+tests/combined-native-retry-order.test.ts:
+(pass) current-intersection: precision replay precedes the current deferred-core decision [4.46ms]
+(pass) current-disjoint: precision replay precedes the current deferred-core decision [1.54ms]
+(pass) current-failure-cleared: precision replay precedes the current deferred-core decision [1.39ms]
+(pass) current-deferral-cleared: precision replay precedes the current deferred-core decision [1.72ms]
+(pass) current-legacy: precision replay precedes the current deferred-core decision [2.16ms]
+(pass) current-unknown: precision replay precedes the current deferred-core decision [1.69ms]
+(pass) canceling precision replay closes the saved-state child without a carrier retry [3.27ms]
+
+tests/negotiated-pair-lanes.test.ts:
+(pass) dense negotiation routes paired rails and ordinary lanes together [90.66ms]
+
+tests/surface-carrier-composition.test.ts:
+(pass) surface composition exposes native terminals without double-counting fanout copper [1.46ms]
+(pass) joining bottom dogbones reverses the terminal via and preserves its physical span [0.35ms]
+
+tests/smooth-tuning-multiple-banks.test.ts:
+(pass) smooth tuning distributes a correction across narrow ordinary approach runs [9.98ms]
+(pass) distributed tuning cannot alter a fully coupled route to hide an infeasible correction [0.68ms]
+
+tests/pr-benchmark-process.test.ts:
+control: running main (aaaaaaa)
+control: running pr (bbbbbbb)
+(pass) paired benchmarks retain crashes and run the other revision in a fresh process [72.20ms]
+(pass) hung and malformed workers stay visible as unsuccessful measurements [128.15ms]
+
+tests/staged-native-precision.test.ts:
+(pass) healthy: precision is a failed-stage replay of the exact saved paired state [8.90ms]
+(pass) precision: precision is a failed-stage replay of the exact saved paired state [5.43ms]
+(pass) carrier-then-precision: precision is a failed-stage replay of the exact saved paired state [7.19ms]
+(pass) a failure without eligible deferred precision does not widen precision [1.21ms]
+(pass) a precision replay clears stale carrier eligibility from the earlier failed stage [0.84ms]
+(pass) cancellation closes the current coarse child without scheduling a precision replay [0.73ms]
+
+tests/copper-index.test.ts:
+(pass) spatial clearance queries agree with exhaustive copper checks [411.85ms]
+(pass) nearest copper distances equal exhaustive checks, including overlaps and unequal widths [104.91ms]
+(pass) median partitions retain every item when dense copper has coincident centers [4.50ms]
+
+tests/route-candidate-selection.test.ts:
+(pass) selects compatible generated alternatives instead of the latest colliding routes [1.67ms]
+(pass) cannot split a paired candidate or accept an incomplete assignment [0.46ms]
+(pass) an unsatisfiable candidate pool can recover when a new route is generated [0.34ms]
+(pass) retiring older candidates preserves exclusions and accepts new compatible geometry [5.47ms]
+(pass) a long independent bus does not hide a shorter bus's avoidable detour [0.48ms]
+(pass) repeated unsatisfiable selections remain recoverable without losing collision exclusions [0.70ms]
+(pass) retired geometry can be added again and selections respect the requested units [0.56ms]
+
+tests/am3352-sbc-snapshot-acceptance.test.ts:
+(pass) incomplete full-board copper cannot create an SBC snapshot artifact [165.15ms]
+
+tests/pipeline-power-obstacles.test.ts:
+(pass) immutable power dogbones obstruct signal layers and appear exactly once in pipeline output [10.43ms]
+
+tests/pipeline-final-acceptance.test.ts:
+(pass) explicit restores the accepted full route during envelope optimization [4.44ms]
+(pass) iteration-budget restores the accepted full route during envelope optimization [3.99ms]
+(pass) optimizer exceptions preserve a complete solution [1.90ms]
+(pass) final acceptance cannot turn an unfinished route into success [1.04ms]
+(pass) the real compactor can be interrupted without changing accepted copper [2.76ms]
+(pass) interrupting an inner-layer cohort search retains the complete accepted route [18.96ms]
+(pass) interruption after a coordinated improvement retains the improved route [36.67ms]
+
+tests/pipeline-surface-escapes.test.ts:
+(pass) a generated bottom dogbone can continue on the top surface without a same-layer via [62.29ms]
+
+tests/grid-boundary.test.ts:
+(pass) fractional board dimensions do not allow a route through rounded-up grid cells [12.73ms]
+
+tests/blocked-expanded-retained-site.test.ts:
+(pass) a retained physical site without a reachable carrier cannot suppress blocked-only expansion [976.83ms]
+
+tests/am3352-output-shape.test.ts:
+(pass) public AM3352 output retains exactly 161 fixed plus 47 identical signal traces [40.21ms]
+(pass) correct output counts cannot conceal changed native terminals, rules, or power copper [72.55ms]
+
+tests/multilayer-matching-bus.test.ts:
+(pass) a matched byte spans existing handoff layers without re-dogboning or separating its strobe [1003.62ms]
+
+tests/route-surface-bridge.test.ts:
+(pass) a two-via outer-surface bridge accepts a long native approach with full-stack drill clearance [103.98ms]
+(pass) surface bridges require explicit native and opposite outer-layer permission [0.35ms]
+(pass) surface bridges enforce the complete remaining copper budget, including fixed signal fanout [0.62ms]
+(pass) a legal native surface route uses no barrel and search exhaustion remains bounded [6.39ms]
+(pass) untimed bridge validation checks contacts between both native-layer approaches [105.63ms]
+(pass) bridge raster keeps narrow envelopes at requested resolution while bounding total cells [1.02ms]
+(pass) surface bridges reject nonmanufacturable barrel dimensions before searching [0.77ms]
+(pass) surface bridges reject invalid computed drill clearance without mutating supplied geometry [1.63ms]
+(pass) generated bridge trace IDs stay distinct from immutable supplied copper IDs [89.25ms]
+(pass) soft bridge negotiation avoids movable copper while preserving hard supplied fanout [165.36ms]
+(pass) soft settings cannot relax copper explicitly supplied as hard [7.05ms]
+(pass) bridge callers can reverse native endpoints without changing manufactured span or fixed copper [75.12ms]
+(pass) bridge raster budgets permit a bounded finer grid and reject invalid search costs [1.52ms]
+(pass) soft via penalties include drill spacing that exceeds copper land clearance [103.72ms]
+
+tests/staggered-bank-entries.test.ts:
+(pass) unrelated moves share depth while overlapping moves retain lane order [1.38ms]
+(pass) staggering reserves full pair width and refuses intersecting bank orders [0.36ms]
+
+tests/selective-pair-plan-feedback.test.ts:
+(pass) 24 selective guide updates preserve the suspended original pair stream [2.44ms]
+(pass) canceling a selective pair probe closes both active and suspended planners [0.54ms]
+
+tests/reserve-bus-package-exits-ownership.test.ts:
+(pass) nearby bypass pads cannot steal native package exit reservations [2.02ms]
+(pass) generated handoffs recover native ownership from their one-via approaches [1.65ms]
+(pass) physical port metadata takes priority over repeated net aliases [0.38ms]
+(pass) mixed-carrier reservations retain each ordinary terminal's physical layer [0.49ms]
+(pass) exit depth on another carrier cannot suppress a legal ordinary reservation [0.21ms]
+(pass) a same-XY pad on the opposite layer cannot steal generated approach ownership [0.61ms]
+
+tests/generated-escape-hole-clearance.test.ts:
+(pass) compact expanded choices keep their two generated barrels drill-clear [554.60ms]
+
+tests/am3352-escape-curve-metadata.test.ts:
+(pass) joined TOP escape curves remain valid outside the via-bounded carrier [2.49ms]
+(pass) escape curve tags reject invalid ending indices and layer or via handoffs [2.91ms]
+
+tests/board-outline-routing.test.ts:
+(pass) sparse visibility routing detours around a concave outline and preserves input [30.87ms]
+(pass) continuous visibility rejects a cutout crossing even when both endpoints are inside [2.81ms]
+(pass) grid occupancy and search honor the real polygon rather than its larger rectangular bounds [12.72ms]
+(pass) hard edges reject a thin cutout between unblocked grid vertices [1.95ms]
+(pass) wire width and edge clearance are enforced at straight and concave boundaries [0.30ms]
+(pass) via land radius, rather than drill radius or trace width, sets edge clearance [0.58ms]
+(pass) fixed wire/via connector chords cannot cross an outline cutout [0.22ms]
+(pass) clockwise outlines and interior grid rectangles use the same continuous clearance [2.26ms]
+(pass) malformed, self-intersecting and degenerate outlines fail explicitly [0.87ms]
+(pass) outline mutation invalidates cached polygon and grid geometry [12.04ms]
+(pass) omitting or supplying an empty outline preserves ordinary rectangular routing [1.67ms]
+
+tests/coupled-pair-other-layer.test.ts:
+(pass) a pair may pass over terminals on another copper layer [35.85ms]
+(pass) a completed plane via may sit inside separated pair approaches [18.85ms]
+(pass) a same-layer lane can leave through the opening between pair terminals [15.35ms]
+
+tests/pipeline-shared-budget.test.ts:
+(pass) a dense bus can converge beyond the old per-layer cutoff while retaining work for controls [4160.06ms]
+(pass) an explicit child search budget is retained across layer retries [1241.48ms]
+
+tests/repair-grid-jogs.test.ts:
+(pass) repair removes a returning jog with clearance checked against fixed copper [3.71ms]
+(pass) single-rail repair never changes a declared coupled corridor [0.23ms]
+
+tests/coupled-pair.test.ts:
+(pass) a declared pair shares its corridor and meets the total uncoupled budget [30.26ms]
+
+tests/grid-heap.test.ts:
+(pass) numeric grid queue orders by cost, progress, and insertion across updates [172.71ms]
+(pass) queue replacements preserve stable ties when priorities increase or ids are reused [80.72ms]
+
+tests/chamfer-pair-approaches.test.ts:
+(pass) acute pair handoffs become clearance-checked 45-degree corners before matching [1.43ms]
+
+tests/find-routed-signal-pocket.test.ts:
+(pass) a routed insertion blocker can extend its ordinary closure while keeping the new pair hard [25.65ms]
+
+tests/bipolar-tuning.test.ts:
+(pass) two-sided rounded meanders pack equal-length rails into a shallower pocket [134.95ms]
+(pass) invalid or undersized two-sided pockets are rejected [0.26ms]
+(pass) paired length tuning uses both sides of a narrow obstacle-bounded corridor [146.23ms]
+
+tests/smooth-paired-lobes.test.ts:
+(pass) smooth paired tuning adds equal length while retaining rail spacing [30.50ms]
+
+tests/round-coupled-return-bends.test.ts:
+(pass) paired return bends stay tangent and coupled across rotations and mirrors [276.28ms]
+(pass) rejects a return whose inner rail would violate self clearance [0.39ms]
+(pass) fixed copper inside the rounded path prevents the replacement [1.05ms]
+
+tests/parallel-grid-clearance.test.ts:
+(pass) legal parallel BGA lanes are not penalized as collisions [3.24ms]
+
+tests/solver.test.ts:
+(pass) routes and length matches lanes without any layer transitions [2.52ms]
+(pass) fails rather than routing a via between different endpoint layers [0.49ms]
+(pass) cannot cross a blocking wall and leaves input untouched [3.51ms]
+(pass) uses the existing SRJ bus trace width [1.72ms]
+(pass) routes around an obstacle on the same layer [1.31ms]
+(pass) exhausted search refuses partial output [2.96ms]
+(pass) reserves unrouted terminals instead of letting an earlier lane occupy them [6.20ms]
+(pass) matching includes both immutable fixed fanouts, not just the carrier [2.64ms]
+(pass) invalid skew tolerances are rejected [0.36ms]
+(pass) meander chamfers scale with the lobe instead of using tiny corner cuts [1.19ms]
+(pass) length tuning distributes lobes on the long run and preserves terminal approaches [1.48ms]
+(pass) routes already within bus tolerance receive no tuning [11.47ms]
+(pass) pair-only matching uses core lengthTolerance without exact equality [24.77ms]
+(pass) overlapping bus and pair constraints keep independent tolerances [8.84ms]
+(pass) invalid pair tolerances and unknown pair members fail explicitly [1.42ms]
+
+tests/finish-surface-timing.test.ts:
+(pass) finishing controls preserves already matched bus tuning and supplied copper [52.24ms]
+
+tests/grid-length-bound.test.ts:
+(pass) bounded grid search rejects an impossible length budget and preserves feasible endpoints [2.77ms]
+(pass) length-constrained search retains a costly short prefix when a cheaper detour cannot finish [4.97ms]
+
+tests/native-paired-carriers.test.ts:
+(pass) fresh control pair backbones match whole copper and stay physically coupled on inner1 [3669.48ms]
+(pass) matched native pipeline requires genuine owners for immutable power copper [125.98ms]
+
+tests/grid-scratch.test.ts:
+(pass) heap clear removes live positions and resets stable ordering after partial consumption [0.40ms]
+(pass) scratch leases isolate active searches and obsolete releases cannot clear new owners [0.45ms]
+(pass) inactive scratch storage is bounded and evicts the oldest buffers [37.43ms]
+(pass) reused and concurrent search paths match fresh searches across roots and length limits [19.00ms]
+(pass) canceling or stepping an old search leaves a newly borrowed search unchanged [4.55ms]
+
+tests/am3352-samples.test.ts:
+(pass) the AM3352 samples translate only RAM and retain every real power dogbone [1747.40ms]
+(pass) moving RAM translates only its physical terminals, including the clock's shared-net CPU pad [1424.24ms]
+(pass) native supply domains, capacitor outputs, monitor pins and explicit ground ties remain distinct [25.57ms]
+(pass) fixture audit rejects changed fixed copper even when input and metadata share the changed object [57.00ms]
+(pass) fixture audit rejects merged power domains and missing original pad ownership [109.30ms]
+(pass) fixture audit rejects relaxed signal constraints and extra signal-to-power aliases [77.11ms]
+(pass) a failed or empty routing is recorded as incomplete rather than a matching pass [191.59ms]
+(pass) completed-copper audit refuses thinner wires/vias and geometry outside native board layers [623.48ms]
+(pass) inner-layers changes only carrier availability and the audit rejects opening bottom [88.71ms]
+(pass) inner-layers-right changes only carrier availability and the audit rejects opening bottom [52.76ms]
+(pass) inner-layers-left changes only carrier availability and the audit rejects opening bottom [49.66ms]
+(pass) inner-layers-above changes only carrier availability and the audit rejects opening bottom [142.96ms]
+(pass) control-inner1 changes only carrier availability and rejects opening another plane [49.99ms]
+(pass) outer-layers retains the control geometry and reserves inner carriers [52.96ms]
+(pass) the copper audit recognizes a computed top carrier without inventing terminal vias [2078.09ms]
+
+tests/repair-shared-layer-conflicts.test.ts:
+(pass) joint repair changes carrier layers to resolve a crossing within absolute bounds [30.71ms]
+(pass) joint repair rejects overlength seed copper instead of accepting zero pairwise conflicts [4.89ms]
+(pass) joint repair tunes replacement routes to the supplied total copper target [36.92ms]
+
+tests/benchmark-frozen-g350.test.ts:
+(pass) prepare freezes exact Git bytes and all eleven trusted inputs without accepted artifacts [6.24ms]
+(pass) prepare-only never spawns a benchmark or writes accepted provenance [2350.83ms]
+(pass) arguments reject unknown budgets, duplicate flags and missing commit/directory [0.49ms]
+fatal: Needed a single revision
+(pass) freeze refuses overwrite, source output aliases and invalid revisions before mutation [910.64ms]
+(pass) complete Git manifests reject omitted, changed and injected runtime files [1638.45ms]
+(pass) execution records reject wrong revision, command paths, budgets and unsuccessful exits [4.15ms]
+(pass) reports reject duplicate/unknown cases, numeric strings, missing DRC and expanded budgets [2.99ms]
+(pass) cache identity and validation must match the exact trusted input and raw report [27.37ms]
+(pass) an unsuccessful run cannot publish a sidecar and preserves raw report bytes [1811.57ms]
+
+tests/expanded-signal-sites-fine-grid.test.ts:
+(pass) a bounded fine native approach recovers a real pad channel missed by the coarse raster [2502.53ms]
+(pass) fine-grid retries cannot pass through copper covering the native pad [561.55ms]
+
+tests/selective-native-approach-guidance.test.ts:
+(pass) a completed ordinary domain failure reflects a real pair obstruction [122.57ms]
+(pass) the default fresh surface stream completes the blocked native wire without promoting its guide [686.83ms]
+(pass) complete physical escape assignments distinguish the CPU conflict from a healthy RAM endpoint [3.82ms]
+(pass) completed feedback selects only the obstructed owned wire and clones the proposal [11.42ms]
+(pass) joint feedback repairs the CPU landing within complete options rather than protecting the clear RAM landing [4.89ms]
+(pass) an interrupted finite repair search cannot produce a joint guide [1.49ms]
+(pass) joint feedback cannot repair a top-only option with a bottom carrier handoff [1.61ms]
+(pass) cancelling or bounding a native-site search emits no completed domain failure [10.87ms]
+(pass) an unfinished inner carrier search cannot report an empty completed native domain [13.63ms]
+(pass) native guidance requires both coincident manufactured handoffs and unchanged physical provenance [17.98ms]
+(pass) omitted via minima retain the authoritative manufactured dogbone dimensions [8.47ms]
+
+tests/route-surface-bridge-native-pad.test.ts:
+(pass) surface bridges keep manufactured barrels off exact and fractional native pads [331.24ms]
+(pass) surface bridge landings protect other queued connections' original terminals [12.61ms]
+
+tests/am3352-carrier.test.ts:
+(pass) a control can use another outer-plane crossing in its owned approach [0.38ms]
+(pass) the additional crossing cannot conceal a plane jump or missing barrel handoff [0.48ms]
+
+tests/route-conflict-index.test.ts:
+(pass) indexed immutable routes preserve first-intersection order and strict clearance [0.32ms]
+(pass) indexed routes match nested segment tests across randomized and degenerate geometry [52.57ms]
+
+tests/native-site-domain-feedback.test.ts:
+(pass) completed physical site propagation records the full contradiction across initially compatible domains [2.31ms]
+(pass) a support work bound retains the unproved physical domains and emits no failure callback [0.35ms]
+
+tests/full-ddr-routing.test.ts:
+(pass) all complete DDR phases route without transitions and pass combined copper DRC [3202.87ms]
+(pass) SoC ball positions and orientation are identical in every DDR layout [363.35ms]
+
+tests/grid-history-projector.test.ts:
+(pass) history projection preserves grid dimensions and exact congestion cells [223.74ms]
+(pass) a history-only projector does not rasterize copper or attach endpoints [2.00ms]
+
+tests/g350-am3352-sample.test.ts:
+(pass) G350 capture is hash indexed and independent of the board checkout [63.68ms]
+(pass) all real BGA and support pads survive, including unused and NC balls [11.60ms]
+(pass) 49 signals terminate at the actual swizzled numeric CPU and RAM pins [10.99ms]
+(pass) power, ground, VREF, calibration, clock and reset connectivity is retained [30.41ms]
+(pass) four layers, all buses and all differential matching rules remain mandatory [20.51ms]
+(pass) 49 straight connections through foreign BGA pads cannot count as a routing pass [57.54ms]
+
+tests/compaction-cut-set.test.ts:
+(pass) collision pruning retains the intersection while removing redundant rows [3.43ms]
+(pass) degenerate feasible point retains its cuts [0.29ms]
+(pass) degenerate feasible line retains its cuts [0.13ms]
+(pass) infeasible intersections retain constraints instead of becoming unconstrained [0.08ms]
+
+tests/normalize-bottom-carrier-tail.test.ts:
+(pass) normalization removes microscopic BOTTOM carrier target tail backsteps while preserving full-stack barrels [4.06ms]
+(pass) normalization removes microscopic BOTTOM carrier source tail backsteps while preserving full-stack barrels [1.16ms]
+(pass) carrier tail normalization preserves annotated or coupled copper [0.73ms]
+(pass) source-tail normalization shifts untouched interior curve and coupling indexes [0.77ms]
+
+tests/route-candidate-cache-cardinality.test.ts:
+(pass) an empty assignment cache cannot satisfy a missing candidate domain [0.57ms]
+(pass) a missing candidate domain cache cannot reject an empty assignment [0.11ms]
+(pass) unresolved and conditional routes retain a missing unit in either query order [0.60ms]
+(pass) mixed empty domains and search budgets keep their assignment results separate [0.32ms]
+
+tests/negotiated-escape-hole-clearance.test.ts:
+(pass) negotiated bottom carriers keep all owned escape drills clear [670.67ms]
+
+tests/self-clearance.test.ts:
+(pass) local smooth bends do not exempt tight returning arms or crossings [2.13ms]
+
+tests/extend-coupled-section.test.ts:
+(pass) paired section extends over existing parallel approaches without moving copper [4.09ms]
+
+tests/refine-route-candidates.test.ts:
+(pass) conditional searches replace incompatible shortest-path alternatives [40.85ms]
+
+tests/search-abandonment.test.ts:
+(pass) returning lane negotiation releases its active grid search [4.11ms]
+(pass) returning lane negotiation also closes a nested coupled-pair search [4.54ms]
+(pass) solver budget failure closes negotiation and releases the unused initial lane search [3.87ms]
+(pass) returning a waypoint generator releases its active grid search [3.83ms]
+
+tests/packed-meanders.test.ts:
+(pass) packed single-lane meanders use the available run to reduce transverse height [77.67ms]
+(pass) packed differential meanders fill a compact bank with shared tangent curves [117.24ms]
+(pass) the integrated matcher packs clear shared corridors before growing their bounds [353.80ms]
+
+tests/compact-control-banks.test.ts:
+(pass) compact banks reserve tuning space without spreading unconstrained controls [102.80ms]
+(pass) paired bank demand follows copper deficits across rotations [1.52ms]
+
+tests/g350-outline-acceptance.test.ts:
+(pass) G350 acceptance checks the preserved waist cutout between two inside endpoints [25.27ms]
+(pass) G350 outline acceptance checks actual via land radius and board-edge clearance [16.80ms]
+
+tests/tuning-bank-power-obstacles.test.ts:
+(pass) both tuning bank allocators retain package approaches and clear pre-dogboned power barrels [3.53ms]
+
+tests/chamfer-ordinary-corners.test.ts:
+(pass) ordinary right-angle bends become two clear turns of 45 degrees before matching [1.17ms]
+(pass) a neighboring net forces a smaller continuous-clearance bevel [0.45ms]
+(pass) shared-section boundary chamfers retain the interior and support smaller matching candidates [0.47ms]
+(pass) fixed power through-vias obstruct bevels and remain immutable [0.45ms]
+(pass) bevel insertion remaps future curves and shared-section indices without changing their interior [0.47ms]
+
+tests/surface-pair-plan-scheduling.test.ts:
+(pass) a blocked preferred surface cannot starve a clear compatible pair carrier [10.31ms]
+(pass) an available preferred pair carrier keeps its existing first-plan geometry [12.84ms]
+(pass) pair planning retains fixed handoff layers and respects declared compatible layers [11.56ms]
+(pass) an alternate pair carrier must be compatible with both partners [4.65ms]
+
+tests/negotiated-dense-lanes.test.ts:
+(pass) dense lane negotiation completes staggered lanes without overlapping copper [41.20ms]
+
+ 643 pass
+ 0 fail
+ 649202 expect() calls
+Ran 643 tests across 189 files. [132.19s]
