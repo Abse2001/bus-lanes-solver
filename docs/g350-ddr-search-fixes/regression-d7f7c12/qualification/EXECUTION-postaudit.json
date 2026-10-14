@@ -1,0 +1,274 @@
+{
+  "execution": {
+    "startedAt": "2026-10-14T02:27:05.949028+00:00",
+    "command": [
+      "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+      "test",
+      "tests"
+    ],
+    "policy": {
+      "wallSeconds": 300,
+      "rssBytes": 2147483648,
+      "sharedBytes": 27917287424,
+      "sampleSeconds": 0.05,
+      "termGraceSeconds": 5
+    },
+    "memoryBefore": {
+      "current": 22020780032,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "exitCode": 0,
+    "diagnosticStopped": false,
+    "stopReasons": [],
+    "accepted": false,
+    "currentGuardPid": 335699,
+    "pid": 335723,
+    "pgid": 335723,
+    "freshLeaderIdentity": {
+      "pid": 335723,
+      "pgid": 335723,
+      "sid": 335723,
+      "start": 14733720,
+      "state": "R",
+      "rss": 929792,
+      "argv": [
+        "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+        "test",
+        "tests"
+      ]
+    },
+    "endedAt": "2026-10-14T02:29:18.234194+00:00",
+    "wallSeconds": 132.28497901800438,
+    "cleanupOwnedGroupEmpty": true,
+    "peakOwnedRssBytes": 786661376,
+    "peakSharedBytes": 22755139584,
+    "memoryAfter": {
+      "current": 22022737920,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "oomDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "signalErrors": [],
+    "signalErrorCount": 0
+  },
+  "dependenciesBefore": {
+    "verified": true,
+    "nonmutating": true,
+    "receiptSha256": "1a49a60909258b542c7f4899e6378fa9f10c1cea08ef1aaf4b5366480dbf71b7",
+    "archiveSha256": "a5122317cc21862873121f8ddefa2ec605cf36c67ec9b688fd5d866391ea43ec",
+    "archiveBytes": 101071149,
+    "treeSha256": "47633d41b2b4d3f88c83a220327912b59445cdc4f301e4235393a6d5c910e9b6",
+    "toolSha256": "61f1410ddde649491049278dde0bbe44a05fa86f33cbeeb1c3910b1922f09b59",
+    "absoluteRoot": "/workspace/bus-lanes-solver/node_modules",
+    "archiveContentBoundByTrustedReceiptAndHash": true
+  },
+  "dependenciesAfter": {
+    "verified": true,
+    "nonmutating": true,
+    "receiptSha256": "1a49a60909258b542c7f4899e6378fa9f10c1cea08ef1aaf4b5366480dbf71b7",
+    "archiveSha256": "a5122317cc21862873121f8ddefa2ec605cf36c67ec9b688fd5d866391ea43ec",
+    "archiveBytes": 101071149,
+    "treeSha256": "47633d41b2b4d3f88c83a220327912b59445cdc4f301e4235393a6d5c910e9b6",
+    "toolSha256": "61f1410ddde649491049278dde0bbe44a05fa86f33cbeeb1c3910b1922f09b59",
+    "absoluteRoot": "/workspace/bus-lanes-solver/node_modules",
+    "archiveContentBoundByTrustedReceiptAndHash": true
+  },
+  "sourceAndArtifactsHeld": true,
+  "packetSha256": "769ffd1eb96604752daa29dbf1e78caceaa10386ce8d0f3c43248377b9deaba9",
+  "fullSuitePassed": true,
+  "actualCounters": {
+    "pass": 643,
+    "fail": 0,
+    "tests": 643,
+    "files": 189
+  },
+  "resultSha256": null,
+  "accepted49": false,
+  "wholeSuiteExecuted": true,
+  "allElevenBenchmarksExecuted": false,
+  "environmentPresenceAndHashesBefore": {
+    "BUN_OPTIONS": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_INSTALL": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_RUNTIME_TRANSPILER_CACHE_PATH": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_TEST_PRELOAD": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useConcurrentJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useDFGJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useFTLJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useConcurrentGC": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useGC": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useGenerationalGC": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useGigacage": {
+      "present": false,
+      "valueSha256": null
+    },
+    "NODE_OPTIONS": {
+      "present": false,
+      "valueSha256": null
+    },
+    "TZ": {
+      "present": false,
+      "valueSha256": null
+    },
+    "LANG": {
+      "present": true,
+      "valueSha256": "99fed2d548c2eb1022f4067f97fe838a2c3ea60ee0e0f53086788505c3ababad"
+    },
+    "LC_ALL": {
+      "present": true,
+      "valueSha256": "99fed2d548c2eb1022f4067f97fe838a2c3ea60ee0e0f53086788505c3ababad"
+    }
+  },
+  "environmentPresenceAndHashesAfter": {
+    "BUN_OPTIONS": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_INSTALL": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_RUNTIME_TRANSPILER_CACHE_PATH": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_TEST_PRELOAD": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useConcurrentJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useDFGJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useFTLJIT": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useConcurrentGC": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useGC": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useGenerationalGC": {
+      "present": false,
+      "valueSha256": null
+    },
+    "BUN_JSC_useGigacage": {
+      "present": false,
+      "valueSha256": null
+    },
+    "NODE_OPTIONS": {
+      "present": false,
+      "valueSha256": null
+    },
+    "TZ": {
+      "present": false,
+      "valueSha256": null
+    },
+    "LANG": {
+      "present": true,
+      "valueSha256": "99fed2d548c2eb1022f4067f97fe838a2c3ea60ee0e0f53086788505c3ababad"
+    },
+    "LC_ALL": {
+      "present": true,
+      "valueSha256": "99fed2d548c2eb1022f4067f97fe838a2c3ea60ee0e0f53086788505c3ababad"
+    }
+  },
+  "toolSha256Before": {
+    "node": "fa8cf99324985af3bd564c0d1133eb33c023c0c6ab8f67a5aeb491c61527c41e",
+    "bun": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+  },
+  "toolSha256After": {
+    "node": "fa8cf99324985af3bd564c0d1133eb33c023c0c6ab8f67a5aeb491c61527c41e",
+    "bun": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74"
+  },
+  "cpuQuotaBefore": "400000 100000",
+  "cpuQuotaAfter": "400000 100000",
+  "cgroupCpuBefore": {
+    "usage_usec": 77882320345,
+    "user_usec": 68099371293,
+    "system_usec": 9782949051,
+    "nice_usec": 1139448,
+    "nr_periods": 679286,
+    "nr_throttled": 5115,
+    "throttled_usec": 271862192,
+    "nr_bursts": 0,
+    "burst_usec": 0
+  },
+  "cgroupCpuAfter": {
+    "usage_usec": 78097482824,
+    "user_usec": 68277884488,
+    "system_usec": 9819598335,
+    "nice_usec": 1139448,
+    "nr_periods": 680609,
+    "nr_throttled": 5115,
+    "throttled_usec": 271862192,
+    "nr_bursts": 0,
+    "burst_usec": 0
+  },
+  "cgroupCpuScalarsIncludeOtherWorkloads": true,
+  "focusedTypesAnd30TestsReused": true,
+  "constructorPerformanceGatePassed": true,
+  "priorFailedFullSuitesPreserved": true
+}

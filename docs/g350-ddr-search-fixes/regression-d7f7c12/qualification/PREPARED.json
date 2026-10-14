@@ -1,0 +1,157 @@
+{
+  "createdUtc": "2026-10-14T02:25:26.545295+00:00",
+  "status": "SOURCE_ONLY_PREPARED_UNEXECUTED_FRESH_FOCUSED_AND_CAUSAL_PHASE_PASS_REQUIRED",
+  "scope": "one-outline-scalar-fresh-full643-tests",
+  "focusedPacketSha256": "e2b99e1ec083aad24e1df62044e7369835034cc09f0b556da4b4c14791b349f0",
+  "sourceDirectory": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-focused-sourceonly-next/source",
+  "sourceFilesReused": 908,
+  "newPrivateCommit": "d7f7c1254d34dfdd2853f069d7277c79ce6ebf5e",
+  "newPrivateTreeSha1": "987f566bc38168ca12d4ad75f1c2cb418e7379d5",
+  "old633AcceptanceDoesNotQualifyNewRuntime": true,
+  "typecheckRepeated": false,
+  "command": [
+    "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+    "test",
+    "tests"
+  ],
+  "policy": {
+    "wallSeconds": 300,
+    "rssBytes": 2147483648,
+    "sharedBytes": 27917287424,
+    "sampleSeconds": 0.05,
+    "termGraceSeconds": 5
+  },
+  "preforkReserveBytes": 2147483648,
+  "expectedActualCounters": {
+    "pass": 643,
+    "fail": 0,
+    "tests": 643,
+    "files": 189
+  },
+  "files": [
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-fullsuite-sourceonly-next/guard.py",
+      "sha256": "646a43a7dafd447eb1e02e7f45715e647443d8c06aead5ebe49096667b18dda0",
+      "bytes": 11979,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-fullsuite-sourceonly-next/README.md",
+      "sha256": "a93877061db444d360ac17f31eb2089cdfa657c771f804b270454b0cc54beac3",
+      "bytes": 788,
+      "mode": 384
+    }
+  ],
+  "externalFiles": [
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-focused-sourceonly-next/PREPARED.json",
+      "sha256": "e2b99e1ec083aad24e1df62044e7369835034cc09f0b556da4b4c14791b349f0",
+      "bytes": 335871,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-focused-sourceonly-next/guard.py",
+      "sha256": "0fadfcd7a5f102bb55540af8f34eda8e3893ac4f152b14580b58d84bde37db13",
+      "bytes": 6942,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-prefix-phase-count30-sourceonly-next/PREPARED.json",
+      "sha256": "1c65488f61a31d54e2817566cca58bc8723fec1a4e7566119ab19eea8cbf340e",
+      "bytes": 19467,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-prefix-phase-count30-sourceonly-next/guard.py",
+      "sha256": "adaf3b4c118922ded1ec9870c8cdc1f4548a928dfd3c8c746b3c58c1b6544357",
+      "bytes": 12156,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-prefix-phase-count30-sourceonly-next/preload.ts",
+      "sha256": "372945892338f30ec3431e184cbd7ea8d9e22d132169c356e1c4d0c804fc9759",
+      "bytes": 1429,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-prefix-phase-count30-sourceonly-next/observed-grid-native-length-bounds.test.ts",
+      "sha256": "30686d61a56097f9609a13bda55f594ca542278561ed05c54d03eb36b5a633c3",
+      "bytes": 11096,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-focused-count30-metadata-correction-sourceonly-next/PREPARED.json",
+      "sha256": "0fc8b2b9c314567a78e0eb15d05e64889020a3b001d8c8a241a5ae56c8cc6753",
+      "bytes": 7018,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-focused-count30-metadata-correction-sourceonly-next/qualify.py",
+      "sha256": "af59398d56c72782bc81a8dbf0b397325451162616920e17f57d4ef1e2b0faea",
+      "bytes": 5256,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-focused-count30-metadata-correction-sourceonly-next/COUNT-CORRECTED-postaudit.json",
+      "sha256": "fe7c3fc82d21b5ad8704326459c4e6e484d714475338966707160dbc332f9fa0",
+      "bytes": 4654,
+      "mode": 384
+    },
+    {
+      "path": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-single-pass-sourceonly-next/SOURCE-proposal.json",
+      "sha256": "37b0bec02c5ac22d8d6f1efd960972cd796c6dcbdf3e4890ea82ff10d1667920",
+      "bytes": 3285,
+      "mode": 384
+    }
+  ],
+  "rootAuthorityRequiredFields": [
+    "authorizedByRoot",
+    "scope",
+    "packetSha256",
+    "policy",
+    "approvalToken",
+    "previousClosedPostauditPath",
+    "previousClosedPostauditSha256",
+    "previousOwnedPgid",
+    "phasePostauditPath",
+    "phasePostauditSha256",
+    "phaseRootCollectionPath",
+    "phaseRootCollectionSha256"
+  ],
+  "actualWorkersOrRoutingImports": 0,
+  "wholeSuiteExecuted": false,
+  "allElevenBenchmarksExecuted": false,
+  "accepted49": false,
+  "fabricationReady": false,
+  "phasePacketSha256": "1c65488f61a31d54e2817566cca58bc8723fec1a4e7566119ab19eea8cbf340e",
+  "phasePostauditPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-prefix-phase-count30-sourceonly-next/EXECUTION-postaudit.json",
+  "phaseResultPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-prefix-phase-count30-sourceonly-next/run/result.json",
+  "priorReferenceConstructorMilliseconds": 4497.473848999998,
+  "environmentNames": [
+    "BUN_OPTIONS",
+    "BUN_INSTALL",
+    "BUN_RUNTIME_TRANSPILER_CACHE_PATH",
+    "BUN_TEST_PRELOAD",
+    "BUN_JSC_useConcurrentJIT",
+    "BUN_JSC_useJIT",
+    "BUN_JSC_useDFGJIT",
+    "BUN_JSC_useFTLJIT",
+    "BUN_JSC_useConcurrentGC",
+    "BUN_JSC_useGC",
+    "BUN_JSC_useGenerationalGC",
+    "BUN_JSC_useGigacage",
+    "NODE_OPTIONS",
+    "TZ",
+    "LANG",
+    "LC_ALL"
+  ],
+  "nodePath": "/workspace/g350-linux-handheld/.cloud-tools/node/bin/node",
+  "bunPath": "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+  "priorFailedFullSuitesPreserved": true,
+  "unchangedDocsBytesCopied": 0,
+  "focusedCountCorrectedPostauditPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-focused-count30-metadata-correction-sourceonly-next/COUNT-CORRECTED-postaudit.json",
+  "countCorrectionPreparedSha256": "0fc8b2b9c314567a78e0eb15d05e64889020a3b001d8c8a241a5ae56c8cc6753",
+  "materialReferenceConstructorTargetMilliseconds": 3000,
+  "originalFocusedGuardToolExitCodePreserved": 2,
+  "originalFocusedGuardQualifiedPreserved": false
+}

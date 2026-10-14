@@ -1,0 +1,86 @@
+{
+  "authorizedByRoot": true,
+  "toolSessionId": 21443,
+  "toolSessionCollected": true,
+  "toolExitCode": 0,
+  "toolWrapperExitCode": 0,
+  "postauditPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/EXECUTION-postaudit.json",
+  "postauditSha256": "2263773bf82ffba02eef87c0d3294f67a27ba501623c2cd447462e722091847e",
+  "execution": {
+    "startedAt": "2026-10-14T07:04:38.068014+00:00",
+    "command": [
+      "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-benchmark-sourceonly-next/candidate-repository/scripts/snapshot-cached-am3352.ts",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/routes",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots"
+    ],
+    "policy": {
+      "wallSeconds": 360,
+      "rssBytes": 2147483648,
+      "sharedBytes": 27917287424,
+      "sampleSeconds": 0.05,
+      "termGraceSeconds": 5
+    },
+    "memoryBefore": {
+      "current": 22672564224,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "exitCode": 0,
+    "diagnosticStopped": false,
+    "stopReasons": [],
+    "accepted": false,
+    "currentGuardPid": 370083,
+    "pid": 370089,
+    "pgid": 370089,
+    "freshLeaderIdentity": {
+      "pid": 370089,
+      "pgid": 370089,
+      "sid": 370089,
+      "start": 16398931,
+      "state": "R",
+      "rss": 331776,
+      "argv": [
+        "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-benchmark-sourceonly-next/candidate-repository/scripts/snapshot-cached-am3352.ts",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/routes",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots"
+      ]
+    },
+    "endedAt": "2026-10-14T07:06:51.780955+00:00",
+    "wallSeconds": 133.7128105070151,
+    "cleanupOwnedGroupEmpty": true,
+    "peakOwnedRssBytes": 1126064128,
+    "peakSharedBytes": 23878492160,
+    "memoryAfter": {
+      "current": 22765756416,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "oomDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "signalErrors": [],
+    "signalErrorCount": 0
+  },
+  "sourceAndDependenciesHeld": true,
+  "galleryPassed": true,
+  "imagesCreated": 11,
+  "imagesInspected": false,
+  "accepted49": false,
+  "fabricationReady": false
+}

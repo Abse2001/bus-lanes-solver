@@ -1,0 +1,58 @@
+import { expect, test } from "bun:test"
+import { routeCoupledPair as baseline } from "../lib/coupled-pair-routing-canonical-witness"
+import { routeCoupledPair as candidate } from "../lib/coupled-pair-routing"
+import { coupledHandoffExceedsLengthLimit } from "../lib/coupled-handoff-length-bound"
+import { fixedCopper } from "../lib/vector-scene"
+import type { SimpleRouteJson } from "../lib/types"
+
+function fixture(maxLength?: number): SimpleRouteJson {
+  return {
+    layerCount: 4,
+    minTraceWidth: 0.1,
+    minTraceToPadEdgeClearance: 0.1,
+    bounds: { minX: -2, maxX: 12, minY: -3, maxY: 3 },
+    obstacles: [{ type: "rect", shape: "circle", center: { x: 5, y: 0 },
+      width: 1, height: 1, layers: ["top"], connectedTo: ["POWER"] }],
+    connections: [-0.11, 0.11].map((y, i) => ({ name: i ? "N" : "P",
+      pointsToConnect: [{ x: 0, y, layer: "top" }, { x: 10, y, layer: "top" }] })),
+    buses: [{ busId: "DATA", connectionNames: ["P", "N"],
+      ...(maxLength === undefined ? {} : { maxLength }) }],
+    differentialPairs: [{ connectionNames: ["P", "N"], traceGap: 0.12,
+      lengthTolerance: 0.127 }],
+  }
+}
+function complete(fn: typeof baseline, input: SimpleRouteJson) {
+  const before = JSON.stringify(input)
+  const generator = fn(input, input.differentialPairs![0], fixedCopper(input),
+    { copper: [], penalty: 1 })
+  let state = generator.next(), iterations = 0
+  try {
+    while (!state.done && iterations < 8000) {
+      state = generator.next()
+      iterations++
+    }
+    expect(state.done).toBe(true)
+    expect(state.value).not.toBeNull()
+    expect(JSON.stringify(input)).toBe(before)
+    return { traces: state.value, iterations }
+  } finally { generator.return(null) }
+}
+for (const maximum of [undefined, 100]) {
+  test(`canonical pair result and generator yield count match at cap ${maximum}`, () => {
+    const input = fixture(maximum)
+    const reference = complete(baseline, structuredClone(input))
+    const result = complete(candidate, structuredClone(input))
+    expect(result).toEqual(reference)
+    expect(result.iterations).toBeGreaterThan(0)
+  })
+}
+test("no cap and Infinity prune nothing even for distant finite handoffs", () => {
+  for (const maximum of [undefined, Infinity]) {
+    const input = fixture(maximum)
+    const before = structuredClone(input)
+    for (const x of [-1000000, 1000000])
+      expect(coupledHandoffExceedsLengthLimit(input, input.connections[0],
+        [{ x, y: x }], 0.1)).toBe(false)
+    expect(input).toEqual(before)
+  }
+})

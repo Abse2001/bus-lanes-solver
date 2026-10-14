@@ -1,0 +1,177 @@
+{
+  "scope": "root-all11-original-cached-benchmark-image-inspection",
+  "utc": "2026-10-14T07:10:23.346610+00:00",
+  "all11ImagesInspected": true,
+  "galleryPostauditSha256": "2263773bf82ffba02eef87c0d3294f67a27ba501623c2cd447462e722091847e",
+  "images": [
+    {
+      "sample": "control",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/control-solved.png",
+      "pngSha256": "811ee038058ce10218683cf4f714e6857b2923f186222ab5263266e59e614014",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        19,
+        16,
+        12
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "control-inner1",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/control-inner1-solved.png",
+      "pngSha256": "ff8e1114a078b38b6c73e9e1aa6817c6511b88c9addbab315211e8ecd314d1ea",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        47,
+        0,
+        0
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "right",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/right-solved.png",
+      "pngSha256": "f3722abc3b2f9f1b68650d5185f938436147ab304656a932156579afdef658a2",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        21,
+        18,
+        8
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "left",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/left-solved.png",
+      "pngSha256": "42cebd55f4a15fb4db1c5b3c0e95b803a728fe7b39b89751e9f9c570e3c21777",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        18,
+        20,
+        9
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "above",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/above-solved.png",
+      "pngSha256": "b5f785f1b1ecb3115dc6cac59c94f1cc55c8aa60a6a62dd463c49097b1e712c5",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        18,
+        15,
+        14
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "inner-layers",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-solved.png",
+      "pngSha256": "69377065f2c849a08976dad9588dd6ed682b6af65eba4ec3505f5d367d2437a3",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        24,
+        23,
+        0
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "inner-layers-right",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-right-solved.png",
+      "pngSha256": "9f14118c44621cded9aa6bb8730d33fe918be854eadb7c4c8662f0a46aeefdda",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        22,
+        25,
+        0
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "inner-layers-left",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-left-solved.png",
+      "pngSha256": "d004f64b7620372b8881eb69480b0240df43f8cd95d4c3a83d06d32a43bc5319",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        28,
+        19,
+        0
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "inner-layers-above",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-above-solved.png",
+      "pngSha256": "dbdab10b144c64bc60be42584d232db7e23c7306d62d92402960c57e41ffed8a",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        18,
+        29,
+        0
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "inner-layers-complete-ca",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-complete-ca-solved.png",
+      "pngSha256": "8d42fb6dd4142834d1971ff1b756f88e91288fc428783599647ad808a3640185",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        0,
+        19,
+        28,
+        0
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    },
+    {
+      "sample": "outer-layers",
+      "pngPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/outer-layers-solved.png",
+      "pngSha256": "716ab2b56349756cbe6b1d49bcc53cdbc762d3044bb7a412cd87214d208f7722",
+      "inspectedByRoot": true,
+      "method": "Viewed the complete individual original PNG through view_image; checked title/placement, four layer columns, visible pad/via joins, complete-route annotations, tuning, boundaries and readable labels.",
+      "displayedCarriersTopInner1Inner2Bottom": [
+        8,
+        0,
+        0,
+        39
+      ],
+      "displayedRoutedSignals": 47,
+      "visualIssuesFound": []
+    }
+  ],
+  "onlyCompletedNativeAcceptedFixtureRoutes": true,
+  "g350Board49Acceptance": false,
+  "electricalTimingQualification": false,
+  "fabricationReady": false
+}

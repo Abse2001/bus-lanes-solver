@@ -1,0 +1,581 @@
+{
+  "frozenDirectory": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/frozen-source",
+  "bunVersion": "1.3.14",
+  "installedFanoutGenerator": {
+    "name": "@tscircuit/fanout-solver",
+    "version": "0.0.76",
+    "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+    "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+  },
+  "installedDependencies": [
+    {
+      "name": "@biomejs/biome",
+      "specification": "^2.2.4",
+      "version": "2.5.15",
+      "packageJsonSha256": "72bb1900df96d9e24331c9f3d7cf5b4d44aac0aae3ff231e266df0c2cf9d5543",
+      "entryPath": null,
+      "entrySha256": null
+    },
+    {
+      "name": "@flatten-js/core",
+      "specification": "1.6.2",
+      "version": "1.6.2",
+      "packageJsonSha256": "63da846c7ce6c6110ce43512e45be5940c5bc5144c974d4b159f039f96327c3c",
+      "entryPath": "../../../../../../node_modules/@flatten-js/core/dist/main.mjs",
+      "entrySha256": "c078dc37d2cf6f95d8c40fa24316a8cd59452e63213d58a2d2500627bbff9963"
+    },
+    {
+      "name": "@tscircuit/checks",
+      "specification": "0.0.237",
+      "version": "0.0.237",
+      "packageJsonSha256": "0b46caa7831361237b071d325042b272d1f2dbfd96150d0d6efa3f38630f2831",
+      "entryPath": "../../../../../../node_modules/@tscircuit/checks/dist/index.js",
+      "entrySha256": "0244e0b69ba47393475e9f87deb71de6cf070492911adf900b9f46bb70f44697"
+    },
+    {
+      "name": "@tscircuit/circuit-json-util",
+      "specification": "0.0.119",
+      "version": "0.0.119",
+      "packageJsonSha256": "05d5376b6c76b48b04671f137b3cf5aeb2685e6658112ba5fb9a42d0ff991ec2",
+      "entryPath": "../../../../../../node_modules/@tscircuit/circuit-json-util/dist/index.js",
+      "entrySha256": "d170c3f4b6ffc523bdeb87ee56566afb9c96fc3d257755f7ca274dd1d544aba5"
+    },
+    {
+      "name": "@tscircuit/fanout-solver",
+      "specification": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+      "version": "0.0.76",
+      "packageJsonSha256": "fd58fddbed687cb8967ab32c596520ccd21c26c9da28788aa0081a58bf12bf9d",
+      "entryPath": "../../../../../../node_modules/@tscircuit/fanout-solver/lib/index.ts",
+      "entrySha256": "ae2cb52ced428df3ca90cf5ddb6a9eab82b24ddcbee6f43594cbde79b2206e37"
+    },
+    {
+      "name": "@tscircuit/math-utils",
+      "specification": "^0.0.38",
+      "version": "0.0.38",
+      "packageJsonSha256": "d5f7081373a428e53b0acfa26ef5e952edb0f8f565dff836ef14db08905f1d9c",
+      "entryPath": "../../../../../../node_modules/@tscircuit/math-utils/dist/index.js",
+      "entrySha256": "a6b693b67c131467d6cfdc0f278ce2cf49b64a79149278dfc5a69a1e58cf53c5"
+    },
+    {
+      "name": "@tscircuit/solver-utils",
+      "specification": "^0.0.21",
+      "version": "0.0.21",
+      "packageJsonSha256": "7a345035db462a84c39801a60ac057bd004e1009627f92c5224c29aba5a608e9",
+      "entryPath": "../../../../../../node_modules/@tscircuit/solver-utils/dist/index.js",
+      "entrySha256": "15c821c38940ebb35b5cea8d814563fe2aa32dcbe77aa7a90ce62122fb9bc141"
+    },
+    {
+      "name": "@types/bun",
+      "specification": "latest",
+      "version": "1.4.2",
+      "packageJsonSha256": "427ffc9a78e324fdf9c8c44d659de97f0dd38503170730d25ddc0a673c703380",
+      "entryPath": null,
+      "entrySha256": null
+    },
+    {
+      "name": "@types/react",
+      "specification": "^19",
+      "version": "19.3.0",
+      "packageJsonSha256": "505c0df4cd73d6a02c946bd9b81451584bd9c83ea72d75cff9b826efceaa19c2",
+      "entryPath": null,
+      "entrySha256": null
+    },
+    {
+      "name": "@types/react-dom",
+      "specification": "^19",
+      "version": "19.3.0",
+      "packageJsonSha256": "4a2052bb362c34f1d39cfe0818b6fe01a9f988b609e8b7e4832aff7dbf2f7180",
+      "entryPath": null,
+      "entrySha256": null
+    },
+    {
+      "name": "circuit-json",
+      "specification": "0.0.514",
+      "version": "0.0.514",
+      "packageJsonSha256": "0d0610ff490a2837485a255c086f3c448ad90d34582959f65e381c454c756816",
+      "entryPath": "../../../../../node_modules/circuit-json/dist/index.mjs",
+      "entrySha256": "fb84ff9c51cd6d1bf12580f50398a6988d1b7e79a83378874569094654f5ebfc"
+    },
+    {
+      "name": "circuit-json-to-connectivity-map",
+      "specification": "^0.0.30",
+      "version": "0.0.30",
+      "packageJsonSha256": "0d4919fba65498626b37c34039fc04f62f1e5c06058c5fe72b015146d812eae7",
+      "entryPath": "../../../../../node_modules/circuit-json-to-connectivity-map/dist/index.js",
+      "entrySha256": "918045dd917789ae571fffe74c4ecaa4b76b02a8e4ee0542e44baeecf72d5ad6"
+    },
+    {
+      "name": "dts-bundle-generator",
+      "specification": "^9.5.1",
+      "version": "9.5.1",
+      "packageJsonSha256": "a2e5bd3d1414a1812d0f793de2cce646f72862df3bca76d49eb27d39313d0775",
+      "entryPath": "../../../../../node_modules/dts-bundle-generator/dist/bundle-generator.js",
+      "entrySha256": "0be9d7aec45b57a07bb440d0e702050e23579cbd3d638d48ac76447f40a4c3ce"
+    },
+    {
+      "name": "format-si-unit",
+      "specification": "^0.0.14",
+      "version": "0.0.14",
+      "packageJsonSha256": "357115dddc1aa1bf448ecff2ba60c79f6e9f498999da8c08704b8f12e43de9df",
+      "entryPath": "../../../../../node_modules/format-si-unit/dist/index.js",
+      "entrySha256": "5966012d1643042f6aa8a52ee60f98ffed62ee4ae32b1106efc86f76e1f1ff30"
+    },
+    {
+      "name": "graphics-debug",
+      "specification": "^0.0.95",
+      "version": "0.0.95",
+      "packageJsonSha256": "6b329af03ec6c8b16c2b8757c40a324a40a0ed75a86e5d0a22c1646985a60ce7",
+      "entryPath": "../../../../../node_modules/graphics-debug/dist/lib/index.js",
+      "entrySha256": "98a728ef4a74c350479db18b9d549f5335beb15420caec8655d97d25ffc617f1"
+    },
+    {
+      "name": "react",
+      "specification": "^19",
+      "version": "19.3.0",
+      "packageJsonSha256": "6e003e4e9ed25afa7fdd55613f8aa877cefa9b359d9c13f81ee704030248e24e",
+      "entryPath": "../../../../../node_modules/react/index.js",
+      "entrySha256": "60caffdecbdc5db3bc4ec4e83df9488345ccb271d07533b9210bf5750918d97e"
+    },
+    {
+      "name": "react-cosmos",
+      "specification": "^7.0.0",
+      "version": "7.4.1",
+      "packageJsonSha256": "c8c556672afd149f4483e1a0478d4468362848cff1b2e08f78e20a0f48fd07e2",
+      "entryPath": "../../../../../node_modules/react-cosmos/index.js",
+      "entrySha256": "1b2a2f15bf29e056cc6c6fa2293ce9fc2c93e9f85fc2e4e4d7de5c100e7a9ea9"
+    },
+    {
+      "name": "react-cosmos-plugin-vite",
+      "specification": "^7.0.0",
+      "version": "7.4.0",
+      "packageJsonSha256": "abc7764cfe4335e919120ab9754fd92c5c1b3691a4050d9832649f2b58b1c327",
+      "entryPath": "../../../../../node_modules/react-cosmos-plugin-vite/cosmos.plugin.json",
+      "entrySha256": "c494b3b3440cdf0fa211ff60a836851106bf3b1c12f97e06b2a77dd8ebf63050"
+    },
+    {
+      "name": "react-dom",
+      "specification": "^19",
+      "version": "19.3.0",
+      "packageJsonSha256": "136d4af63de473392ea79d6a21932b0ed9eb37fe518ce70f4621250f3d79e9bb",
+      "entryPath": "../../../../../node_modules/react-dom/index.js",
+      "entrySha256": "ba1a3e33489f868371561777607e3ee5091df0f7ea3f1a10f789d6b86e4c1505"
+    },
+    {
+      "name": "transformation-matrix",
+      "specification": "^3.1.0",
+      "version": "3.1.0",
+      "packageJsonSha256": "7548565a728472f003a0ce2d0ba681e07eb038d7cbeb4da40e715c8c80ef263a",
+      "entryPath": "../../../../../node_modules/transformation-matrix/build-commonjs/index.js",
+      "entrySha256": "7fd48b8e4f89c589ddfef1e047e9f4f1bcca80074edc059281c670e8d6533cc4"
+    },
+    {
+      "name": "tsup",
+      "specification": "^8.5.0",
+      "version": "8.5.1",
+      "packageJsonSha256": "420725303bff2abcaa95fa33d68b8f11cb974b640c8c0bae8c15863ed5125ec4",
+      "entryPath": "../../../../../node_modules/tsup/dist/index.js",
+      "entrySha256": "8d68123d7e85aab57156133f122dfe83a254ecd506eed26d63c50e8cff8c5cd2"
+    },
+    {
+      "name": "typescript",
+      "specification": "5.9.3",
+      "version": "5.9.3",
+      "packageJsonSha256": "822ef7ca6452205657b6288b066481ecf508bfbf43455d715cf7d3ec457561e6",
+      "entryPath": "../../../../../node_modules/typescript/lib/typescript.js",
+      "entrySha256": "3ae902c92cc44dace175c0e69e13a4b0899f6983c6121d76b9ab8dd5795e7675"
+    },
+    {
+      "name": "vite",
+      "specification": "^7.3.0",
+      "version": "7.3.7",
+      "packageJsonSha256": "aae1f593c0e6f320989b60af6e90f8ed4ea5137e5a0b9db663f9b0088333eb3c",
+      "entryPath": "../../../../../node_modules/vite/dist/node/index.js",
+      "entrySha256": "8b142bd1231a46bf2cad4c05b3f76de5b183064ee771b9934fbaffb70b914652"
+    },
+    {
+      "name": "yalps",
+      "specification": "0.6.4",
+      "version": "0.6.4",
+      "packageJsonSha256": "908e43065c989cc5e1a18da5b1117465aab58772d2d2da65b6db4266e3fcb8f8",
+      "entryPath": "../../../../../node_modules/yalps/dist/index.js",
+      "entrySha256": "b7d2251f96be0ad9e856dda1f3914b11bd6dcd72b2351988fb9e8f2a31f658c8"
+    }
+  ],
+  "cases": [
+    {
+      "sample": "control",
+      "inputSha256": "b7a4e9d09a22fe0ed131a544548b14eef20fbf4e88b6dc6ffaa11ca44e6bfe59",
+      "fixedCopperSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "control-inner1",
+      "inputSha256": "14b5b318540ce7bac367cf22338abd7f9fffd2f7ce6c2a12f903116f50ca9bde",
+      "fixedCopperSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 8000000
+    },
+    {
+      "sample": "right",
+      "inputSha256": "78c22c8d818ee2c2abe2eec9c6b6e408161a9d0eaf09afbafc3242e71e8f5778",
+      "fixedCopperSha256": "00f35fe4ae6dd6789c431be9f29ae2d994088d4bb5f7ddc7de4e185106cc72b3",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "left",
+      "inputSha256": "6042ca0f0889a983a6ccf8f929a6a46b18cc57134e1b9f3b49c19063b936caa5",
+      "fixedCopperSha256": "5561376c82dd712cbe35138f6abfc91b636e7923c3cf98902c69ade63efe3ac9",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "above",
+      "inputSha256": "20fc884f08accd368e4ce049ab3fc180a1926f425787a504dbc4040f651bfa69",
+      "fixedCopperSha256": "ffe6e0066d82091414c2835d6eda15aaedffa441b108b22c1501da0027515749",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "inner-layers",
+      "inputSha256": "1b91e6c5207e4b7e132aa5ac246e94777f926c7beab8675adf0356634b8280ad",
+      "fixedCopperSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "inner-layers-right",
+      "inputSha256": "2eaf3dedcd84fbfed10262f4d4c99370a0ca00a7a060f87b7a1cdcba9de37a8e",
+      "fixedCopperSha256": "00f35fe4ae6dd6789c431be9f29ae2d994088d4bb5f7ddc7de4e185106cc72b3",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "inner-layers-left",
+      "inputSha256": "1c3db8ee018bc90df7fbbb0c198c42efcc0ca948a6a213338650cf81a51f7ab2",
+      "fixedCopperSha256": "5561376c82dd712cbe35138f6abfc91b636e7923c3cf98902c69ade63efe3ac9",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "inner-layers-above",
+      "inputSha256": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+      "fixedCopperSha256": "ffe6e0066d82091414c2835d6eda15aaedffa441b108b22c1501da0027515749",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "inner-layers-complete-ca",
+      "inputSha256": "a6def279fa2d3356a66ee94b1760a76eebb6c6d8e605005ce5903bd2fbca8776",
+      "fixedCopperSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 800000
+    },
+    {
+      "sample": "outer-layers",
+      "inputSha256": "de3fd915f3c7d8c9bf4fd3c9b197596ba5e08c1be328f9c5223d7ab78736588f",
+      "fixedCopperSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+      "fanoutProvenance": {
+        "soc": {
+          "file": "tests/fixtures/am3352-ram/soc-power-fanout.json",
+          "inputSha256": "7da24163a21c28ee3235bcebfdd0b0940cf755d61b696afe38a71f711ce13df2",
+          "optionsSha256": "ed89cb15c141174058d9d1febada5341695f2ca74ac6948f92950c66da407654",
+          "tracesSha256": "06656a83624a575c1250376c18c94d19d2228baa5f32abf410abbf81f876b664",
+          "outputSha256": "5f7318200cb83be3a8a39d7d2f081984d8015680f76fb0a0e38dbbd5a96da9fb",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        },
+        "ram": {
+          "file": "tests/fixtures/am3352-ram/ram-power-fanout.json",
+          "inputSha256": "aefa0d89adae1b823c2475282fcbcc70ba8247f7112e33113c88f46d515ec3f5",
+          "optionsSha256": "b390465e173fbf55c45b1e2208b16ac76b7859ec5ea6491d414dd5052d328b60",
+          "tracesSha256": "1398389b003bec8da57fb8833c7f5778c0e46fb79256ccfeb0c810e342739284",
+          "outputSha256": "bdaafd3454d47b185b7ebf222ab15c6acb6231fc406052bff9f490fe5468b1f6",
+          "generator": {
+            "name": "@tscircuit/fanout-solver",
+            "version": "0.0.76",
+            "dependency": "github:tscircuit/fanout-solver#15857f17beed0f228b2e29544f7ce393af297c86",
+            "sourceSha256": "e7d8139088c055e67c7ef347c463f2d51bad28477f2c74abc3b95ab8c0247c64"
+          }
+        }
+      },
+      "defaultMaxPipelineIterations": 8000000
+    }
+  ],
+  "casesSha256": "4649bb3bc62b841688b7c29b2890672d8223c30b04fd5aa49c35825899968a96"
+}

@@ -1,0 +1,88 @@
+{
+  "collectedUtc": "2026-10-14T02:29:59.965877+00:00",
+  "sessionId": 3987,
+  "toolExitCode": 0,
+  "postauditPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-fullsuite-sourceonly-next/EXECUTION-postaudit.json",
+  "postauditSha256": "8190819345c2906436d2407dfa383080bb11655720c044184bf00759f45a56c2",
+  "sourceAndDependenciesHeld": true,
+  "execution": {
+    "startedAt": "2026-10-14T02:27:05.949028+00:00",
+    "command": [
+      "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+      "test",
+      "tests"
+    ],
+    "policy": {
+      "wallSeconds": 300,
+      "rssBytes": 2147483648,
+      "sharedBytes": 27917287424,
+      "sampleSeconds": 0.05,
+      "termGraceSeconds": 5
+    },
+    "memoryBefore": {
+      "current": 22020780032,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "exitCode": 0,
+    "diagnosticStopped": false,
+    "stopReasons": [],
+    "accepted": false,
+    "currentGuardPid": 335699,
+    "pid": 335723,
+    "pgid": 335723,
+    "freshLeaderIdentity": {
+      "pid": 335723,
+      "pgid": 335723,
+      "sid": 335723,
+      "start": 14733720,
+      "state": "R",
+      "rss": 929792,
+      "argv": [
+        "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+        "test",
+        "tests"
+      ]
+    },
+    "endedAt": "2026-10-14T02:29:18.234194+00:00",
+    "wallSeconds": 132.28497901800438,
+    "cleanupOwnedGroupEmpty": true,
+    "peakOwnedRssBytes": 786661376,
+    "peakSharedBytes": 22755139584,
+    "memoryAfter": {
+      "current": 22022737920,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "oomDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "signalErrors": [],
+    "signalErrorCount": 0
+  },
+  "actualCounters": {
+    "pass": 643,
+    "fail": 0,
+    "tests": 643,
+    "files": 189
+  },
+  "fullSuitePassed": true,
+  "privateCandidateCommit": "d7f7c1254d34dfdd2853f069d7277c79ce6ebf5e",
+  "allElevenBenchmarksExecuted": false,
+  "accepted49": false,
+  "fabricationReady": false
+}

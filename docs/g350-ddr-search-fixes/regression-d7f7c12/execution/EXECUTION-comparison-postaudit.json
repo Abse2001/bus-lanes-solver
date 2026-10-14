@@ -1,0 +1,109 @@
+{
+  "stage": "comparison",
+  "execution": {
+    "startedAt": "2026-10-14T06:57:43.831935+00:00",
+    "command": [
+      "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/leader.py",
+      "comparison"
+    ],
+    "policy": {
+      "wallSeconds": 41400,
+      "rssBytes": 8053063680,
+      "sharedBytes": 32212254720,
+      "sampleSeconds": 0.05,
+      "termGraceSeconds": 5
+    },
+    "memoryBefore": {
+      "current": 22665506816,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "exitCode": 0,
+    "diagnosticStopped": false,
+    "stopReasons": [],
+    "accepted": false,
+    "currentGuardPid": 368798,
+    "pid": 368804,
+    "pgid": 368804,
+    "freshLeaderIdentity": {
+      "pid": 368804,
+      "pgid": 368804,
+      "sid": 368804,
+      "start": 16357508,
+      "state": "R",
+      "rss": 12288,
+      "argv": [
+        "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/leader.py",
+        "comparison"
+      ]
+    },
+    "endedAt": "2026-10-14T07:02:26.688360+00:00",
+    "wallSeconds": 282.8560608359985,
+    "cleanupOwnedGroupEmpty": true,
+    "peakOwnedRssBytes": 735739904,
+    "peakSharedBytes": 23380926464,
+    "memoryAfter": {
+      "current": 22672437248,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "oomDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "signalErrors": [],
+    "signalErrorCount": 0
+  },
+  "dependenciesBefore": {
+    "verified": true,
+    "nonmutating": true,
+    "receiptSha256": "1a49a60909258b542c7f4899e6378fa9f10c1cea08ef1aaf4b5366480dbf71b7",
+    "archiveSha256": "a5122317cc21862873121f8ddefa2ec605cf36c67ec9b688fd5d866391ea43ec",
+    "archiveBytes": 101071149,
+    "treeSha256": "47633d41b2b4d3f88c83a220327912b59445cdc4f301e4235393a6d5c910e9b6",
+    "toolSha256": "61f1410ddde649491049278dde0bbe44a05fa86f33cbeeb1c3910b1922f09b59",
+    "absoluteRoot": "/workspace/bus-lanes-solver/node_modules",
+    "archiveContentBoundByTrustedReceiptAndHash": true
+  },
+  "dependenciesAfter": {
+    "verified": true,
+    "nonmutating": true,
+    "receiptSha256": "1a49a60909258b542c7f4899e6378fa9f10c1cea08ef1aaf4b5366480dbf71b7",
+    "archiveSha256": "a5122317cc21862873121f8ddefa2ec605cf36c67ec9b688fd5d866391ea43ec",
+    "archiveBytes": 101071149,
+    "treeSha256": "47633d41b2b4d3f88c83a220327912b59445cdc4f301e4235393a6d5c910e9b6",
+    "toolSha256": "61f1410ddde649491049278dde0bbe44a05fa86f33cbeeb1c3910b1922f09b59",
+    "absoluteRoot": "/workspace/bus-lanes-solver/node_modules",
+    "archiveContentBoundByTrustedReceiptAndHash": true
+  },
+  "sourceAndArtifactsHeld": true,
+  "packetSha256": "9f869846dcad27d1c931177aa8a8f283d5a7bfab8a67b0ab05556341ca2a8046",
+  "stagePassed": true,
+  "resultSha256": "f63a68010b50c5972f87f37d24ce1ff1f320fbb4aa1b9fccb21bba664b350ec0",
+  "validationSha256": null,
+  "fullSuitePreparedSha256": "769ffd1eb96604752daa29dbf1e78caceaa10386ce8d0f3c43248377b9deaba9",
+  "fullSuitePostauditSha256": "8190819345c2906436d2407dfa383080bb11655720c044184bf00759f45a56c2",
+  "fullSuiteRootCollectionSha256": "79df921e70c3561cb93b3cb1fcf6f8935d6365fb2a4c2630656dc580ed44fdbd",
+  "accepted49": false,
+  "fabricationReady": false,
+  "baselineExecutedFresh": false,
+  "historicalC115ActualAccepted": true,
+  "historicalBaselineNativeValidatedFresh": true,
+  "allElevenBenchmarksExecuted": false,
+  "bothElevenCaseSetsCompared": true
+}

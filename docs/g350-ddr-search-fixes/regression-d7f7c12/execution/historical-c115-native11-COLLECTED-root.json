@@ -1,0 +1,90 @@
+{
+  "authorizedByRoot": true,
+  "phase": "historical-c115-native11",
+  "packetSha256": "cdd1ea980fc1ad2372b207205754268f94a54bb711a9e37f3cd36574c309947a",
+  "toolSessionId": 8900,
+  "toolSessionCollected": true,
+  "toolWrapperExitCode": 0,
+  "toolExitCode": 0,
+  "postauditPath": "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-operational-sourceonly-next/EXECUTION-postaudit.json",
+  "postauditSha256": "19829ade3f1e042c37acdd9eec21cab563e8088e3a08cbe16834d615afa69849",
+  "execution": {
+    "startedAt": "2026-10-14T03:46:16.154612+00:00",
+    "command": [
+      "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-validator-sourceonly-next/validate-historical-baseline.ts",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-validator-sourceonly-next/config.json",
+      "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-operational-sourceonly-next/native-validation.json"
+    ],
+    "policy": {
+      "wallSeconds": 300,
+      "rssBytes": 2147483648,
+      "sharedBytes": 27917287424,
+      "sampleSeconds": 0.05,
+      "termGraceSeconds": 5
+    },
+    "memoryBefore": {
+      "current": 22199070720,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "exitCode": 0,
+    "diagnosticStopped": false,
+    "stopReasons": [],
+    "accepted": false,
+    "currentGuardPid": 347045,
+    "pid": 347051,
+    "pgid": 347051,
+    "freshLeaderIdentity": {
+      "pid": 347051,
+      "pgid": 347051,
+      "sid": 347051,
+      "start": 15208740,
+      "state": "R",
+      "rss": 319488,
+      "argv": [
+        "/workspace/g350-linux-handheld/.cloud-tools/bun/node_modules/bun/bin/bun.exe",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-validator-sourceonly-next/validate-historical-baseline.ts",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-validator-sourceonly-next/config.json",
+        "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-operational-sourceonly-next/native-validation.json"
+      ]
+    },
+    "endedAt": "2026-10-14T03:48:26.831627+00:00",
+    "wallSeconds": 130.67674704798264,
+    "cleanupOwnedGroupEmpty": true,
+    "peakOwnedRssBytes": 645718016,
+    "peakSharedBytes": 22825758720,
+    "memoryAfter": {
+      "current": 22200934400,
+      "events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      }
+    },
+    "oomDelta": {
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "signalErrors": [],
+    "signalErrorCount": 0
+  },
+  "sourceAndDependenciesHeld": true,
+  "historicalBaselineNativeValidationPassed": true,
+  "baselineExecutedFresh": false,
+  "historicalC115ActualAccepted": true,
+  "validationExecutedFresh": true,
+  "nativeCasesAccepted": 11,
+  "accepted49": false,
+  "fabricationReady": false
+}

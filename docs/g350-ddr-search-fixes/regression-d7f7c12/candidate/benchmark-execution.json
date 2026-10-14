@@ -1,0 +1,27 @@
+{
+  "revision": "d7f7c1254d34dfdd2853f069d7277c79ce6ebf5e",
+  "libGitTreeSha1": "5d9cd19ab1c7bf25702801442e71c4b7aa8c75db",
+  "sourceManifestSha256": "a2faa96c1b98c891c114c5a066b80ddff26cf123b015a52914e3a0e8894daed0",
+  "driverManifestSha256": "6b89d6e906fbb8f43510891e3ba0148cb5b070accf44a4d5051890b6b3d22d36",
+  "fixtureManifestSha256": "545c4ea52382db1aa58c15301279f63b4e93215069ef45907f5f6367a8f5c3b1",
+  "cwd": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/frozen-source",
+  "command": [
+    "./benchmark.sh",
+    "--solver",
+    "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/frozen-source/lib/index.ts",
+    "--timeout-seconds",
+    "3600",
+    "--routes-directory",
+    "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/routes",
+    "--output",
+    "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/report.json",
+    "--require-all-solved"
+  ],
+  "concurrency": 1,
+  "timeoutSeconds": 3600,
+  "maxPipelineIterations": 8000000,
+  "bunVersion": "1.3.14",
+  "startedAt": "2026-10-14T04:38:05.471Z",
+  "endedAt": "2026-10-14T06:52:48.734Z",
+  "exitCode": 0
+}

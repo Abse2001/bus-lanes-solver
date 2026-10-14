@@ -1,0 +1,520 @@
+{
+  "proposalPath": "/workspace/bus-lanes-solver/.cache/g350-d7-git-transfer-pr-proposal-nonexecuting-witness-successor-next/SOURCE-manifest.json",
+  "proposalSha256": "f45f8a3b2cf469c17ec0df9ac587099d89a2d99107ae7f0bf9946b431bb80969",
+  "copyRows": [
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/report.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/candidate/report.json",
+      "bytes": 172224,
+      "sourceMode": 384,
+      "sha256": "17d31e48ebc0bd200663f48f87b647b71dc7ef8d2349c436c460d8a4de6e800f",
+      "role": "fresh D7 accepted benchmark/native proof",
+      "copyByteForByte": true,
+      "reviewPath": "candidate/report.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/report.json.provenance.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/candidate/report.json.provenance.json",
+      "bytes": 64430,
+      "sourceMode": 384,
+      "sha256": "de752d25c74204c26149e38c5b2a52682f4c47cf990af4aa872273727ca5efb3",
+      "role": "fresh D7 accepted benchmark/native proof",
+      "copyByteForByte": true,
+      "reviewPath": "candidate/report.json.provenance.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/native-validation.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/candidate/native-validation.json",
+      "bytes": 192704,
+      "sourceMode": 384,
+      "sha256": "e6838802273b4822d0f7e0e77300cbb520e662dd15c047ae275d59f76b512555",
+      "role": "fresh D7 accepted benchmark/native proof",
+      "copyByteForByte": true,
+      "reviewPath": "candidate/native-validation.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/frozen-source/benchmark-source.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/candidate/benchmark-source.json",
+      "bytes": 49871,
+      "sourceMode": 384,
+      "sha256": "52c299649b0f6559dc26aacac4ad902403342189c7ea4125389bffcf7e272798",
+      "role": "original frozen producer audit",
+      "copyByteForByte": true,
+      "reviewPath": "candidate/benchmark-source.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/frozen-source/benchmark-inputs.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/candidate/benchmark-inputs.json",
+      "bytes": 29846,
+      "sourceMode": 384,
+      "sha256": "140461b5b2809784d712c02d86fc07955e20bf9963828f1ae0c3b6f263294963",
+      "role": "original frozen producer audit",
+      "copyByteForByte": true,
+      "reviewPath": "candidate/benchmark-inputs.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/artifacts/candidate/frozen-source/benchmark-execution.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/candidate/benchmark-execution.json",
+      "bytes": 1390,
+      "sourceMode": 384,
+      "sha256": "e085401f7bd2f481bf7714f1ef10c6ffd9ca04fa6fda289c5cde98d5a04bbf4d",
+      "role": "original frozen producer audit",
+      "copyByteForByte": true,
+      "reviewPath": "candidate/benchmark-execution.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/docs/g350-am3352-solver-fix/regression-c115121/candidate-benchmark.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/historical-c115/candidate-benchmark.json",
+      "bytes": 172218,
+      "sourceMode": 384,
+      "sha256": "4c486393be2ed98374abaafdbc70fe4ce1ff96076031c95bd1ce8d80e473dc04",
+      "role": "historical baseline; no new C115 producer claim",
+      "copyByteForByte": true,
+      "reviewPath": "historical-c115/candidate-benchmark.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/docs/g350-am3352-solver-fix/regression-c115121/candidate-benchmark.json.provenance.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/historical-c115/candidate-benchmark.json.provenance.json",
+      "bytes": 62363,
+      "sourceMode": 384,
+      "sha256": "2739a9500aeb15275528fcbfec6e6bc7514772e87aeb4c3b433bb5ddc459699e",
+      "role": "historical baseline; no new C115 producer claim",
+      "copyByteForByte": true,
+      "reviewPath": "historical-c115/candidate-benchmark.json.provenance.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/docs/g350-am3352-solver-fix/regression-c115121/benchmark-source.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/historical-c115/benchmark-source.json",
+      "bytes": 49090,
+      "sourceMode": 384,
+      "sha256": "60a4ab679dc3697bd8f36056eaaef9ec8b4d73d5935d1b468a44a035444e9cb2",
+      "role": "historical baseline; no new C115 producer claim",
+      "copyByteForByte": true,
+      "reviewPath": "historical-c115/benchmark-source.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/docs/g350-am3352-solver-fix/regression-c115121/benchmark-inputs.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/historical-c115/benchmark-inputs.json",
+      "bytes": 28848,
+      "sourceMode": 384,
+      "sha256": "b9cc8b0255815bc1dc43d9d2621bb60ffbf3b956f7139b6812cd07bc26fb7d8c",
+      "role": "historical baseline; no new C115 producer claim",
+      "copyByteForByte": true,
+      "reviewPath": "historical-c115/benchmark-inputs.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/docs/g350-am3352-solver-fix/regression-c115121/benchmark-execution.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/historical-c115/benchmark-execution.json",
+      "bytes": 1017,
+      "sourceMode": 384,
+      "sha256": "643dfc7598300b69a9bb9787b31ad97c8aa9182f420c63b26e47fbc848cdd70d",
+      "role": "historical baseline; no new C115 producer claim",
+      "copyByteForByte": true,
+      "reviewPath": "historical-c115/benchmark-execution.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-historical-c115-native-operational-sourceonly-next/native-validation.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/historical-c115/native-validation.json",
+      "bytes": 191932,
+      "sourceMode": 384,
+      "sha256": "6dc4d9c6ec1ce5687d8be285a3c96c3f0a0f9b3cfedeb1a528b7244a9624e0f9",
+      "role": "fresh Native validation of historical C115 caches",
+      "copyByteForByte": true,
+      "reviewPath": "historical-c115/native-validation.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/comparison/comparison.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/comparison.json",
+      "bytes": 187059,
+      "sourceMode": 384,
+      "sha256": "628ffe4d9eb57db13e6c22162d74859048132f80533a4beac9264c72447f7943",
+      "role": "original strict22 comparison, runtime descriptive",
+      "copyByteForByte": true,
+      "reviewPath": "comparison.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/comparison/comparison.md",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/comparison.md",
+      "bytes": 6206,
+      "sourceMode": 384,
+      "sha256": "5b656ab761bcd5d30aba58716d70eb9d216d60a99884ac375a0ce99bc94adbb4",
+      "role": "original strict22 comparison, runtime descriptive",
+      "copyByteForByte": true,
+      "reviewPath": "comparison.md"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/EXECUTION-candidate-postaudit.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/EXECUTION-candidate-postaudit.json",
+      "bytes": 3896,
+      "sourceMode": 384,
+      "sha256": "53b09a0da597bced12d0cb56fda47ba1a27b97f8d9c9af367a46c59f29433e51",
+      "role": "actual closed source/dependency/resource proof",
+      "copyByteForByte": true,
+      "reviewPath": "execution/EXECUTION-candidate-postaudit.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-historical-baseline-postloop-successor-next/EXECUTION-comparison-postaudit.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/EXECUTION-comparison-postaudit.json",
+      "bytes": 3835,
+      "sourceMode": 384,
+      "sha256": "6a53ef0582f2b339b7ee030691365b69d8b1e49a2413ce84caecfad258d3f49c",
+      "role": "actual closed source/dependency/resource proof",
+      "copyByteForByte": true,
+      "reviewPath": "execution/EXECUTION-comparison-postaudit.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/EXECUTION-postaudit.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/gallery-postaudit.json",
+      "bytes": 12555,
+      "sourceMode": 384,
+      "sha256": "2263773bf82ffba02eef87c0d3294f67a27ba501623c2cd447462e722091847e",
+      "role": "actual gallery completed, imagesInspected remains false in original producer",
+      "copyByteForByte": true,
+      "reviewPath": "execution/gallery-postaudit.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/outline-all11-historical-candidate-COLLECTED-root.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/outline-all11-historical-candidate-COLLECTED-root.json",
+      "bytes": 2462,
+      "sourceMode": 384,
+      "sha256": "9c114be1ce0004bdb6264b3640da54ceff512175437e2dcf44fbb01bf0ccb7eb",
+      "role": "actual Root collection, not authority",
+      "copyByteForByte": true,
+      "reviewPath": "execution/outline-all11-historical-candidate-COLLECTED-root.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/outline-original-strict22-COLLECTED-root.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/outline-original-strict22-COLLECTED-root.json",
+      "bytes": 2487,
+      "sourceMode": 384,
+      "sha256": "f0da28009b9d5873532086976793efbb2b9c9811626512c55e043fab97787f06",
+      "role": "actual Root collection, not authority",
+      "copyByteForByte": true,
+      "reviewPath": "execution/outline-original-strict22-COLLECTED-root.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/outline-all11-cached-gallery-COLLECTED-root.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/outline-all11-cached-gallery-COLLECTED-root.json",
+      "bytes": 2922,
+      "sourceMode": 384,
+      "sha256": "aac2514631b5209d04087f6b8966cee2288d2543a175c522750a1e68c32f529e",
+      "role": "actual Root collection, not authority",
+      "copyByteForByte": true,
+      "reviewPath": "execution/outline-all11-cached-gallery-COLLECTED-root.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/historical-c115-native11-COLLECTED-root.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/historical-c115-native11-COLLECTED-root.json",
+      "bytes": 3121,
+      "sourceMode": 384,
+      "sha256": "dda53ad4f3823e60e80cd726af4956c7251c56a57d2405896542af87c0bbd0be",
+      "role": "actual Root collection, not authority",
+      "copyByteForByte": true,
+      "reviewPath": "execution/historical-c115-native11-COLLECTED-root.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/outline-scalar-fullsuite-COLLECTED-root.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/execution/outline-scalar-fullsuite-COLLECTED-root.json",
+      "bytes": 2261,
+      "sourceMode": 384,
+      "sha256": "79df921e70c3561cb93b3cb1fcf6f8935d6365fb2a4c2630656dc580ed44fdbd",
+      "role": "actual Root collection, not authority",
+      "copyByteForByte": true,
+      "reviewPath": "execution/outline-scalar-fullsuite-COLLECTED-root.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/root-routing-progress/outline-all11-gallery-VISUAL_REVIEW-root.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/root-visual-review.json",
+      "bytes": 8149,
+      "sourceMode": 384,
+      "sha256": "49ade36d820df4a68f3cd02459a4555ecdcd50d4760dd711799892f0704162f3",
+      "role": "separate actual Root inspection of every original PNG",
+      "copyByteForByte": true,
+      "reviewPath": "root-visual-review.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/validated-source-manifest.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/validated-source-manifest.json",
+      "bytes": 174113,
+      "sourceMode": 384,
+      "sha256": "63692e5ceef27277b1dd16edf5da8f562abee0b470de2a8a92911c7eef72b78c",
+      "role": "original accepted snapshot source/cache validation manifest",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/validated-source-manifest.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/control-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/control-solved.png",
+      "bytes": 306287,
+      "sourceMode": 384,
+      "sha256": "811ee038058ce10218683cf4f714e6857b2923f186222ab5263266e59e614014",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/control-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/control-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/control-solved.svg",
+      "bytes": 5240226,
+      "sourceMode": 384,
+      "sha256": "745d612630312b66d6f167f0dcc1eca78081bd3b546d73d89440671b9ecde91c",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/control-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/control-inner1-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/control-inner1-solved.png",
+      "bytes": 176208,
+      "sourceMode": 384,
+      "sha256": "ff8e1114a078b38b6c73e9e1aa6817c6511b88c9addbab315211e8ecd314d1ea",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/control-inner1-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/control-inner1-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/control-inner1-solved.svg",
+      "bytes": 5804196,
+      "sourceMode": 384,
+      "sha256": "8a4604a5554ad658ad2fd63cbac76aaf34bc0be271670c76db334f89472236f8",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/control-inner1-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/right-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/right-solved.png",
+      "bytes": 82447,
+      "sourceMode": 384,
+      "sha256": "f3722abc3b2f9f1b68650d5185f938436147ab304656a932156579afdef658a2",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/right-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/right-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/right-solved.svg",
+      "bytes": 6569391,
+      "sourceMode": 384,
+      "sha256": "ad196e276bd4b9625f3dc0a18cc80206c22f0fc5e46908a853c918f1d870e8cd",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/right-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/left-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/left-solved.png",
+      "bytes": 82216,
+      "sourceMode": 384,
+      "sha256": "42cebd55f4a15fb4db1c5b3c0e95b803a728fe7b39b89751e9f9c570e3c21777",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/left-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/left-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/left-solved.svg",
+      "bytes": 8813387,
+      "sourceMode": 384,
+      "sha256": "63411b816ff6c5580ec37724a1237e9030f5b6c88f822a746f56bc5bad7b24c4",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/left-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/above-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/above-solved.png",
+      "bytes": 341234,
+      "sourceMode": 384,
+      "sha256": "b5f785f1b1ecb3115dc6cac59c94f1cc55c8aa60a6a62dd463c49097b1e712c5",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/above-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/above-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/above-solved.svg",
+      "bytes": 7458025,
+      "sourceMode": 384,
+      "sha256": "d36f4fec3664d0e045b130b952d2eae33b3fe489f7a951455e70579a813b4294",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/above-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-solved.png",
+      "bytes": 294864,
+      "sourceMode": 384,
+      "sha256": "69377065f2c849a08976dad9588dd6ed682b6af65eba4ec3505f5d367d2437a3",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-solved.svg",
+      "bytes": 5295439,
+      "sourceMode": 384,
+      "sha256": "a31c6b5e1f1ae40558c17b56a02ac55b23451984b2bc3bac2108f33d711bafa1",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-right-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-right-solved.png",
+      "bytes": 94663,
+      "sourceMode": 384,
+      "sha256": "9f14118c44621cded9aa6bb8730d33fe918be854eadb7c4c8662f0a46aeefdda",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-right-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-right-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-right-solved.svg",
+      "bytes": 5597594,
+      "sourceMode": 384,
+      "sha256": "876781966e64326cf7ff747d80d0639ec07f8b94d2dcc581fe27ae8bf2eeb62f",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-right-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-left-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-left-solved.png",
+      "bytes": 93099,
+      "sourceMode": 384,
+      "sha256": "d004f64b7620372b8881eb69480b0240df43f8cd95d4c3a83d06d32a43bc5319",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-left-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-left-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-left-solved.svg",
+      "bytes": 9546631,
+      "sourceMode": 384,
+      "sha256": "22fd80f55e77d56cb49381be6cf013d6542fb9f90c302ba5580b440437cc9b97",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-left-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-above-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-above-solved.png",
+      "bytes": 265869,
+      "sourceMode": 384,
+      "sha256": "dbdab10b144c64bc60be42584d232db7e23c7306d62d92402960c57e41ffed8a",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-above-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-above-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-above-solved.svg",
+      "bytes": 8645882,
+      "sourceMode": 384,
+      "sha256": "22c5970d03e896def376e6de44c2ead090be26862d77adb44a2670c523496da0",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-above-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-complete-ca-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-complete-ca-solved.png",
+      "bytes": 166091,
+      "sourceMode": 384,
+      "sha256": "8d42fb6dd4142834d1971ff1b756f88e91288fc428783599647ad808a3640185",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-complete-ca-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/inner-layers-complete-ca-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/inner-layers-complete-ca-solved.svg",
+      "bytes": 15906896,
+      "sourceMode": 384,
+      "sha256": "38f30731c12749aa442901100aa66c3bfbbbd94026b7d4ddd2ea3eed76bf01ed",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/inner-layers-complete-ca-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/outer-layers-solved.png",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/outer-layers-solved.png",
+      "bytes": 185173,
+      "sourceMode": 384,
+      "sha256": "716ab2b56349756cbe6b1d49bcc53cdbc762d3044bb7a412cd87214d208f7722",
+      "role": "complete accepted47 signal image, Root inspected",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/outer-layers-solved.png"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-cached-gallery-sourceonly-next/snapshots/outer-layers-solved.svg",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/snapshots/outer-layers-solved.svg",
+      "bytes": 7104059,
+      "sourceMode": 384,
+      "sha256": "4df7b191a5529607e5044ed501a1eb08be223e982805c1f35e812491e02a802b",
+      "role": "original SVG of same complete accepted route",
+      "copyByteForByte": true,
+      "reviewPath": "snapshots/outer-layers-solved.svg"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-fullsuite-sourceonly-next/PREPARED.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/qualification/PREPARED.json",
+      "bytes": 6398,
+      "sourceMode": 384,
+      "sha256": "769ffd1eb96604752daa29dbf1e78caceaa10386ce8d0f3c43248377b9deaba9",
+      "role": "full643 qualification packet, unexecuted flags preserve preparation history",
+      "copyByteForByte": true,
+      "reviewPath": "qualification/PREPARED.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-fullsuite-sourceonly-next/EXECUTION-postaudit.json",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/qualification/EXECUTION-postaudit.json",
+      "bytes": 7264,
+      "sourceMode": 384,
+      "sha256": "8190819345c2906436d2407dfa383080bb11655720c044184bf00759f45a56c2",
+      "role": "actual full643 counters and held source/dependencies",
+      "copyByteForByte": true,
+      "reviewPath": "qualification/EXECUTION-postaudit.json"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-fullsuite-sourceonly-next/run/child.log",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/qualification/full-suite.log",
+      "bytes": 68180,
+      "sourceMode": 384,
+      "sha256": "5f9ff4bcc40f0914f8ce235ff2a47b1135a1764028ef06aa91d772283a02e9ca",
+      "role": "actual 643 pass 0 fail across189files",
+      "copyByteForByte": true,
+      "reviewPath": "qualification/full-suite.log"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-focused-sourceonly-next/source/tests/coupled-handoff-length-canonical-parity.test.ts",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/qualification/witness-source/tests/coupled-handoff-length-canonical-parity.test.ts.txt",
+      "bytes": 2503,
+      "sourceMode": 420,
+      "sha256": "0c5bd10e4e25f58dccb429a189cdbf8600888a976e9ed01227db5b075579ca42",
+      "role": "three qualification-only witness tests, not part of five commits; non-executable .txt evidence, excluded from test discovery by filename",
+      "copyByteForByte": true,
+      "reviewPath": "qualification/witness-source/tests/coupled-handoff-length-canonical-parity.test.ts.txt"
+    },
+    {
+      "sourcePath": "/workspace/bus-lanes-solver/.cache/g350-canonical-outline-raster-focused-sourceonly-next/source/lib/coupled-pair-routing-canonical-witness.ts",
+      "destinationPath": "docs/g350-ddr-search-fixes/regression-d7f7c12/qualification/witness-source/lib/coupled-pair-routing-canonical-witness.ts.txt",
+      "bytes": 34670,
+      "sourceMode": 420,
+      "sha256": "8da85fcc8d48c8f09c98ffa2f8a2601af615200be83a919c7206ad86400313aa",
+      "role": "unchanged baseline oracle used by extra qualification file; evidence copy only; non-executable .txt evidence, excluded from test discovery by filename",
+      "copyByteForByte": true,
+      "reviewPath": "qualification/witness-source/lib/coupled-pair-routing-canonical-witness.ts.txt"
+    }
+  ],
+  "originalSourceBytesHeld": true,
+  "qualificationWitnessFilesAreNonExecutableText": true,
+  "accepted49": false,
+  "fabricationReady": false
+}
