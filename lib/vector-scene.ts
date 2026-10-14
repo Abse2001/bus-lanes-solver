@@ -210,6 +210,35 @@ function pointPreparedSegmentDistance(
     ry = ey - t * dy
   return Math.sqrt(rx * rx + ry * ry)
 }
+/** Point raster queries use the same four directed rectangle projections and
+ * corner distances as clearanceToCopper, without constructing segment arrays.
+ * Keep every endpoint term and one final min to preserve NaN/ulp decisions. */
+function pointPreparedRectDistance(
+  px: number,
+  py: number,
+  rect: NonNullable<Copper["rect"]>,
+) {
+  if (px >= rect.minX && px <= rect.maxX && py >= rect.minY && py <= rect.maxY)
+    return 0
+  const width = rect.maxX - rect.minX,
+    height = rect.maxY - rect.minY,
+    reverseWidth = rect.minX - rect.maxX,
+    reverseHeight = rect.minY - rect.maxY,
+    minX = rect.minX - px,
+    maxX = rect.maxX - px,
+    minY = rect.minY - py,
+    maxY = rect.maxY - py
+  return Math.min(
+    pointPreparedSegmentDistance(px, py, rect.minX, rect.minY, width, 0, width * width),
+    pointPreparedSegmentDistance(px, py, rect.maxX, rect.minY, 0, height, height * height),
+    pointPreparedSegmentDistance(px, py, rect.maxX, rect.maxY, reverseWidth, 0, reverseWidth * reverseWidth),
+    pointPreparedSegmentDistance(px, py, rect.minX, rect.maxY, 0, reverseHeight, reverseHeight * reverseHeight),
+    Math.sqrt(minX * minX + minY * minY),
+    Math.sqrt(maxX * maxX + minY * minY),
+    Math.sqrt(maxX * maxX + maxY * maxY),
+    Math.sqrt(minX * minX + maxY * maxY),
+  )
+}
 /** Scalar version of copperTooClose for grid edges. It retains the exact
  * projection, sqrt and radius-subtraction arithmetic of the public predicate. */
 export function copperTooClosePrepared(
@@ -224,8 +253,16 @@ export function copperTooClosePrepared(
   margin: number,
 ): boolean {
   const radius = c.copper.radius
-  if (c.copper.rect)
+  if (c.copper.rect) {
+    const rect = c.copper.rect
+    if (
+      ax === bx && ay === by && Number.isFinite(ax) && Number.isFinite(ay) &&
+      Number.isFinite(rect.minX) && Number.isFinite(rect.maxX) &&
+      Number.isFinite(rect.minY) && Number.isFinite(rect.maxY) &&
+      rect.minX <= rect.maxX && rect.minY <= rect.maxY
+    ) return pointPreparedRectDistance(ax, ay, rect) < margin
     return copperTooClose({ x: ax, y: ay }, { x: bx, y: by }, c.copper, margin)
+  }
   if (c.dx === 0 && c.dy === 0)
     return (
       pointPreparedSegmentDistance(c.ax, c.ay, ax, ay, dx, dy, denominator) -
