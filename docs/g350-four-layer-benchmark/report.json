@@ -1506,5 +1506,22 @@
     "The checkpoint and current commit are different source revisions; this report does not benchmark 93f10c15.",
     "inner-layers-right crossed the 180-second budget versus historical 141.706 seconds and the earlier live diagnostic 177.776 seconds. Treat this as a budget regression risk; timing conditions were not controlled.",
     "Only report data is committed here. No route geometry, failed snapshots or images are included."
+  ],
+  "subsequentSourceChecks": [
+    {
+      "localCommit": "18491580f3875b9b5cba16c7a8a49c8741293606",
+      "equivalentPublishedCommit": "d2976c007e79165758e0df3d711cf2365f372ee0",
+      "gitTree": "7528b4e7502d125b7c8cc87cc1b3eea4e3ed1cbc",
+      "tests": {
+        "passed": 600,
+        "failed": 0,
+        "files": 191,
+        "assertions": 1011317,
+        "seconds": 169.36
+      },
+      "typecheck": "passed",
+      "packageCheck": "isolated Node, browser, TypeScript consumers passed; five files, 2829797 bytes unpacked",
+      "scope": "Source checks only; the timed legacy checkpoint remains the earlier frozen revision."
+    }
   ]
 }

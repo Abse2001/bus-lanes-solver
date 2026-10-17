@@ -61,3 +61,5 @@ bun install
 ```
 
 The source reconstruction was exercised successfully. Dependency installation and host load can change timings; the original run reused its installed dependency tree. This directory commits only report data, with no route artifacts or images.
+
+A subsequent checked source tree, local `18491580f3875b9b5cba16c7a8a49c8741293606` (identical to [published commit d2976c0](https://github.com/Abse2001/bus-lanes-solver/commit/d2976c007e79165758e0df3d711cf2365f372ee0)), passed all **600 tests** across 191 files, type checking, and the isolated Node/browser/TypeScript package checks. It adds fair sparse conflict repairs and tuning within generated multivia approaches. These checks do not extend the benchmark results to that source revision or establish complete G350 routing.

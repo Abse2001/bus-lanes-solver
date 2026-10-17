@@ -707,6 +707,7 @@ export function* negotiateSurfaceRoutes(
                 proposal.key,
                 (earlyComponentAttempts.get(proposal.key) ?? 0) + 1,
               )
+              return { gridStep: proposal.gridStep }
             },
             round,
           },
@@ -1152,7 +1153,7 @@ export function* negotiateSurfaceRoutes(
     maxProposals?: number
     supplementalDomains?: boolean
     adaptViaBudget?: boolean
-    onProposal?: (component: number[]) => void
+    onProposal?: (component: number[]) => { gridStep: number } | void
     round?: number
   }
 
@@ -1160,7 +1161,7 @@ export function* negotiateSurfaceRoutes(
     active: Array<[number, number]>,
     maximum: number,
     limit: number,
-  ): Array<{ release: number[]; key: string }> {
+  ): Array<{ release: number[]; key: string; gridStep: number }> {
     const components = conflictComponents(active),
       busy = new Set(active.flat()),
       internal = (component: number[]) =>
@@ -1169,7 +1170,8 @@ export function* negotiateSurfaceRoutes(
         ).length,
       lastAttempt = (component: number[]) =>
         Math.max(...component.map((index) => lastEarlyAttempt[index])),
-      proposals: Array<{ release: number[]; key: string }> = []
+      proposals: Array<{ release: number[]; key: string; gridStep: number }> =
+        []
     components.sort(
       (a, b) =>
         lastAttempt(a) - lastAttempt(b) ||
@@ -1185,7 +1187,9 @@ export function* negotiateSurfaceRoutes(
       let release = component
       if (component.length > maximum) {
         const fragments = closureFragments(component, active, maximum),
-          skip = attempt % Math.max(1, options.maxClosureFragments ?? 12)
+          skip =
+            Math.floor(attempt / 2) %
+            Math.max(1, options.maxClosureFragments ?? 12)
         let next = fragments.next()
         if (next.done) continue
         const first = next.value
@@ -1193,7 +1197,7 @@ export function* negotiateSurfaceRoutes(
           next = fragments.next()
         release = next.done ? first : next.value
       } else if (
-        attempt % 2 === 1 &&
+        attempt % 4 >= 2 &&
         component.length < maximum &&
         (options.maxClosureNeighbors ?? 4) > 0
       ) {
@@ -1202,7 +1206,14 @@ export function* negotiateSurfaceRoutes(
         )
         if (neighbor !== undefined) release = [...component, neighbor]
       }
-      proposals.push({ release, key })
+      // Give the same release both lattice resolutions before expanding its
+      // neighborhood. A narrow legal corridor can be absent from the coarse
+      // lattice even when its component already has the right membership.
+      proposals.push({
+        release,
+        key,
+        gridStep: attempt % 2 ? Math.min(0.1, fineGridStep) : 0.1,
+      })
     }
     return proposals
   }
@@ -1214,7 +1225,7 @@ export function* negotiateSurfaceRoutes(
     const before = current.slice(),
       beforeCount = edges(current).length
     for (const component of proposals.slice(0, settings.maxProposals)) {
-      settings.onProposal?.(component)
+      const override = settings.onProposal?.(component)
       report("closure", component[0], settings.round ?? 0, beforeCount)
       const maxVias =
         settings.adaptViaBudget &&
@@ -1228,7 +1239,11 @@ export function* negotiateSurfaceRoutes(
           ? 2
           : settings.maxVias
       if (
-        (yield* repairClosureProposal(component, { ...settings, maxVias })) &&
+        (yield* repairClosureProposal(component, {
+          ...settings,
+          ...override,
+          maxVias,
+        })) &&
         edges(current).length < beforeCount
       )
         return true

@@ -354,3 +354,108 @@ test("sparse components are repaired fairly while ordinary progress postpones st
     } as Parameters<typeof validateRoutedCopperDrc>[0]).valid,
   ).toBe(true)
 }, 15000)
+
+test("a repeated early component visit uses the fine lattice through narrow physical gates", () => {
+  const thin = (x: number, y: number): Wire => ({ ...wire(x, y), width: 0.02 }),
+    connections = [
+      { name: "a", pointsToConnect: [thin(-2, 0.04), thin(2, 0.04)] },
+      { name: "b", pointsToConnect: [thin(-2, 0.16), thin(2, 0.16)] },
+    ],
+    native: SimpleRouteJson = {
+      layerCount: 4,
+      allowedLayers: ["top", "bottom"],
+      minTraceWidth: 0.02,
+      minTraceToPadEdgeClearance: 0.005,
+      minViaPadDiameter: 0.1,
+      minViaHoleDiameter: 0.05,
+      minBoardEdgeClearance: 0,
+      bounds: { minX: -3, maxX: 3, minY: -3, maxY: 3 },
+      connections,
+      buses: [
+        {
+          busId: "thin_gate_bus",
+          connectionNames: ["a", "b"],
+          allowedLayers: ["top"],
+        },
+      ],
+      obstacles: [
+        ...[
+          [-3, 0.02],
+          [0.06, 0.14],
+          [0.18, 3],
+        ].map(([minY, maxY]) => ({
+          center: { x: 0, y: (minY + maxY) / 2 },
+          width: 0.4,
+          height: maxY - minY,
+          layers: ["top"],
+          connectedTo: [],
+        })),
+        {
+          center: { x: 0, y: 0 },
+          width: 6,
+          height: 6,
+          layers: ["bottom"],
+          connectedTo: [],
+        },
+      ],
+    },
+    state: FlexibleSignalState = {
+      native,
+      pending: native,
+      retained: [],
+      escapes: [],
+      traces: connections.map((connection) => ({
+        type: "pcb_trace",
+        pcb_trace_id: connection.name,
+        connection_name: connection.name,
+        route:
+          connection.name === "b"
+            ? [
+                connection.pointsToConnect[0],
+                thin(1, 0.16),
+                thin(1.3, -0.14),
+                thin(1.6, 0.16),
+                connection.pointsToConnect[1],
+              ]
+            : connection.pointsToConnect,
+      })),
+    },
+    before = structuredClone(state),
+    coarseOnly = run(state, { maxRounds: 3 }),
+    repeated = run(state, { maxRounds: 5 }),
+    early = repeated.progress.filter(
+      (value) => value.stage === "closure" && value.round > 0,
+    )
+  // Each forty-micron physical opening has only a ten-micron legal center
+  // interval. The board's .1 lattice misses both; its .02 lattice fits them.
+  expect(coarseOnly.result).toBeNull()
+  expect(coarseOnly.conflicts).toEqual([1])
+  expect(early.map((value) => value.round)).toEqual([2, 4])
+  expect(repeated.result).toBeTruthy()
+  expect(repeated.conflicts).toEqual([1, 0])
+  expect(state).toEqual(before)
+  const traces = repeated.result!.traces.map((trace) =>
+    joinSignalEscapes(
+      trace,
+      repeated.result!.escapes.filter(
+        (escape) => escape.connection_name === trace.connection_name,
+      ),
+    ),
+  )
+  for (const trace of traces) {
+    const connection = connections.find(
+      (value) => value.name === trace.connection_name,
+    )!
+    expect(trace.route[0]).toMatchObject(connection.pointsToConnect[0])
+    expect(trace.route.at(-1)).toMatchObject(connection.pointsToConnect[1])
+    expect(trace.route.every((point) => point.route_type === "wire")).toBe(true)
+  }
+  expect(
+    validateRoutedCopperDrc({
+      inputSrj: native,
+      routedSrj: { ...native, traces },
+      clearance: 0.005,
+      allowBlindAndBuriedVias: false,
+    } as Parameters<typeof validateRoutedCopperDrc>[0]).valid,
+  ).toBe(true)
+}, 15000)
