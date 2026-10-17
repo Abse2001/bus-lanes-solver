@@ -459,3 +459,103 @@ test("a repeated early component visit uses the fine lattice through narrow phys
     } as Parameters<typeof validateRoutedCopperDrc>[0]).valid,
   ).toBe(true)
 }, 15000)
+
+test("an early atomic retry can release discarded partner cost without increasing its search budget", () => {
+  const state = crossingState(),
+    native = state.native
+  native.bounds = { minX: -3, maxX: 3, minY: -2, maxY: 3 }
+  native.buses = []
+  native.connections = [
+    { name: "a", pointsToConnect: [wire(-2, 0), wire(2, 0)] },
+    { name: "b", pointsToConnect: [wire(-2, 1), wire(2, 1)] },
+  ]
+  native.obstacles = native.connections.flatMap((connection) =>
+    connection.pointsToConnect.map((point) => ({
+      center: { x: point.x, y: point.y },
+      width: 0.12,
+      height: 0.12,
+      layers: ["top"],
+      connectedTo: [connection.name],
+    })),
+  )
+  // Opposite generated U-shaped approaches cross each other's shorter route.
+  // Their discarded copper remains in softTraces during every atomic search.
+  state.traces = [
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "old_a",
+      connection_name: "a",
+      route: [
+        wire(-2, 0),
+        wire(-1.2, 0),
+        wire(-1, 0.2),
+        wire(-1, 1.8),
+        wire(-0.8, 2),
+        wire(0.8, 2),
+        wire(1, 1.8),
+        wire(1, 0.2),
+        wire(1.2, 0),
+        wire(2, 0),
+      ],
+    },
+    {
+      type: "pcb_trace",
+      pcb_trace_id: "old_b",
+      connection_name: "b",
+      route: [
+        wire(-2, 1),
+        wire(-0.7, 1),
+        wire(-0.5, 0.8),
+        wire(-0.5, -0.8),
+        wire(-0.3, -1),
+        wire(0.3, -1),
+        wire(0.5, -0.8),
+        wire(0.5, 0.8),
+        wire(0.7, 1),
+        wire(2, 1),
+      ],
+    },
+  ]
+  const before = structuredClone(state),
+    options = {
+      congestionHistory: false,
+      maxClosureExpansions: 128,
+      maxUntimedVias: 2,
+    },
+    retainedCost = run(state, { ...options, maxRounds: 9 }),
+    releasedCost = run(state, { ...options, maxRounds: 11 }),
+    earlyRounds = (outcome: ReturnType<typeof run>) =>
+      outcome.progress
+        .filter((value) => value.stage === "closure" && value.round > 0)
+        .map((value) => value.round)
+  expect(state).toEqual(before)
+  expect(retainedCost.result).toBeNull()
+  expect(retainedCost.conflicts).toEqual([1])
+  expect(earlyRounds(retainedCost)).toEqual([2, 4, 6, 8])
+  expect(earlyRounds(releasedCost)).toEqual([2, 4, 6, 8, 10])
+  expect(releasedCost.conflicts).toEqual([1, 0])
+  expect(releasedCost.result).toBeTruthy()
+  const traces = releasedCost.result!.traces.map((trace) =>
+    joinSignalEscapes(
+      trace,
+      releasedCost.result!.escapes.filter(
+        (escape) => escape.connection_name === trace.connection_name,
+      ),
+    ),
+  )
+  for (const trace of traces) {
+    const connection = native.connections.find(
+      (value) => value.name === trace.connection_name,
+    )!
+    expect(trace.route[0]).toMatchObject(connection.pointsToConnect[0])
+    expect(trace.route.at(-1)).toMatchObject(connection.pointsToConnect[1])
+  }
+  expect(
+    validateRoutedCopperDrc({
+      inputSrj: native,
+      routedSrj: { ...native, traces },
+      clearance: 0.08,
+      allowBlindAndBuriedVias: false,
+    } as Parameters<typeof validateRoutedCopperDrc>[0]).valid,
+  ).toBe(true)
+}, 15000)

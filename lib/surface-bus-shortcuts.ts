@@ -87,6 +87,15 @@ export function* surfaceBusShortcutCandidates(
         maxVias: options.maxVias ?? 2,
         maxExpansions: options.maxExpansions ?? 750000,
       }
+      // A bounded directed search can find a much shorter physical path
+      // before the ordinary search spends its budget on equal-cost branches.
+      // The full-copper length ceiling applies to both attempts.
+      const directed = yield* routeSurfaceBridge(local, connection!, {
+        ...settings,
+        heuristicWeight: 4,
+        maxExpansions: Math.min(settings.maxExpansions, 50000),
+      })
+      if (directed) return directed
       const bridge = yield* routeSurfaceBridge(local, connection!, settings)
       if (bridge || settings.maxVias !== 4) return bridge
       return yield* routeSurfaceViaAttachments(local, connection!, {
