@@ -10,6 +10,7 @@ import { tuningPathIsSelfClear } from "./length-tuning"
 import { MinHeap } from "./min-heap"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { signalWidth } from "./repair-bus-dogbones"
+import { SoftCopperCostIndex } from "./soft-copper-cost"
 import { routeAnglesAreConventional } from "./route-angle-validation"
 import { maximumCarrierLength } from "./route-lengths"
 import type {
@@ -31,13 +32,27 @@ export interface SurfaceBridgeOptions {
     values: readonly Float32Array[]
   }
   gridStep?: number
+  /** Optional board-world lattice origin for narrow geometric channels.
+   * Defaults to the board bounds corner; all physical checks stay unchanged. */
+  gridOrigin?: Point
   maxExpansions?: number
   maxLength?: number
   searchPadding?: number
   /** Negotiated copper contributes cost while input.traces remain hard. */
   softTraces?: Trace[]
   softPenalty?: number
+  /** Charge each distinct provisional net (default), or one Boolean conflict
+   * for comparison. Multiple pieces of the same net count only once. */
+  softConflictCost?: "per-net" | "binary"
+  /** Optional nonnegative per-net multipliers, keyed by connection/source ID. */
+  softNetWeights?: Readonly<Record<string, number>>
+  /** Travel multiplier on lower-ranked bus layers. Existing bus preferences
+   * remain soft: two is the default; one disables the preference cost. */
+  nonPreferredLayerCost?: number
   viaPenalty?: number
+  /** Bias bounded searches toward the target; one preserves ordinary A*.
+   * This affects exploration order, never copper or hard length clearance. */
+  heuristicWeight?: number
   /** Manufactured transition budget, either two (default) or four vias. */
   maxVias?: number
   /** Raster memory budget; defaults to one million and is capped at four million cells. */
@@ -58,6 +73,7 @@ interface Label {
   viaCells?: number[]
   parent?: Label
   attachment?: Point[]
+  goal?: Point[]
   via?: boolean
 }
 
@@ -127,6 +143,8 @@ export function* routeSurfaceBridge(
     return null
   const softPenalty = options.softPenalty ?? 20,
     viaPenalty = options.viaPenalty ?? 4,
+    nonPreferredLayerCost = options.nonPreferredLayerCost ?? 2,
+    heuristicWeight = options.heuristicWeight ?? 1,
     requestedCells = options.maxGridCells ?? 1_000_000,
     maxVias = inner ? 2 : (options.maxVias ?? 2)
   if (
@@ -134,9 +152,26 @@ export function* routeSurfaceBridge(
     softPenalty < 0 ||
     !Number.isFinite(viaPenalty) ||
     viaPenalty < 0 ||
+    !Number.isFinite(nonPreferredLayerCost) ||
+    nonPreferredLayerCost < 1 ||
+    !Number.isFinite(heuristicWeight) ||
+    heuristicWeight <= 0 ||
     !Number.isInteger(requestedCells) ||
     requestedCells < 4 ||
     (maxVias !== 2 && maxVias !== 4)
+  )
+    return null
+  if (
+    (options.softConflictCost !== undefined &&
+      !["per-net", "binary"].includes(options.softConflictCost)) ||
+    (options.softNetWeights &&
+      Object.values(options.softNetWeights).some(
+        (weight) => !Number.isFinite(weight) || weight < 0,
+      )) ||
+    (options.history &&
+      (!Number.isFinite(options.history.step) || options.history.step <= 0)) ||
+    (options.gridOrigin &&
+      ![options.gridOrigin.x, options.gridOrigin.y].every(Number.isFinite))
   )
     return null
   const maxGridCells = Math.min(requestedCells, 4_000_000),
@@ -157,6 +192,17 @@ export function* routeSurfaceBridge(
     fixed = fixedCopper(input),
     layers = [surface, bridge],
     carrierLayers = signalLayers(input, connection),
+    preferredLayer = (input.buses ?? [])
+      .filter((bus) => bus.connectionNames.includes(connection.name))
+      .flatMap((bus) => [bus.preferredLayer, ...(bus.preferredLayers ?? [])])
+      .find(
+        (layer) =>
+          layer && carrierLayers.includes(layer) && layers.includes(layer),
+      ),
+    layerCosts = layers.map((layer) =>
+      preferredLayer && layer !== preferredLayer ? nonPreferredLayerCost : 1,
+    ),
+    hasLayerPreference = layerCosts.some((cost) => cost !== 1),
     scenes = layers.map(
       (layer) =>
         new VectorScene(
@@ -199,10 +245,8 @@ export function* routeSurfaceBridge(
             )
           : 4),
     ),
-    minX = envelope.minX,
-    minY = envelope.minY,
-    rangeX = envelope.maxX - minX,
-    rangeY = envelope.maxY - minY
+    rangeX = envelope.maxX - envelope.minX,
+    rangeY = envelope.maxY - envelope.minY
   if (
     rangeX <= 0 ||
     rangeY <= 0 ||
@@ -212,15 +256,15 @@ export function* routeSurfaceBridge(
     return null
   // Limit both the raster memory and the search. Larger boards use a coarser
   // fallback; every selected edge is still checked with continuous geometry.
-  const step = surfaceBridgeGridStep(
-    rangeX,
-    rangeY,
+  const grid = surfaceBridgeGridGeometry(
+    input.bounds,
+    envelope,
     options.gridStep ?? Math.min(0.05, width),
     maxGridCells,
+    options.gridOrigin,
   )
-  if (!Number.isFinite(step) || step <= 0) return null
-  const columns = Math.floor(rangeX / step) + 1,
-    rows = Math.floor(rangeY / step) + 1,
+  if (!grid) return null
+  const { minX, minY, step, columns, rows } = grid,
     size = columns * rows,
     point = (cell: number): Point => ({
       x: minX + (cell % columns) * step,
@@ -339,100 +383,153 @@ export function* routeSurfaceBridge(
   }
   const softTraces = options.softTraces ?? [],
     hasSoft = softTraces.length > 0,
-    softInput = { ...input, obstacles: [], traces: softTraces },
-    softCopper = hasSoft ? fixedCopper(softInput) : [],
-    softScenes = hasSoft
-      ? layers.map(
-          (layer) =>
-            new VectorScene(
-              softInput,
-              {
-                ...connection,
-                pointsToConnect: pads.map((pad) => ({ ...pad, layer })),
-              },
-              width,
-              softCopper,
-            ),
-        )
-      : [],
-    softLandScenes = hasSoft
-      ? physical.map(
-          (layer) =>
-            new VectorScene(
-              softInput,
-              {
-                ...connection,
-                pointsToConnect: pads.map((pad) => ({ ...pad, layer })),
-              },
-              diameter,
-              softCopper,
-            ),
-        )
-      : [],
-    softVias = softTraces.flatMap((trace) =>
-      trace.route.filter((point): point is Via => point.route_type === "via"),
-    ),
+    softCosts =
+      hasSoft && softPenalty
+        ? new SoftCopperCostIndex(
+            input,
+            connection,
+            softTraces,
+            options.softNetWeights,
+          )
+        : undefined,
+    binaryCost = options.softConflictCost === "binary",
+    softCache =
+      softCosts && !softCosts.integerCosts
+        ? Float64Array
+        : (softCosts?.maxCost ?? 0) < 255
+          ? Uint8Array
+          : (softCosts?.maxCost ?? 0) < 65535
+            ? Uint16Array
+            : (softCosts?.maxCost ?? 0) < 0xffffffff
+              ? Uint32Array
+              : Float64Array,
+    rawSoftCosts = softCache === Float64Array,
     softEdges = hasSoft
-      ? [new Uint8Array(size * 8), new Uint8Array(size * 8)]
+      ? [new softCache(size * 8), new softCache(size * 8)]
       : [],
-    softLands = hasSoft ? new Uint8Array(size) : undefined
-  const edgeCostFactor = (
-    layer: number,
-    cell: number,
-    direction: number,
-    next: number,
-  ) => {
-    const history = options.history
-    const at = point(next)
+    softLands = hasSoft ? new softCache(size) : undefined
+  // Fractional weights can be far below one. Store their raw Float64 value
+  // with a NaN unknown marker, rather than rounding away 1 + a small weight.
+  if (rawSoftCosts) {
+    for (const cache of softEdges) cache.fill(NaN)
+    softLands?.fill(NaN)
+  }
+  const history = options.history,
+    historyColumns = history
+      ? Math.floor((history.bounds.maxX - history.bounds.minX) / history.step) +
+        1
+      : 0,
+    historyRows = history
+      ? Math.floor((history.bounds.maxY - history.bounds.minY) / history.step) +
+        1
+      : 0
+  const historyCost = (at: Point, layer: number) => {
     const historyX = history
       ? Math.round((at.x - history.bounds.minX) / history.step)
       : -1
     const historyY = history
       ? Math.round((at.y - history.bounds.minY) / history.step)
       : -1
-    const historyColumns = history
-      ? Math.floor((history.bounds.maxX - history.bounds.minX) / history.step) +
-        1
-      : 0
-    const historyRows = history
-      ? Math.floor((history.bounds.maxY - history.bounds.minY) / history.step) +
-        1
-      : 0
-    const historic =
-      history &&
+    return history &&
       historyX >= 0 &&
       historyX < historyColumns &&
       historyY >= 0 &&
       historyY < historyRows
-        ? (history.values[layer]?.[historyX + historyY * historyColumns] ?? 0)
-        : 0
-    if (!hasSoft || !softPenalty) return 1 + historic
+      ? (history.values[layer]?.[historyX + historyY * historyColumns] ?? 0)
+      : 0
+  }
+  const edgeCostFactor = (
+    layer: number,
+    cell: number,
+    direction: number,
+    next: number,
+  ) => {
+    const historic = historyCost(point(next), layer)
+    if (!hasSoft || !softPenalty) return layerCosts[layer] + historic
     const index = cell * 8 + direction,
       cache = softEdges[layer]
-    if (!cache[index]) {
-      cache[index] = softScenes[layer].visible(point(cell), point(next)) ? 1 : 2
+    if (rawSoftCosts ? Number.isNaN(cache[index]) : !cache[index]) {
+      const cost = softCosts!.edgeCost(
+        point(cell),
+        point(next),
+        layers[layer],
+        width / 2,
+        scenes[layer].margin - width / 2,
+        binaryCost,
+      )
+      cache[index] = rawSoftCosts ? cost : 1 + cost
       cache[next * 8 + ((direction + 4) % 8)] = cache[index]
     }
-    return (cache[index] === 1 ? 1 : 1 + softPenalty) + historic
+    return (
+      layerCosts[layer] +
+      (cache[index] - (rawSoftCosts ? 0 : 1)) * softPenalty +
+      historic
+    )
   }
   const landingPenalty = (cell: number) => {
     if (!softLands || !softPenalty) return 0
-    if (!softLands[cell]) {
-      const at = point(cell),
-        clear =
-          softLandScenes.every((scene) => scene.visible(at, at)) &&
-          !softVias.some(
-            (via) =>
-              distance(via, at) <
-              hole / 2 +
-                (via.via_hole_diameter ?? hole) / 2 +
-                holeClearance -
-                1e-8,
-          )
-      softLands[cell] = clear ? 1 : 2
+    if (rawSoftCosts ? Number.isNaN(softLands[cell]) : !softLands[cell]) {
+      const cost = softCosts!.landingCost(
+        point(cell),
+        diameter / 2,
+        landScenes[0].margin - diameter / 2,
+        hole / 2,
+        holeClearance,
+        binaryCost,
+      )
+      softLands[cell] = rawSoftCosts ? cost : 1 + cost
     }
-    return softLands[cell] === 1 ? 0 : softPenalty
+    return (softLands[cell] - (rawSoftCosts ? 0 : 1)) * softPenalty
   }
+  const hasConnectorCosts = hasLayerPreference || !!history || !!softCosts
+  const connectorCost = (path: Point[]) => {
+    if (!softCosts && !history) return length(path) * layerCosts[0]
+    let cost = 0
+    for (let i = 1; i < path.length; i++) {
+      const a = path[i - 1],
+        b = path[i],
+        span = distance(a, b)
+      if (!span) continue
+      // Match grid-edge cost density along exact native connectors. Every
+      // soft intersection uses the continuous copper predicate; history uses
+      // samples at the same density used for native search edges.
+      const count = Math.max(1, Math.ceil(span / step))
+      let previous = a
+      for (let j = 1; j <= count; j++) {
+        const next = {
+          x: a.x + ((b.x - a.x) * j) / count,
+          y: a.y + ((b.y - a.y) * j) / count,
+        }
+        const conflicts =
+          softCosts?.edgeCost(
+            previous,
+            next,
+            surface,
+            width / 2,
+            scenes[0].margin - width / 2,
+            binaryCost,
+          ) ?? 0
+        cost +=
+          (span / count) *
+          (layerCosts[0] + historyCost(next, 0) + conflicts * softPenalty)
+        previous = next
+      }
+    }
+    return cost
+  }
+  const attachmentCosts = [
+      new Map<number, number>(),
+      new Map<number, number>(),
+    ],
+    goalAttachments = new Map<
+      number,
+      Array<{ path: Point[]; length: number; cost: number }>
+    >(),
+    octile = (a: Point, b: Point) => {
+      const dx = Math.abs(a.x - b.x),
+        dy = Math.abs(a.y - b.y)
+      return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)
+    }
   const attachments = pads.map((pad, end) => {
     const result = new Map<number, Point[]>(),
       cx = Math.round((pad.x - minX) / step),
@@ -443,15 +540,61 @@ export function* routeSurfaceBridge(
           y = cy + dy
         if (x < 0 || x >= columns || y < 0 || y >= rows) continue
         const cell = x + y * columns,
-          at = point(cell),
-          path = connectors(end ? at : pad, end ? pad : at)
-            .sort((a, b) => length(a) - length(b))
-            .find((candidate) => scenes[0].pathVisible(candidate))
-        if (path) result.set(cell, path)
+          at = point(cell)
+        let best: Point[] | undefined,
+          bestCost = Infinity,
+          bestLength = Infinity
+        for (const candidate of connectors(end ? at : pad, end ? pad : at)) {
+          if (!scenes[0].pathVisible(candidate)) continue
+          const cost = connectorCost(candidate),
+            size = length(candidate)
+          // Do not let a cheap soft-avoiding source connector discard a
+          // shorter, more expensive attachment that fits the physical budget.
+          if (size + octile(at, pads[1 - end]) > maxLength + 1e-8) continue
+          if (end) {
+            const choices = goalAttachments.get(cell) ?? []
+            choices.push({ path: candidate, length: size, cost })
+            goalAttachments.set(cell, choices)
+          }
+          if (
+            cost < bestCost - 1e-9 ||
+            (Math.abs(cost - bestCost) < 1e-9 && size < bestLength)
+          ) {
+            best = candidate
+            bestCost = cost
+            bestLength = size
+          }
+        }
+        if (best) {
+          result.set(cell, best)
+          attachmentCosts[end].set(cell, bestCost)
+        }
       }
     return result
   })
   if (!attachments[0].size || !attachments[1].size) return null
+  const goalDx = Float64Array.from({ length: columns }, (_, x) =>
+      Math.abs(minX + x * step - pads[1].x),
+    ),
+    goalDy = Float64Array.from({ length: rows }, (_, y) =>
+      Math.abs(minY + y * step - pads[1].y),
+    ),
+    surfaceCarrierAllowed = carrierLayers.includes(surface)
+  // Every raster edge and terminal connector is octilinear. Its remaining
+  // copper length is at least this unobstructed octile distance, and every
+  // odd transition count must pay for a return to the native pad plane.
+  const remainingLength = (cell: number) => {
+    const dx = goalDx[cell % columns],
+      dy = goalDy[Math.floor(cell / columns)]
+    return Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)
+  }
+  const remainingCost = (cell: number, count: number) =>
+    remainingLength(cell) +
+    (count % 2
+      ? viaPenalty
+      : count === 0 && !surfaceCarrierAllowed
+        ? 2 * viaPenalty
+        : 0)
   // A freshly placed first barrel must not suppress a longer middle-plane
   // path that has travelled far enough to place a second barrel. Keep those
   // drill-clear states separate while retaining a bounded raster state count.
@@ -465,36 +608,38 @@ export function* routeSurfaceBridge(
       phase++
     return phase * size + cell
   }
-  const queue = new MinHeap<Label>(),
+  // Tight octile bounds create equal-f shortest-path plateaus. Prefer the
+  // longest settled prefix there instead of flooding the entire plateau.
+  const queue = new MinHeap<Label>((a, b) => b.g - a.g),
     costs = new Float64Array(size * maxVias * 2)
   costs.fill(Infinity)
   for (const [cell, attachment] of attachments[0]) {
-    const g = length(attachment)
-    if (g > maxLength + 1e-8) continue
+    const routeLength = length(attachment),
+      g = attachmentCosts[0].get(cell)!
+    if (routeLength + remainingLength(cell) > maxLength + 1e-8) continue
     costs[cell] = g
     queue.push({
       id: cell,
       cell,
       count: 0,
       g,
-      routeLength: g,
-      f: g + distance(point(cell), pads[1]),
+      routeLength,
+      f: g + heuristicWeight * remainingCost(cell, 0),
       attachment,
     })
   }
   let expanded = 0
   while (queue.length && expanded < (options.maxExpansions ?? 1_500_000)) {
     const current = queue.pop()
-    if (current.g > costs[current.id] + 1e-9) continue
-    if (++expanded % 64 === 0) yield
-    if (
-      current.count % 2 === 0 &&
-      carrierLayers.includes(current.count === 0 ? surface : bridge) &&
-      attachments[1].has(current.cell)
-    ) {
+    if (current.goal) {
+      // A connector's complete cost belongs to the finished path. Queue
+      // that terminal cost rather than accepting the first nearby grid cell;
+      // another approach can have a cheaper preferred-layer completion.
+      const found = current.parent!
+      if (found.g > costs[found.id] + 1e-9) continue
       const result = materialize(
-        current,
-        attachments[1].get(current.cell)!,
+        found,
+        current.goal,
         point,
         input,
         connection,
@@ -505,6 +650,7 @@ export function* routeSurfaceBridge(
         hole,
         fixed,
         softTraces,
+        !!history,
       )
       if (
         result &&
@@ -512,6 +658,55 @@ export function* routeSurfaceBridge(
           maxLength + 1e-8
       )
         return result
+      continue
+    }
+    if (current.g > costs[current.id] + 1e-9) continue
+    if (++expanded % 64 === 0) yield
+    if (
+      current.count % 2 === 0 &&
+      carrierLayers.includes(current.count === 0 ? surface : bridge) &&
+      attachments[1].has(current.cell)
+    ) {
+      const goals = goalAttachments.get(current.cell)!
+      if (hasConnectorCosts) {
+        for (const goal of goals) {
+          if (current.routeLength + goal.length > maxLength + 1e-8) continue
+          const completeCost = current.g + goal.cost
+          queue.push({
+            id: current.id,
+            cell: current.cell,
+            count: current.count,
+            g: completeCost,
+            routeLength: current.routeLength + goal.length,
+            f: completeCost,
+            parent: current,
+            goal: goal.path,
+          })
+        }
+      } else {
+        const goal = attachments[1].get(current.cell)!
+        const result = materialize(
+          current,
+          goal,
+          point,
+          input,
+          connection,
+          layers,
+          physical,
+          width,
+          diameter,
+          hole,
+          fixed,
+          softTraces,
+          !!history,
+        )
+        if (
+          result &&
+          length(joinSignalEscapes(result.carrier, result.escapes).route) <=
+            maxLength + 1e-8
+        )
+          return result
+      }
     }
     const x = current.cell % columns,
       y = Math.floor(current.cell / columns),
@@ -529,7 +724,7 @@ export function* routeSurfaceBridge(
           current.g +
           span * edgeCostFactor(layer, current.cell, direction, cell)
       if (
-        routeLength > maxLength + 1e-8 ||
+        routeLength + remainingLength(cell) > maxLength + 1e-8 ||
         !withinEscape(cell, current.count) ||
         g >= costs[id] - 1e-9 ||
         !edgeVisible(layer, current.cell, direction, cell)
@@ -542,7 +737,7 @@ export function* routeSurfaceBridge(
         count: current.count,
         g,
         routeLength,
-        f: g + distance(point(cell), pads[1]),
+        f: g + heuristicWeight * remainingCost(cell, current.count),
         firstVia: current.firstVia,
         viaCells: current.viaCells,
         parent: current,
@@ -577,7 +772,7 @@ export function* routeSurfaceBridge(
           count,
           g,
           routeLength: current.routeLength,
-          f: g + distance(point(current.cell), pads[1]),
+          f: g + heuristicWeight * remainingCost(current.cell, count),
           firstVia,
           viaCells: [...(current.viaCells ?? []), current.cell],
           parent: current,
@@ -616,6 +811,68 @@ export function surfaceBridgeGridStep(
       (2 * (maxCells - 1)),
     coarse = Math.max(requested, quadratic)
   return cells(coarse) <= maxCells ? coarse : coarse * (1 + 1e-12)
+}
+
+/** Keep one board-relative lattice while routing windows grow. Changing a
+ * search window must not shift the manufactured via sites between pad rows.
+ * The aligned origin can add a row/column, so include those cells in the
+ * original memory budget rather than silently allocating a larger raster. */
+export function surfaceBridgeGridGeometry(
+  board: SimpleRouteJson["bounds"],
+  envelope: SimpleRouteJson["bounds"],
+  requested: number,
+  maxCells = 1_000_000,
+  origin: Point = { x: board.minX, y: board.minY },
+) {
+  const rangeX = envelope.maxX - envelope.minX,
+    rangeY = envelope.maxY - envelope.minY
+  let step = surfaceBridgeGridStep(rangeX, rangeY, requested, maxCells)
+  if (
+    !Number.isFinite(step) ||
+    step <= 0 ||
+    ![origin.x, origin.y, origin.x - board.minX, origin.y - board.minY].every(
+      Number.isFinite,
+    )
+  )
+    return null
+  const geometry = (step: number) => {
+    const phaseX = board.minX + ((origin.x - board.minX) % step),
+      phaseY = board.minY + ((origin.y - board.minY) % step)
+    // One outside row/column may represent a shifted phase at the board edge.
+    // Continuous scenes reject every outside wire and land; retain the phase
+    // instead of clamping it to a different lattice at the boundary.
+    const minX = phaseX + Math.floor((envelope.minX - phaseX) / step) * step,
+      minY = phaseY + Math.floor((envelope.minY - phaseY) / step) * step
+    return {
+      minX,
+      minY,
+      step,
+      columns: Math.floor((envelope.maxX - minX) / step) + 1,
+      rows: Math.floor((envelope.maxY - minY) / step) + 1,
+    }
+  }
+  let result = geometry(step)
+  if (result.columns * result.rows > maxCells) {
+    // (rangeX / step + 2) * (rangeY / step + 2) bounds every
+    // board-relative phase, including an extra origin-side row and column.
+    const sum = rangeX + rangeY
+    step =
+      maxCells > 4
+        ? Math.max(
+            step,
+            (sum + Math.sqrt(sum * sum + (maxCells - 4) * rangeX * rangeY)) /
+              (maxCells - 4),
+          ) *
+          (1 + 1e-12)
+        : Math.max(step, board.maxX - board.minX, board.maxY - board.minY) *
+          (1 + 1e-12)
+    result = geometry(step)
+  }
+  return result.columns > 0 &&
+    result.rows > 0 &&
+    result.columns * result.rows <= maxCells
+    ? result
+    : null
 }
 
 function surfaceSearchBounds(
@@ -671,6 +928,7 @@ function materialize(
   hole: number,
   fixed: ReturnType<typeof fixedCopper>,
   softTraces: Trace[] = [],
+  preserveSearchPath = false,
 ): SurfaceBridgeRoute | null {
   const chain: Label[] = []
   for (let label: Label | undefined = found; label; label = label.parent)
@@ -747,8 +1005,9 @@ function materialize(
         type: "pcb_trace",
         pcb_trace_id: "surface_piece",
         connection_name: connection.name,
-        // Ordinary shortcuts can erase the path selected to avoid soft copper.
-        route: (softTraces.length && !negotiatedInner
+        // Ordinary shortcuts can erase the path selected to avoid provisional
+        // copper or accumulated congestion history.
+        route: (preserveSearchPath || (softTraces.length && !negotiatedInner)
           ? simplify(current)
           : reduceOrdinaryTurns(simplify(current), scene)
         ).map((at) => ({

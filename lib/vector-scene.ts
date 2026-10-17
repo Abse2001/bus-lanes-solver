@@ -1,3 +1,4 @@
+import { BoardBoundary } from "./board-boundary"
 import { CopperIndex } from "./copper-index"
 import {
   distance,
@@ -297,12 +298,14 @@ export class VectorScene {
   readonly copper: Copper[]
   readonly owners: Set<string>
   readonly margin: number
+  readonly boardBoundary: BoardBoundary
   constructor(
     readonly input: SimpleRouteJson,
     readonly connection: Connection,
     readonly width: number,
     all: Copper[],
   ) {
+    this.boardBoundary = new BoardBoundary(input)
     this.owners = new Set(
       [
         connection.name,
@@ -323,18 +326,7 @@ export class VectorScene {
       (input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075)
   }
   visible(a: Point, b: Point) {
-    const m = this.width / 2 + (this.input.minBoardEdgeClearance ?? 0),
-      r = this.input.bounds
-    if (
-      [a, b].some(
-        (p) =>
-          p.x < r.minX + m - 1e-9 ||
-          p.x > r.maxX - m + 1e-9 ||
-          p.y < r.minY + m - 1e-9 ||
-          p.y > r.maxY - m + 1e-9,
-      )
-    )
-      return false
+    if (!this.boardBoundary.containsSegment(a, b, this.width / 2)) return false
     const minX = Math.min(a.x, b.x) - this.margin,
       maxX = Math.max(a.x, b.x) + this.margin,
       minY = Math.min(a.y, b.y) - this.margin,
@@ -364,7 +356,7 @@ export class VectorScene {
   /** Vertices of circumscribed octagonal Minkowski offsets. Their edges are
    * horizontal, vertical or 45 degrees, including circular vias and trace caps. */
   vertices(): Point[] {
-    const result: Point[] = [],
+    const result: Point[] = this.boardBoundary.vertices(this.width / 2),
       k = Math.SQRT2 - 1,
       epsilon = 1e-5
     for (const c of this.copper) {

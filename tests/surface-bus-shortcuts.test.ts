@@ -168,3 +168,117 @@ test("an exhausted shortcut search preserves the original matching checkpoint", 
   expect(run(previous, 0)).toEqual([previous])
   expect(previous).toEqual(original)
 })
+
+test("a singleton skew constraint does not trigger an unnecessary shortcut search", () => {
+  const previous = fixture()
+  previous.native.buses![0].connectionNames = ["A"]
+  const before = structuredClone(previous)
+  // A has a shorter physical path in the two-member fixture above, but no
+  // other member in this bus needs tuning to its current length.
+  expect(run(previous)).toEqual([previous])
+  expect(previous).toEqual(before)
+})
+
+test("an explicit four-via shortcut crosses alternating surface barriers", () => {
+  const wire = (x: number, y: number, layer: string): Wire => ({
+    route_type: "wire",
+    x,
+    y,
+    layer,
+    width: 0.1,
+  })
+  const makeTrace = (name: string, y: number, detourY: number): Trace => {
+    const points: Trace["route"] = [wire(-3, y, "top")]
+    if (detourY !== y) points.push(wire(-3, detourY, "top"))
+    let layer = "top"
+    for (const x of [-2.5, -0.8, 0.8, 2.5]) {
+      const nextLayer = layer === "top" ? "bottom" : "top"
+      points.push(
+        wire(x, detourY, layer),
+        {
+          route_type: "via",
+          x,
+          y: detourY,
+          from_layer: layer,
+          to_layer: nextLayer,
+          layers: ["top", "inner1", "inner2", "bottom"],
+          via_diameter: 0.3,
+          via_hole_diameter: 0.15,
+        },
+        wire(x, detourY, nextLayer),
+      )
+      layer = nextLayer
+    }
+    if (detourY !== y) points.push(wire(3, detourY, "top"))
+    points.push(wire(3, y, "top"))
+    return {
+      type: "pcb_trace",
+      pcb_trace_id: name,
+      connection_name: name,
+      source_trace_id: name,
+      route: points,
+    }
+  }
+  const traces = [makeTrace("A", 0, 2), makeTrace("B", -2, -2)]
+  const native: SimpleRouteJson = {
+    layerCount: 4,
+    allowedLayers: ["top", "bottom"],
+    minTraceWidth: 0.1,
+    minTraceToPadEdgeClearance: 0.05,
+    minViaPadDiameter: 0.3,
+    minViaHoleDiameter: 0.15,
+    bounds: { minX: -4, maxX: 4, minY: -3, maxY: 3 },
+    obstacles: [-1.5, 0, 1.5].map((x) => ({
+      type: "rect" as const,
+      center: { x, y: 0 },
+      width: 0.2,
+      height: 6,
+      layers: [x === 0 ? "bottom" : "top"],
+      connectedTo: ["WALL"],
+    })),
+    connections: traces.map((trace) => ({
+      name: trace.connection_name!,
+      pointsToConnect: [trace.route[0], trace.route.at(-1)!] as Wire[],
+    })),
+    buses: [
+      {
+        busId: "BYTE",
+        connectionNames: ["A", "B"],
+        traceWidth: 0.1,
+        maxLengthSkew: 0.1,
+      },
+    ],
+  }
+  const previous: FlexibleSignalState = {
+    native,
+    pending: native,
+    traces,
+    retained: [],
+    escapes: [],
+  }
+  const before = structuredClone(previous)
+  expect(drc(native, traces).issues).toEqual([])
+  expect(run(previous)).toEqual([previous])
+  const search = surfaceBusShortcutCandidates(previous, {
+    maxVias: 4,
+    maxExpansions: 100000,
+  })
+  let next = search.next()
+  while (!next.done) next = search.next()
+  expect(next.value.length).toBeGreaterThan(1)
+  const last = next.value.at(-1)!
+  const complete = last.traces.map((trace) =>
+    joinSignalEscapes(
+      trace,
+      last.escapes.filter(
+        (escape) => escape.connection_name === trace.connection_name,
+      ),
+    ),
+  )
+  expect(length(complete[0].route)).toBeLessThan(6.2)
+  expect(
+    complete[0].route.filter((point) => point.route_type === "via"),
+  ).toHaveLength(4)
+  expect(drc(native, complete).issues).toEqual([])
+  expect(previous).toEqual(before)
+})

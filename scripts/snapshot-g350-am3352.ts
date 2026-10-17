@@ -9,6 +9,10 @@ import {
 import type { SimpleRouteJson, Trace } from "../lib"
 import { g350Am3352Metadata, loadG350Am3352Sample } from "./g350-am3352-sample"
 import { validateG350Am3352Sample } from "./validate-g350-am3352-sample"
+import {
+  deriveG350Am3352DataSwizzle,
+  g350OriginalCpuToRamDq,
+} from "./g350-am3352-data-swizzle"
 
 const background = "#10151b"
 const componentNames: Record<string, string> = g350Am3352Metadata.componentNames
@@ -215,6 +219,7 @@ async function writeSnapshot(
   input: SimpleRouteJson,
   directory: string,
   kind: "input" | "routed",
+  pinMapping: "original" | "repaired" = "original",
 ) {
   const width = 2400,
     height = 2100
@@ -241,6 +246,11 @@ async function writeSnapshot(
         kind,
         routingAccepted: kind === "routed",
         inputFixtureSha256: g350Am3352Metadata.filesSha256["native-input.json"],
+        routedInputSha256: hash(JSON.stringify(input)),
+        pinMapping,
+        cpuToRamDq: deriveG350Am3352DataSwizzle(
+          pinMapping === "original" ? g350OriginalCpuToRamDq : undefined,
+        ).manifest.cpuToRamDq,
         signalCount: input.connections.length,
         padObstacleCount: input.obstacles.length,
         filesSha256: { [name + ".svg"]: hash(svg), [name + ".png"]: hash(png) },
@@ -260,8 +270,14 @@ export async function exportG350InputSnapshot(directory: string) {
 export async function exportG350RoutedSnapshot(
   output: SimpleRouteJson,
   directory: string,
+  pinMapping: "original" | "repaired" = "repaired",
 ) {
-  const input = loadG350Am3352Sample()
+  if (!["original", "repaired"].includes(pinMapping))
+    throw Error("Invalid G350 pin mapping")
+  const input =
+    pinMapping === "original"
+      ? loadG350Am3352Sample()
+      : deriveG350Am3352DataSwizzle().input
   const report = validateG350Am3352Sample(input, output)
   if (!report.valid || report.connectedSignals !== 49)
     throw Error(
@@ -272,16 +288,31 @@ export async function exportG350RoutedSnapshot(
     input,
     directory,
     "routed",
+    pinMapping,
   )
   return report
 }
 
 if (import.meta.main) {
-  const [source, directory, ...extra] = process.argv.slice(2)
-  if (!source || !directory || extra.length)
+  const [source, directory, flag, mapping, ...extra] = process.argv.slice(2)
+  if (
+    !source ||
+    !directory ||
+    extra.length ||
+    (flag !== undefined && flag !== "--pin-mapping") ||
+    (flag !== undefined && !["original", "repaired"].includes(mapping))
+  )
     throw Error(
-      "Usage: bun scripts/snapshot-g350-am3352.ts --input|completed.json output-directory",
+      "Usage: bun scripts/snapshot-g350-am3352.ts --input|completed.json output-directory [--pin-mapping original|repaired]",
     )
-  if (source === "--input") await exportG350InputSnapshot(directory)
-  else await exportG350RoutedSnapshot(await Bun.file(source).json(), directory)
+  if (source === "--input") {
+    if (mapping === "repaired")
+      throw Error("The captured input snapshot uses the original pin mapping")
+    await exportG350InputSnapshot(directory)
+  } else
+    await exportG350RoutedSnapshot(
+      await Bun.file(source).json(),
+      directory,
+      (mapping ?? "repaired") as "original" | "repaired",
+    )
 }

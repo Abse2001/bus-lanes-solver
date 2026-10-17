@@ -12,6 +12,7 @@ import {
 } from "./flexible-signal-state"
 import { distance, length } from "./geometry"
 import { GridHistoryProjector, GridVisibilitySearch } from "./grid-visibility"
+import { localRoutingBounds } from "./local-routing-bounds"
 import {
   ownedSignalEscapes,
   signalDogboneOptions,
@@ -21,7 +22,13 @@ import { retargetGeneratedEscape } from "./retarget-generated-escape"
 import { RouteConflictIndex } from "./route-conflict-index"
 import { maximumCarrierLength } from "./route-lengths"
 import { solveSignalCandidatePool } from "./solve-signal-candidate-pool"
-import type { Connection, Terminal, Trace, Wire } from "./types"
+import type {
+  Connection,
+  SimpleRouteJson,
+  Terminal,
+  Trace,
+  Wire,
+} from "./types"
 import {
   type Copper,
   fixedCopper,
@@ -29,10 +36,19 @@ import {
   VectorScene,
 } from "./vector-scene"
 
-interface SignalSiteOptions {
+export interface SignalSiteProgress {
+  stage: "sites" | "negotiate"
+  connectionName: string
+  requestedSignals: number
+  routedSignals: number
+  siteOptions: number
+}
+
+export interface SignalSiteOptions {
   allowExpandedSites?: boolean
   maxCandidateSearchNodes?: number
   retainExistingRoutes?: boolean
+  onProgress?: (progress: SignalSiteProgress) => void
 }
 
 interface SiteOption {
@@ -295,12 +311,22 @@ export function* negotiateSignalSites(
   if (!base.connections.length) return null
   const hard = fixedCopper(base),
     variants = new Map<string, SiteOption[]>()
+  const deferredLayers = new Map<string, Set<string>>()
   const existing = new Map<string, { option: SiteOption; trace?: Trace }>()
-  const histories = new Map<string, Float32Array>(),
-    projectors = new Map<string, GridHistoryProjector>()
+  const histories = new Map<
+    string,
+    { layer: string; projector: GridHistoryProjector; values: Float32Array }
+  >()
   const clearance =
     native.minTraceToPadEdgeClearance ?? native.defaultObstacleMargin ?? 0.075
   for (const connection of base.connections) {
+    options.onProgress?.({
+      stage: "sites",
+      connectionName: connection.name,
+      siteOptions: 0,
+      routedSignals: 0,
+      requestedSignals: base.connections.length,
+    })
     const previous = options.retainExistingRoutes
       ? existingSignalSite(
           base,
@@ -430,34 +456,25 @@ export function* negotiateSignalSites(
             signalWidth(native, connection),
             hard,
           )
-          const search = new GridVisibilitySearch(
-            scene,
+          const lowerBound = distance(
             local.pointsToConnect[0],
             local.pointsToConnect[1],
-            [],
-            0,
-            undefined,
-            { checkReachability: true, maxLength },
           )
-          try {
-            let steps = 0
-            while (!search.solved && !search.failed && steps++ < 3000) {
-              search.step()
-              yield
-            }
-            if (search.solved)
-              choices.push({
-                connection: local,
-                escapes,
-                escapeCopper,
-                scene,
-                layer,
-                length: length(search.result),
-                maxLength,
-              })
-          } finally {
-            search.cancel()
-          }
+          if (lowerBound > maxLength + 1e-8) continue
+          // Enumerate physical handoffs without routing every cross-product
+          // twice. The negotiated search below performs the same exact hard
+          // reachability and length checks when this option is actually used.
+          // In particular, retain an enclosed option here: discovering it is
+          // unreachable must not discard another endpoint or carrier layer.
+          choices.push({
+            connection: local,
+            escapes,
+            escapeCopper,
+            scene,
+            layer,
+            length: lowerBound,
+            maxLength,
+          })
         }
     for (const layer of carrierLayers) {
       if (
@@ -465,11 +482,19 @@ export function* negotiateSignalSites(
         !connection.pointsToConnect.every((point) =>
           native.allowedLayers?.includes(point.layer),
         ) ||
-        connection.pointsToConnect.every((point) => point.layer === layer) ||
-        (!expandNonNativeSites &&
-          choices.some((choice) => choice.layer === layer))
+        connection.pointsToConnect.every((point) => point.layer === layer)
       )
         continue
+      if (
+        !expandNonNativeSites &&
+        choices.some((choice) => choice.layer === layer)
+      ) {
+        let deferred = deferredLayers.get(connection.name)
+        if (!deferred)
+          deferredLayers.set(connection.name, (deferred = new Set()))
+        deferred.add(layer)
+        continue
+      }
       const expanded = yield* expandedSignalSiteChoices(
         single,
         connection,
@@ -504,6 +529,13 @@ export function* negotiateSignalSites(
     choices.sort((a, b) => a.length - b.length)
     if (!choices.length) return null
     variants.set(connection.name, choices)
+    options.onProgress?.({
+      stage: "sites",
+      connectionName: connection.name,
+      siteOptions: choices.length,
+      routedSignals: 0,
+      requestedSignals: base.connections.length,
+    })
   }
   const copperConflicts = new CopperConflictIndex()
   const overlap = (a: Copper[], b: Copper[]) =>
@@ -561,6 +593,10 @@ export function* negotiateSignalSites(
   }
 
   const routed = new Map<string, Candidate>()
+  // A failed complete search proves this fixed scene/site has no path. A
+  // work-budget interruption does not. Remember only proofs, and widen sites
+  // lazily when an entire compact carrier domain has proved unreachable.
+  const unreachable = new WeakSet<SiteOption>()
   for (const connection of base.connections) {
     const previous = existing.get(connection.name)
     if (!previous?.trace) continue
@@ -602,10 +638,31 @@ export function* negotiateSignalSites(
     }
   }
   if (!queue.length) return finish()
+  // Site choices share a window and a congestion history on each layer. Start
+  // near the complete terminal envelope, then retry the full board before
+  // declaring any site unreachable. Unrelated support parts must not force
+  // every local negotiation to rasterize the entire board.
+  const localBounds = localRoutingBounds(
+    base,
+    [...variants.values()].flatMap((choices) =>
+      choices.flatMap((choice) => choice.connection.pointsToConnect),
+    ),
+  )
+  const regions: SimpleRouteJson["bounds"][] =
+    JSON.stringify(localBounds) === JSON.stringify(base.bounds)
+      ? [base.bounds]
+      : [localBounds, base.bounds]
   for (let iteration = 0; queue.length && iteration < 1200; iteration++) {
     const connection = queue.shift()!,
       choices = variants.get(connection.name)!,
       visit = visits.get(connection.name) ?? 0
+    options.onProgress?.({
+      stage: "negotiate",
+      connectionName: connection.name,
+      siteOptions: choices.length,
+      routedSignals: routed.size,
+      requestedSignals: base.connections.length,
+    })
     visits.set(connection.name, visit + 1)
     routed.delete(connection.name)
     const others = [...routed.values()],
@@ -614,6 +671,7 @@ export function* negotiateSignalSites(
     for (let k = 0; k < Math.min(choices.length, 4); k++) {
       const option = choices[(visit * 4 + k) % choices.length],
         { scene, connection: local, layer } = option
+      if (unreachable.has(option)) continue
       // The terminal dogbones are fixed for this option. Each conflicting
       // route must be displaced regardless of the carrier path. Together with
       // straight-line distance this is a conservative score lower bound; skip
@@ -632,59 +690,122 @@ export function* negotiateSignalSites(
         )
           continue
       }
-      if (!projectors.has(layer)) {
-        const projector = new GridHistoryProjector(scene)
-        projectors.set(layer, projector)
-        histories.set(layer, new Float32Array(projector.cellCount))
-      }
-      const search = new GridVisibilitySearch(
-        scene,
-        local.pointsToConnect[0],
-        local.pointsToConnect[1],
-        soft,
-        10 + iteration,
-        histories.get(layer),
-        {
-          checkReachability: true,
-          maxLength: option.maxLength,
-          paretoLength: Number.isFinite(option.maxLength),
-        },
-      )
-      try {
-        let steps = 0
-        while (!search.solved && !search.failed && steps++ < 3000) {
-          search.step()
-          yield
-        }
-        if (search.solved) {
-          const trace = signalTrace(native, connection, search.result, layer),
-            copper = [...option.escapeCopper, ...routeCopper(trace)]
-          const hits = others.filter(
-              (other) =>
-                overlap(copper, other.copper) ||
-                generatedEscapeHolesConflict(
-                  native,
-                  option.escapes,
-                  other.escapes,
-                ),
-            ),
-            score = length(trace.route) + hits.length * 100
-          const candidate = {
-            ...option,
-            id: candidateId++,
-            trace,
-            copper,
-            hits,
-            score,
+      for (const [regionIndex, bounds] of regions.entries()) {
+        // A route can fit locally while the complete set cannot. After two
+        // negotiation sweeps, let congestion move every carrier over the full
+        // board instead of waiting for a local hard-reachability failure.
+        if (
+          iteration >= base.connections.length * 2 &&
+          regionIndex < regions.length - 1
+        )
+          continue
+        const historyKey = `${layer}:${regionIndex}`
+        let history = histories.get(historyKey)
+        if (!history) {
+          const projector = new GridHistoryProjector(scene, { bounds })
+          history = {
+            layer,
+            projector,
+            values: new Float32Array(projector.cellCount),
           }
-          if (!stopWithOneRemaining) addCandidate(candidate)
-          if (!best || score < best.score) best = candidate
+          histories.set(historyKey, history)
         }
-      } finally {
-        search.cancel()
+        const search = new GridVisibilitySearch(
+          scene,
+          local.pointsToConnect[0],
+          local.pointsToConnect[1],
+          soft,
+          10 + iteration,
+          history.values,
+          {
+            bounds,
+            checkReachability: true,
+            maxLength: option.maxLength,
+            paretoLength: Number.isFinite(option.maxLength),
+          },
+        )
+        try {
+          let steps = 0
+          while (!search.solved && !search.failed && steps++ < 3000) {
+            search.step()
+            yield
+          }
+          if (search.solved) {
+            const trace = signalTrace(native, connection, search.result, layer),
+              copper = [...option.escapeCopper, ...routeCopper(trace)]
+            const hits = others.filter(
+                (other) =>
+                  overlap(copper, other.copper) ||
+                  generatedEscapeHolesConflict(
+                    native,
+                    option.escapes,
+                    other.escapes,
+                  ),
+              ),
+              score = length(trace.route) + hits.length * 100
+            const candidate = {
+              ...option,
+              id: candidateId++,
+              trace,
+              copper,
+              hits,
+              score,
+            }
+            if (!stopWithOneRemaining) addCandidate(candidate)
+            if (!best || score < best.score) best = candidate
+          } else if (search.failed && regionIndex === regions.length - 1)
+            unreachable.add(option)
+        } finally {
+          search.cancel()
+        }
+        if (search.solved) break
       }
     }
     if (!best) {
+      for (const layer of deferredLayers.get(connection.name) ?? []) {
+        if (
+          !choices
+            .filter((option) => option.layer === layer)
+            .every((option) => unreachable.has(option))
+        )
+          continue
+        deferredLayers.get(connection.name)!.delete(layer)
+        const expanded = yield* expandedSignalSiteChoices(
+          { ...base, connections: [connection] },
+          connection,
+          layer,
+        )
+        for (const option of expanded) {
+          const maxLength = maximumCarrierLength(
+            {
+              ...native,
+              traces: [...(native.traces ?? []), ...option.escapes],
+            },
+            connection.name,
+          )
+          if (length(option.route) > maxLength + 1e-8) continue
+          choices.push({
+            connection: option.connection,
+            escapes: option.escapes,
+            escapeCopper: fixedCopper({
+              ...base,
+              obstacles: [],
+              traces: option.escapes,
+            }),
+            scene: new VectorScene(
+              base,
+              option.connection,
+              signalWidth(native, connection),
+              hard,
+            ),
+            layer,
+            length: length(option.route),
+            maxLength,
+          })
+        }
+        choices.sort((a, b) => a.length - b.length)
+        visits.set(connection.name, 0)
+      }
       queue.push(connection)
       continue
     }
@@ -692,17 +813,17 @@ export function* negotiateSignalSites(
       const hit = overlap(best.copper, other.copper)
       if (hit) {
         const [a, b] = hit
-        projectors
-          .get(a.layer)
-          ?.penalizeIntersection(
-            histories.get(a.layer)!,
-            a.a,
-            a.b,
-            b.a,
-            b.b,
-            a.radius + b.radius + clearance,
-            true,
-          )
+        for (const { layer, projector, values } of histories.values())
+          if (layer === a.layer)
+            projector.penalizeIntersection(
+              values,
+              a.a,
+              a.b,
+              b.a,
+              b.b,
+              a.radius + b.radius + clearance,
+              true,
+            )
       }
       routed.delete(other.connection.name)
       if (!queue.some((c) => c.name === other.connection.name))

@@ -8,10 +8,11 @@ import {
   type NativeSingleCarrierOptions,
 } from "./route-matched-native-single-carrier"
 import { initialSignalDogbones } from "./initial-signal-dogbones"
+import { boardBoundaryReports } from "./board-boundary"
 import { retargetGeneratedEscape } from "./retarget-generated-escape"
 import { joinSignalEscapes } from "./join-signal-escapes"
 import { tuneGeneratedPairEscapes } from "./tune-generated-pair-escapes"
-import { routeFreshSurfaceBuses } from "./route-fresh-surface-buses"
+import { routeSurfaceBusPortfolio } from "./route-surface-bus-portfolio"
 import { rebalancePairEscapes } from "./rebalance-pair-escapes"
 import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
 import {
@@ -46,10 +47,17 @@ import {
 import { BaseSolver } from "@tscircuit/solver-utils"
 import { getCopperLayerNames } from "@tscircuit/fanout-solver"
 import { BusLanesSolver } from "./bus-lanes-solver"
-import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
+import type {
+  SimpleRouteJson,
+  SolverOptions,
+  SurfaceRoutingStrategy,
+  Trace,
+} from "./types"
 
 export interface BusLanesPipelineOptions extends SolverOptions {
   fanout?: "auto" | "none"
+  /** Surface approach search policy; auto uses joint negotiation for large buses. */
+  surfaceRouting?: SurfaceRoutingStrategy
   /** Default matched goal includes timing and differential coupling. Connectivity
    * explicitly requests only pad-to-pad routing and copper DRC on one carrier. */
   goal?: "matched" | "connectivity"
@@ -57,6 +65,12 @@ export interface BusLanesPipelineOptions extends SolverOptions {
   /** Native paired backbones, whole-copper matching and movable controllers
    * on a single inner carrier. All numerical settings are board-space mm. */
   singleCarrier?: NativeSingleCarrierOptions
+}
+
+class PipelineBoardBoundaryError extends Error {
+  constructor() {
+    super("Final copper exceeds the board outline or edge clearance")
+  }
 }
 
 function canRouteOnPadLayers(input: SimpleRouteJson) {
@@ -211,7 +225,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
                 signalEnvelope(this.acceptedTraces!).areaMm2 - 1e-6
               ) {
                 improvedBest = true
-                this.acceptedTraces = structuredClone(complete)
+                this.acceptCompleteTraces(complete)
                 this.stats = {
                   ...this.stats,
                   envelopeOptimization: {
@@ -291,7 +305,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
                   if (!validator.solved && !validator.failed)
                     validator.tryFinalAcceptance()
                 }
-                this.acceptedTraces = structuredClone(complete)
+                this.acceptCompleteTraces(complete)
                 this.stats = {
                   ...this.stats,
                   envelopeOptimization: {
@@ -321,6 +335,23 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
 
+  /** Carriers can be legal while a fixed fanout or owned approach crosses a
+   * cutout. Audit the complete output copper before retaining any snapshot. */
+  private assertCompleteCopperBoundary(traces: Trace[]) {
+    if (
+      !boardBoundaryReports(this.input, [
+        ...(this.input.traces ?? []),
+        ...traces,
+      ]).valid
+    )
+      throw new PipelineBoardBoundaryError()
+  }
+
+  private acceptCompleteTraces(traces: Trace[]) {
+    this.assertCompleteCopperBoundary(traces)
+    this.acceptedTraces = structuredClone(traces)
+  }
+
   private finishAccepted(early: boolean) {
     const optimization = this.envelopeOptimization
     this.envelopeOptimization = undefined
@@ -329,6 +360,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
     } catch (error) {
       this.stats = { ...this.stats, optimizationCleanupError: String(error) }
     }
+    this.assertCompleteCopperBoundary(this.acceptedTraces!)
     this.traces = structuredClone(this.acceptedTraces!)
     this.solved = true
     this.failed = false
@@ -784,12 +816,18 @@ export class BusLanesPipelineSolver extends BaseSolver {
       (this.input.buses?.length ?? 0) > 1 &&
       canRouteOnPadLayers(this.input)
     ) {
-      this.sharedPackages = routeFreshSurfaceBuses(
+      this.sharedPackages = routeSurfaceBusPortfolio(
         this.input,
         laneInput,
         this.escapes,
         terminalLayers,
         this.childOptions(),
+        {
+          strategy: this.options.surfaceRouting,
+          onProgress: (surfaceRouting) => {
+            this.stats = { ...this.stats, surfaceRouting }
+          },
+        },
       )
       return
     }
@@ -977,15 +1015,19 @@ export class BusLanesPipelineSolver extends BaseSolver {
             throw Error(
               "Native single-carrier matching exhausted its routing plans",
             )
-          this.acceptedTraces = structuredClone(result.value)
+          this.acceptCompleteTraces(result.value)
           this.finishAccepted(false)
         }
       } catch (error) {
         this.nativeSingleCarrier?.return(null)
         this.nativeSingleCarrier = undefined
+        this.traces = []
         this.failed = true
         this.error = String(error)
-        this.failureCode = "native_single_carrier_matching_failed"
+        this.failureCode =
+          error instanceof PipelineBoardBoundaryError
+            ? "board_boundary_violation"
+            : "native_single_carrier_matching_failed"
         this.phase = "failed"
       }
       return
@@ -1002,8 +1044,17 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.failed = solver.failed
       this.error = solver.error
       if (solver.solved) {
-        this.traces = structuredClone(solver.traces)
-        this.solved = true
+        try {
+          this.assertCompleteCopperBoundary(solver.traces)
+          this.traces = structuredClone(solver.traces)
+          this.solved = true
+        } catch (error) {
+          this.traces = []
+          this.failed = true
+          this.error = String(error)
+          this.failureCode = "board_boundary_violation"
+          this.phase = "failed"
+        }
       }
       return
     }
@@ -1177,7 +1228,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
           )
         )
           throw Error("Final absolute bus length violation")
-        this.acceptedTraces = structuredClone(this.traces)
+        this.acceptCompleteTraces(this.traces)
         this.phase = "optimize_envelope"
         this.envelopeOptimization = this.optimizeEnvelope()
       }
@@ -1208,7 +1259,10 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.phase = "retry_layers"
         return
       }
-      this.failureCode = this.child?.failureCode ?? "local_dogbone_failed"
+      this.failureCode =
+        error instanceof PipelineBoardBoundaryError
+          ? "board_boundary_violation"
+          : (this.child?.failureCode ?? "local_dogbone_failed")
       this.error = error instanceof Error ? error.message : String(error)
       this.failed = true
       this.phase = "failed"
