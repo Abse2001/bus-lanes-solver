@@ -6,6 +6,7 @@ import { fixedRouteLength, minimumLengthTargets } from "./route-lengths"
 import { distance, length } from "./geometry"
 import { VectorScene, fixedCopper, routeCopper } from "./vector-scene"
 import { tuningPathIsSelfClear } from "./length-tuning"
+import { coalesceCoupledStraightSegments } from "./coalesce-coupled-straight-segments"
 import type { SimpleRouteJson, Trace, Point, Wire } from "./types"
 
 /** Tune shared corridors jointly; residual skew corrections are restricted to
@@ -24,7 +25,7 @@ export function tuneCoupledLengths(
   const pairedInput = { ...input, buses: [] }
   let result = tuneSmoothLengths(
     input,
-    traces,
+    coalesceCoupledStraightSegments(traces),
     minimumLengthTargets(pairedInput, traces),
     options,
   )

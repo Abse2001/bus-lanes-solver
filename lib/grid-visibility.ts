@@ -3,6 +3,7 @@ import {
   type LengthSearchLabel,
 } from "./length-search-frontier"
 import { GridComponents } from "./grid-components"
+import { gridBoardBoundaryMask } from "./grid-board-boundary"
 import type { Point, SimpleRouteJson } from "./types"
 import type { GridHeap } from "./grid-heap"
 import { acquireGridScratch, type GridScratchLease } from "./grid-scratch"
@@ -505,6 +506,7 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       scene.width,
       scene.input.minBoardEdgeClearance,
       scene.input.bounds,
+      scene.input.outline,
       scene.copper.map((c) => [c.a.x, c.a.y, c.b.x, c.b.y, c.radius, c.rect]),
     ])
     let cachedGrid = grids.get(gridKey)
@@ -514,7 +516,16 @@ export class GridVisibilitySearch extends GridHistoryProjector {
       grids.delete(gridKey)
       grids.set(gridKey, cachedGrid)
     }
-    this.blocked = cachedGrid?.blocked ?? new Uint8Array(n)
+    this.blocked =
+      cachedGrid?.blocked ??
+      (scene.input.outline?.length
+        ? gridBoardBoundaryMask(
+            scene.boardBoundary,
+            this.xs,
+            this.ys,
+            scene.width / 2,
+          )
+        : new Uint8Array(n))
     this.hardEdgeKnown = cachedGrid?.edgeKnown ?? new Uint8Array(n)
     this.hardEdgeBlocked = cachedGrid?.edgeBlocked ?? new Uint8Array(n)
     if (cachedGrid) this.copperBuckets = cachedGrid.buckets
@@ -1017,6 +1028,16 @@ export class GridVisibilitySearch extends GridHistoryProjector {
     buckets: CopperBuckets | undefined,
     margin = this.scene.margin,
   ): boolean {
+    if (
+      buckets === this.copperBuckets &&
+      this.scene.input.outline?.length &&
+      !this.scene.boardBoundary.containsSegment(
+        { x: fromX, y: fromY },
+        { x: toX, y: toY },
+        this.scene.width / 2,
+      )
+    )
+      return false
     if (!buckets) return true
     const minX = Math.min(fromX, toX),
       maxX = Math.max(fromX, toX)

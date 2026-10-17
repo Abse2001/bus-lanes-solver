@@ -9,6 +9,7 @@ import { extendCoupledSectionEnds } from "./extend-coupled-section"
 import { fixedRouteLength, maximumCarrierLength } from "./route-lengths"
 import { coupledPairCache } from "./coupled-pair-cache"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
+import { reserveBusPackageExits } from "./reserve-bus-package-exits"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { distance, length, simplify } from "./geometry"
 import { VectorScene, routeCopper, type Copper } from "./vector-scene"
@@ -235,9 +236,22 @@ export function* routeCoupledPair(
       )
       .flatMap((b) => b.connectionNames),
   )
-  const busMembers = input.connections.filter((c) => busNames.has(c.name))
+  const busMembers = input.connections.filter(
+    (c) => busNames.has(c.name) && c.pointsToConnect[0].layer === layer,
+  )
   if (busMembers.length > 2 && originalPads.some((p) => p.length)) {
-    const reserve = busMembers.length * (width + clearance)
+    // Members using another package face do not all need parallel escape
+    // space in the inter-package gap. Offer the actual face demand first;
+    // retain the wider whole-bus corridor as another geometric alternative.
+    const faceReserve = Math.max(
+      0,
+      ...reserveBusPackageExits(input, pair).map((guide) =>
+        distance(guide.a, guide.b),
+      ),
+    )
+    const reserves = [
+      ...new Set([faceReserve, busMembers.length * (width + clearance)]),
+    ]
     // Aligned pad columns can differ by a rounding residue after translation.
     // Use the travel direction for alignment instead of moving the corridor to
     // the opposite package edge because of a sub-nanometer difference.
@@ -246,22 +260,23 @@ export function* routeCoupledPair(
     const positions = busMembers.flatMap((c) =>
       c.pointsToConnect.map((p) => p[crossAxis]),
     )
-    const outer =
-      (side > 0 ? Math.max(...positions) : Math.min(...positions)) +
-      side * (reserve + 2 * width + gap + clearance)
-    for (let end = 0; end < 2; end++) {
-      const front = handoffChoices[end][0]
-      handoffChoices[end].unshift({
-        ...handoffChoices[end][0],
-        [axis]:
-          handoffChoices[end][0][axis] + (end === 0 ? sign : -sign) * reserve,
-        [crossAxis]: outer,
-      })
-      if (end === 0)
-        handoffChoices[end].unshift({
+    for (const reserve of reserves) {
+      const outer =
+        (side > 0 ? Math.max(...positions) : Math.min(...positions)) +
+        side * (reserve + 2 * width + gap + clearance)
+      for (let end = 0; end < 2; end++) {
+        const front = handoffChoices[end][0]
+        handoffChoices[end].push({
           ...front,
-          [axis]: front[axis] + (sign * reserve) / 2,
+          [axis]: front[axis] + (end === 0 ? sign : -sign) * reserve,
+          [crossAxis]: outer,
         })
+        if (end === 0)
+          handoffChoices[end].push({
+            ...front,
+            [axis]: front[axis] + (sign * reserve) / 2,
+          })
+      }
     }
   }
   // A retry must explore another handoff topology instead of repeatedly

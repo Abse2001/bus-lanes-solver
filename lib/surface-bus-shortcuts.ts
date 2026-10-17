@@ -6,6 +6,7 @@ import {
   routeSurfaceBridge,
   surfaceBridgeEligible,
 } from "./route-surface-bridge"
+import { routeSurfaceViaAttachments } from "./route-surface-via-attachments"
 import type { Wire } from "./types"
 
 /** Reduce a bus's length target before allocating its shared tuning space.
@@ -15,7 +16,11 @@ import type { Wire } from "./types"
  * feasible candidate before any geometry is accepted. */
 export function* surfaceBusShortcutCandidates(
   previous: FlexibleSignalState,
-  options: { maxAttempts?: number; maxExpansions?: number } = {},
+  options: {
+    maxAttempts?: number
+    maxExpansions?: number
+    maxVias?: 2 | 4
+  } = {},
 ): Generator<void, FlexibleSignalState[]> {
   let state = previous
   const candidates = [previous]
@@ -34,7 +39,9 @@ export function* surfaceBusShortcutCandidates(
       ),
     )
     const targets = busLengthReports(state.native, joined)
-      .filter((report) => report.toleranceMm !== null)
+      .filter(
+        (report) => report.toleranceMm !== null && report.lengths.length > 1,
+      )
       .flatMap((report) => {
         const lengths = [...report.lengths].sort(
           (a, b) => (b.totalLengthMm ?? 0) - (a.totalLengthMm ?? 0),
@@ -71,15 +78,24 @@ export function* surfaceBusShortcutCandidates(
             ceiling,
             target.nextLongest - fixedRouteLength(state.native, name) - 1e-6,
           )
-    let replacement = yield* routeSurfaceBridge(local, connection, {
-      maxLength: nextCeiling,
-      maxExpansions: options.maxExpansions ?? 750000,
-    })
-    if (!replacement && nextCeiling < ceiling - 1e-6)
-      replacement = yield* routeSurfaceBridge(local, connection, {
-        maxLength: ceiling,
+    function* shorterRoute(maxLength: number) {
+      const settings = {
+        maxLength,
+        maxVias: options.maxVias ?? 2,
         maxExpansions: options.maxExpansions ?? 750000,
+      }
+      const bridge = yield* routeSurfaceBridge(local, connection!, settings)
+      if (bridge || settings.maxVias !== 4) return bridge
+      return yield* routeSurfaceViaAttachments(local, connection!, {
+        ...settings,
+        candidateEscapes: state.escapes.filter(
+          (escape) => escape.connection_name === name,
+        ),
       })
+    }
+    let replacement = yield* shorterRoute(nextCeiling)
+    if (!replacement && nextCeiling < ceiling - 1e-6)
+      replacement = yield* shorterRoute(ceiling)
     if (!replacement) continue
     const improved = joinSignalEscapes(replacement.carrier, replacement.escapes)
     if (length(improved.route) >= oldLength - 0.25 + 1e-8) continue

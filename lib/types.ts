@@ -91,6 +91,8 @@ export interface SimpleRouteJson {
     maxUncoupledLength?: number
   }>
 }
+export type SurfaceRoutingStrategy = "auto" | "sites" | "joint"
+
 export interface SolverOptions {
   /** Candidate budget for tuning the original paired corridor. */
   originalCorridorTuningCandidates?: number

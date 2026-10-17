@@ -28,7 +28,14 @@ export function* planSharedPairCorridors(
   input: SimpleRouteJson,
   terminalLayers: ReadonlyMap<string, string[]>,
   freshDogbones = false,
-  options: { preferPackageOnlyTuning?: boolean } = {},
+  options: {
+    preferPackageOnlyTuning?: boolean
+    onProgress?: (progress: {
+      connectionName: string
+      pairedSignals: number
+      candidates: number
+    }) => void
+  } = {},
 ): Generator<Trace[] | undefined> {
   const pairs = input.differentialPairs ?? []
   const bounded = input.buses?.some((bus) => bus.maxLength !== undefined)
@@ -58,6 +65,28 @@ export function* planSharedPairCorridors(
   const alternatives: (number | readonly [number, number])[] = freshDogbones
     ? [100, 2, 3, 0, 1, 101, 102, 103, 4, 104, 5, 105, 6, 106, 7, 107]
     : [1, 2, [0, 1], [1, 0], 0, [0, 2], [2, 0], 3, [1, 2], [2, 1], 4, 5, 6, 7]
+  const carrierRounds = Math.max(
+    1,
+    ...pairs.map((pair) => {
+      const members = pair.connectionNames.map(
+        (name) =>
+          input.connections.find((connection) => connection.name === name)!,
+      )
+      return (
+        terminalLayers.get(members[0].name) ?? [
+          members[0].pointsToConnect[0].layer,
+        ]
+      ).filter(
+        (layer) =>
+          (!input.allowedLayers || input.allowedLayers.includes(layer)) &&
+          members.every(
+            (member) =>
+              terminalLayers.get(member.name)?.includes(layer) ??
+              member.pointsToConnect[0].layer === layer,
+          ),
+      ).length
+    }),
+  )
   // Prefer corrections inside package approaches. A secondary provisional
   // shape may still help ordinary lanes connect; final pipeline acceptance
   // independently enforces physical coupling outside those approaches.
@@ -65,12 +94,19 @@ export function* planSharedPairCorridors(
     (freshDogbones && options.preferPackageOnlyTuning
       ? [false, true]
       : [false]
-    ).map((allowProvisionalPairTuning) => ({
-      variant,
-      allowProvisionalPairTuning,
-    })),
+    ).flatMap((allowProvisionalPairTuning) =>
+      Array.from({ length: carrierRounds }, (_, carrierRound) => ({
+        variant,
+        allowProvisionalPairTuning,
+        carrierRound,
+      })),
+    ),
   )
-  for (const { variant, allowProvisionalPairTuning } of searches) {
+  for (const {
+    variant,
+    allowProvisionalPairTuning,
+    carrierRound,
+  } of searches) {
     for (const [index, pair] of pairs.entries()) {
       const members = pair.connectionNames.map(
         (name) => input.connections.find((c) => c.name === name)!,
@@ -80,9 +116,21 @@ export function* planSharedPairCorridors(
         ?.filter((layer) =>
           members.every((c) => terminalLayers.get(c.name)?.includes(layer)),
         ) ?? [members[0].pointsToConnect[0].layer]
-      for (const layer of layers.filter(
-        (layer) => !input.allowedLayers || input.allowedLayers.includes(layer),
-      )) {
+      // Offer one carrier choice for every pair before starting the next
+      // carrier round. A difficult alternate-layer escape must not starve
+      // another pair's inexpensive preferred-layer domain.
+      for (const layer of layers
+        .filter(
+          (layer) =>
+            !input.allowedLayers || input.allowedLayers.includes(layer),
+        )
+        .slice(carrierRound, carrierRound + 1)) {
+        options.onProgress?.({
+          connectionName: pair.connectionNames[0],
+          pairedSignals:
+            domains.filter((domain) => domain.length > 0).length * 2,
+          candidates: domains[index].length,
+        })
         const reserved = typeof variant === "number" && variant >= 100
         const sceneKey = JSON.stringify([index, layer, reserved])
         const local = scenes.get(sceneKey) ?? {

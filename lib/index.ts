@@ -1,3 +1,4 @@
+export { BoardBoundary, boardBoundaryReports } from "./board-boundary"
 export { BusLanesSolver } from "./bus-lanes-solver"
 export type * from "./types"
 export {

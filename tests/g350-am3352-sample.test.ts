@@ -12,6 +12,7 @@ import {
   loadG350Am3352Sample,
 } from "../scripts/g350-am3352-sample"
 import { validateG350Am3352Sample } from "../scripts/validate-g350-am3352-sample"
+import type { SimpleRouteJson, Trace, Wire } from "../lib"
 
 // The imported circuit contains heterogeneous records. Narrow by record type
 // below while retaining the original JSON field names and numeric pin numbers.
@@ -232,4 +233,254 @@ test("49 straight connections through foreign BGA pads cannot count as a routing
   expect(report.drc.valid).toBe(false)
   expect(report.valid).toBe(false)
   expect(report.fabricationReady).toBe(false)
+})
+
+// Small copper examples isolate the independent acceptance checks from routing
+// and preserve the full, hash-indexed G350 capture above.
+const acceptanceWire = (x: number, y: number, layer = "top"): Wire => ({
+  route_type: "wire",
+  x,
+  y,
+  layer,
+  width: 0.1016,
+})
+const acceptanceVia = (x: number, y: number, from = "top", to = "bottom") => ({
+  route_type: "via" as const,
+  x,
+  y,
+  from_layer: from,
+  to_layer: to,
+  layers: ["top", "inner1", "inner2", "bottom"],
+  via_diameter: 0.4572,
+  via_hole_diameter: 0.254,
+})
+function copperAcceptance(
+  route: Trace["route"],
+  obstacles: SimpleRouteJson["obstacles"] = [],
+  board: Partial<
+    Pick<SimpleRouteJson, "outline" | "minBoardEdgeClearance">
+  > = {},
+) {
+  const input: SimpleRouteJson = {
+    layerCount: 4,
+    allowedLayers: ["top", "bottom"],
+    allowBlindAndBuriedVias: false,
+    minTraceWidth: 0.1016,
+    minTraceToPadEdgeClearance: 0.1016,
+    minViaPadDiameter: 0.4572,
+    minViaHoleDiameter: 0.254,
+    minViaHoleEdgeToViaHoleEdgeClearance: 0.254,
+    bounds: { minX: -10, maxX: 10, minY: -10, maxY: 10 },
+    obstacles,
+    connections: [
+      {
+        name: "CONTROL",
+        pointsToConnect: [acceptanceWire(0, 0), acceptanceWire(4, 0)],
+      },
+    ],
+    buses: [],
+    differentialPairs: [],
+    traces: [],
+    ...board,
+  }
+  const output: SimpleRouteJson = {
+    ...input,
+    traces: [
+      {
+        type: "pcb_trace",
+        pcb_trace_id: "control",
+        connection_name: "CONTROL",
+        source_trace_id: "CONTROL",
+        route,
+      },
+    ],
+  }
+  const before = structuredClone(input)
+  const report = validateG350Am3352Sample(input, output)
+  expect(input).toEqual(before)
+  return report
+}
+
+test("G350 acceptance rejects non-finite or undersized copper independently of DRC", () => {
+  expect(
+    copperAcceptance([acceptanceWire(0, 0), acceptanceWire(4, 0)]).valid,
+  ).toBe(true)
+  for (const point of [
+    { ...acceptanceWire(2, 0), x: Number.NaN },
+    { ...acceptanceWire(2, 0), y: Number.POSITIVE_INFINITY },
+    { ...acceptanceWire(2, 0), width: Number.NaN },
+    { ...acceptanceWire(2, 0), width: Number.POSITIVE_INFINITY },
+    { ...acceptanceWire(2, 0), width: 0.01 },
+  ]) {
+    const report = copperAcceptance([
+      acceptanceWire(0, 0),
+      point,
+      acceptanceWire(4, 0),
+    ])
+    expect(report.complete).toBe(true)
+    expect(report.routeGeometryValid).toBe(false)
+    expect(report.valid).toBe(false)
+  }
+})
+
+test("G350 acceptance detects same-net shortcuts on untimed controls", () => {
+  const report = copperAcceptance([
+    acceptanceWire(0, 0),
+    acceptanceWire(4, 4),
+    acceptanceWire(0, 4),
+    acceptanceWire(4, 0),
+  ])
+  expect(report.complete).toBe(true)
+  expect(report.drc.valid).toBe(true)
+  expect(report.matched).toBe(true)
+  expect(report.selfShorts).not.toHaveLength(0)
+  expect(report.valid).toBe(false)
+})
+
+test("G350 acceptance requires drill spacing even between vias on the same net", () => {
+  const viaRoute = (secondX: number): Trace["route"] => [
+    acceptanceWire(0, 0),
+    acceptanceWire(1, 1),
+    acceptanceVia(1, 1),
+    acceptanceWire(1, 1, "bottom"),
+    acceptanceWire(secondX, 1, "bottom"),
+    acceptanceVia(secondX, 1, "bottom", "top"),
+    acceptanceWire(secondX, 1),
+    acceptanceWire(4, 0),
+  ]
+  expect(copperAcceptance(viaRoute(2)).valid).toBe(true)
+  const report = copperAcceptance(viaRoute(1.5))
+  expect(report.drc.valid).toBe(true)
+  expect(report.drillSpacingValid).toBe(false)
+  expect(report.valid).toBe(false)
+})
+
+test("G350 acceptance rejects incorrect via dimensions and partial layer spans", () => {
+  for (const change of [
+    { via_diameter: 0.3 },
+    { via_hole_diameter: 0.2 },
+    { layers: ["top", "bottom"] },
+    { from_layer: "inner1" },
+    { to_layer: "top" },
+  ]) {
+    const report = copperAcceptance([
+      acceptanceWire(0, 0),
+      acceptanceWire(1, 1),
+      { ...acceptanceVia(1, 1), ...change },
+      acceptanceWire(1, 1, "bottom"),
+      acceptanceWire(2, 1, "bottom"),
+      acceptanceVia(2, 1, "bottom", "top"),
+      acceptanceWire(2, 1),
+      acceptanceWire(4, 0),
+    ])
+    expect(report.complete).toBe(true)
+    expect(report.allowedLayers).toBe(false)
+    expect(report.valid).toBe(false)
+  }
+})
+
+test("G350 acceptance rejects missing and offset layer-transition vias", () => {
+  for (const route of [
+    [
+      acceptanceWire(0, 0),
+      acceptanceWire(2, 1, "bottom"),
+      acceptanceWire(4, 0),
+    ],
+    [
+      acceptanceWire(0, 0),
+      acceptanceWire(1, 1),
+      acceptanceVia(1.01, 1),
+      acceptanceWire(1.01, 1, "bottom"),
+      acceptanceWire(2, 1, "bottom"),
+      acceptanceVia(2, 1, "bottom", "top"),
+      acceptanceWire(2, 1),
+      acceptanceWire(4, 0),
+    ],
+  ]) {
+    const report = copperAcceptance(route)
+    expect(report.complete).toBe(true)
+    expect(
+      report.drc.issues.some((issue) => issue.code === "disconnected-trace"),
+    ).toBe(true)
+    expect(report.valid).toBe(false)
+  }
+})
+
+test("G350 acceptance audits the larger copper width at a segment transition", () => {
+  const report = copperAcceptance(
+    [{ ...acceptanceWire(0, 0), width: 0.4 }, acceptanceWire(4, 0)],
+    [
+      {
+        center: { x: 2, y: 0.3 },
+        width: 0.05,
+        height: 0.05,
+        layers: ["top"],
+        connectedTo: [],
+      },
+    ],
+  )
+  expect(report.routeGeometryValid).toBe(true)
+  expect(report.drc.valid).toBe(false)
+  expect(report.valid).toBe(false)
+})
+
+test("G350 acceptance rejects copper that crosses an outline cutout inside the bounds", () => {
+  const report = copperAcceptance(
+    [acceptanceWire(0, 0), acceptanceWire(4, 0)],
+    [],
+    {
+      outline: [
+        { x: -5, y: -5 },
+        { x: 5, y: -5 },
+        { x: 5, y: 5 },
+        { x: 3, y: 5 },
+        { x: 3, y: -1 },
+        { x: 1, y: -1 },
+        { x: 1, y: 5 },
+        { x: -5, y: 5 },
+      ],
+      minBoardEdgeClearance: 0.3,
+    },
+  )
+  expect(report.complete).toBe(true)
+  expect(report.drc.valid).toBe(true)
+  expect(report.boundary.valid).toBe(false)
+  expect(report.valid).toBe(false)
+})
+
+test("non-finite G350 pair copper is rejected before exterior coupling sampling", () => {
+  const input = loadG350Am3352Sample()
+  const connection = input.connections.find(
+    (c) => c.name === input.differentialPairs![0].connectionNames[0],
+  )!
+  const output: SimpleRouteJson = {
+    ...input,
+    traces: [
+      {
+        type: "pcb_trace",
+        pcb_trace_id: "nonfinite_pair",
+        connection_name: connection.name,
+        source_trace_id: connection.source_trace_id,
+        route: [
+          {
+            ...connection.pointsToConnect[0],
+            route_type: "wire",
+            width: 0.1016,
+          },
+          acceptanceWire(Number.POSITIVE_INFINITY, 10),
+          {
+            ...connection.pointsToConnect[1],
+            route_type: "wire",
+            width: 0.1016,
+          },
+        ],
+      },
+    ],
+  }
+  const report = validateG350Am3352Sample(input, output)
+  expect(report.routeGeometryValid).toBe(false)
+  expect(
+    report.coupling.every((pair) => !pair.applicable && !pair.matched),
+  ).toBe(true)
+  expect(report.valid).toBe(false)
 })
