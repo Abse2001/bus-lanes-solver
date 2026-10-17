@@ -95,7 +95,8 @@ function run(
   options: SurfaceNegotiationOptions = {},
 ) {
   const progress: SurfaceNegotiationProgress[] = [],
-    conflicts: number[] = []
+    conflicts: number[] = [],
+    states: FlexibleSignalState[] = []
   let finalFallback = false
   const work = negotiateSurfaceRoutes(state.native, state, {
     congestionHistory: true,
@@ -114,7 +115,10 @@ function run(
       progress.push(value)
       if (value.stage === "closure" && value.round === 0) finalFallback = true
     },
-    onProvisionalCheckpoint: (_, count) => conflicts.push(count),
+    onProvisionalCheckpoint: (value, count) => {
+      conflicts.push(count)
+      states.push(value)
+    },
     ...options,
   })
   let next = work.next(),
@@ -122,7 +126,12 @@ function run(
   try {
     while (!next.done && !finalFallback && ++steps < 50000) next = work.next()
     expect(next.done || finalFallback).toBe(true)
-    return { result: finalFallback ? null : next.value, progress, conflicts }
+    return {
+      result: finalFallback ? null : next.value,
+      progress,
+      conflicts,
+      states,
+    }
   } finally {
     if (!next.done) work.return(null)
   }
@@ -220,4 +229,128 @@ test("default early repair remains reachable after a large sweep without congest
   expect(early.round).toBe(36)
   expect(outcome.result!.traces).toHaveLength(36)
   expect(state).toEqual(before)
+}, 15000)
+
+test("sparse components are repaired fairly while ordinary progress postpones stagnation", () => {
+  const groups = [
+      { name: "locked", x: -2, span: 1 },
+      { name: "easy", x: 2, span: 0.3 },
+      { name: "free_0", x: 6, span: 2 },
+      { name: "free_1", x: 11, span: 2 },
+      { name: "free_2", x: 16, span: 2 },
+    ],
+    connections = groups.flatMap(({ name, x, span }) => [
+      {
+        name: `${name}_h`,
+        pointsToConnect: [
+          wire(x - span, name === "easy" ? -0.7 : 0),
+          wire(x + span, name === "easy" ? -0.7 : 0),
+        ],
+      },
+      { name: `${name}_v`, pointsToConnect: [wire(x, -span), wire(x, span)] },
+    ]),
+    native: SimpleRouteJson = {
+      layerCount: 4,
+      allowedLayers: ["top", "bottom"],
+      minTraceWidth: 0.12,
+      minTraceToPadEdgeClearance: 0.08,
+      minViaPadDiameter: 0.3,
+      minViaHoleDiameter: 0.15,
+      bounds: { minX: -4, maxX: 19, minY: -3, maxY: 3 },
+      connections,
+      obstacles: connections.flatMap((connection) =>
+        connection.pointsToConnect.map((point) => ({
+          center: point,
+          width: 0.12,
+          height: 0.12,
+          layers: ["top"],
+          connectedTo: [connection.name],
+        })),
+      ),
+      buses: [
+        {
+          busId: "locked",
+          connectionNames: ["locked_h", "locked_v"],
+          allowedLayers: ["top"],
+          maxLength: 2,
+        },
+      ],
+    },
+    state: FlexibleSignalState = {
+      native,
+      pending: native,
+      retained: [],
+      escapes: [],
+      traces: connections.map((connection) => ({
+        type: "pcb_trace",
+        pcb_trace_id: connection.name,
+        connection_name: connection.name,
+        route:
+          connection.name === "easy_h"
+            ? [
+                connection.pointsToConnect[0],
+                wire(1.7, 0),
+                wire(2.3, 0),
+                connection.pointsToConnect[1],
+              ]
+            : connection.pointsToConnect,
+      })),
+    },
+    before = structuredClone(state),
+    outcome = run(state, {
+      maxRounds: 14,
+      maxExpansions: 20,
+      surfaceGridStep: 0.1,
+      heuristicWeight: 4,
+      hardNeighborRouting: true,
+    }),
+    firstEarly = outcome.progress.findIndex(
+      (value) => value.stage === "closure" && value.round > 0,
+    ),
+    early = outcome.progress
+      .slice(firstEarly)
+      .filter((value) => value.stage === "closure" && value.round > 0),
+    previousGain = outcome.progress
+      .slice(0, firstEarly)
+      .find((value) => value.conflicts < 5)!
+  expect(state).toEqual(before)
+  expect(outcome.result).toBeNull()
+  expect(previousGain.round).toBeGreaterThan(0)
+  expect(early[0].round).toBe(connections.length)
+  expect(early[0].round - previousGain.round).toBeLessThan(connections.length)
+  // The third proposal in the first probe was never entered after free_0's
+  // gain. It must stay unmarked and receive the next turn ahead of free_2.
+  expect(early.slice(0, 4).map((value) => value.connectionName)).toEqual([
+    "locked_h",
+    "free_0_h",
+    "free_1_h",
+    "free_2_h",
+  ])
+  expect(outcome.conflicts.at(-1)).toBe(1)
+  const repaired = outcome.states.at(-1)!,
+    freeInput = {
+      ...native,
+      connections: connections.filter(
+        (connection) => !connection.name.startsWith("locked"),
+      ),
+      buses: [],
+    },
+    traces = repaired.traces
+      .filter((trace) => !trace.connection_name!.startsWith("locked"))
+      .map((trace) =>
+        joinSignalEscapes(
+          trace,
+          repaired.escapes.filter(
+            (escape) => escape.connection_name === trace.connection_name,
+          ),
+        ),
+      )
+  expect(
+    validateRoutedCopperDrc({
+      inputSrj: freeInput,
+      routedSrj: { ...freeInput, traces },
+      clearance: 0.08,
+      allowBlindAndBuriedVias: false,
+    } as Parameters<typeof validateRoutedCopperDrc>[0]).valid,
+  ).toBe(true)
 }, 15000)

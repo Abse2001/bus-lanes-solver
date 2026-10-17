@@ -644,7 +644,11 @@ export function* negotiateSurfaceRoutes(
   lastFailure.fill(-100)
   lastClearAttempt.fill(-100)
   const maximumClosure = Math.min(4, options.maxClosureSize ?? 3),
-    earlySweep = Math.max(1, targets.length)
+    earlySweep = Math.max(1, targets.length),
+    sparseClosureCooldown = Math.max(4, Math.ceil(earlySweep / 3)),
+    lastEarlyAttempt = new Int32Array(targets.length),
+    earlyComponentAttempts = new Map<string, number>()
+  lastEarlyAttempt.fill(-earlySweep)
   let lastEarlyClosure = -earlySweep,
     continueEarlyClosure = false
   for (let round = 0; round < (options.maxRounds ?? 120); round++) {
@@ -666,25 +670,47 @@ export function* negotiateSurfaceRoutes(
       options.earlyClosure !== false &&
       (continueEarlyClosure ||
         (round - lastImprovement >= earlySweep &&
-          round - lastEarlyClosure >= earlySweep))
+          round - lastEarlyClosure >= earlySweep) ||
+        (round >= earlySweep &&
+          round - lastEarlyClosure >= sparseClosureCooldown &&
+          active.length <= Math.ceil(earlySweep / 3) &&
+          conflictComponents(active).every(
+            (component) => component.length <= maximumClosure,
+          )))
     ) {
       lastEarlyClosure = round
       continueEarlyClosure = false
       const proposals = earlyClosureProposals(active, maximumClosure, 3)
       if (
-        yield* repairClosure(proposals, {
-          gridStep: 0.1,
-          maxVias: 4,
-          softPenalty: 20,
-          orientation: 0,
-          originVariant: 0,
-          maxExpansions: Math.min(25000, options.maxClosureExpansions ?? 25000),
-          maxOrders: 2,
-          maxProposals: 3,
-          supplementalDomains: false,
-          adaptViaBudget: true,
-          round,
-        })
+        yield* repairClosure(
+          proposals.map((proposal) => proposal.release),
+          {
+            gridStep: 0.1,
+            maxVias: 4,
+            softPenalty: 20,
+            orientation: 0,
+            originVariant: 0,
+            maxExpansions: Math.min(
+              25000,
+              options.maxClosureExpansions ?? 25000,
+            ),
+            maxOrders: 2,
+            maxProposals: 3,
+            supplementalDomains: false,
+            adaptViaBudget: true,
+            onProposal: (release) => {
+              const proposal = proposals.find(
+                (value) => value.release === release,
+              )!
+              for (const index of release) lastEarlyAttempt[index] = round
+              earlyComponentAttempts.set(
+                proposal.key,
+                (earlyComponentAttempts.get(proposal.key) ?? 0) + 1,
+              )
+            },
+            round,
+          },
+        )
       ) {
         const remaining = edges(current).length
         if (!remaining) {
@@ -1126,6 +1152,7 @@ export function* negotiateSurfaceRoutes(
     maxProposals?: number
     supplementalDomains?: boolean
     adaptViaBudget?: boolean
+    onProposal?: (component: number[]) => void
     round?: number
   }
 
@@ -1133,45 +1160,49 @@ export function* negotiateSurfaceRoutes(
     active: Array<[number, number]>,
     maximum: number,
     limit: number,
-  ): number[][] {
+  ): Array<{ release: number[]; key: string }> {
     const components = conflictComponents(active),
+      busy = new Set(active.flat()),
       internal = (component: number[]) =>
         active.filter(
           ([a, b]) => component.includes(a) && component.includes(b),
         ).length,
-      proposals: number[][] = [],
-      seen = new Set<string>(),
-      add = (component: number[]) => {
-        const key = [...component].sort((a, b) => a - b).join(":")
-        if (component.length && !seen.has(key) && proposals.length < limit) {
-          seen.add(key)
-          proposals.push(component)
-        }
-      }
-    components.sort((a, b) => internal(b) - internal(a) || a.length - b.length)
-    // Give each component a first attempt before spending the small budget
-    // on more fragments or nearby clear blockers from the same component.
+      lastAttempt = (component: number[]) =>
+        Math.max(...component.map((index) => lastEarlyAttempt[index])),
+      proposals: Array<{ release: number[]; key: string }> = []
+    components.sort(
+      (a, b) =>
+        lastAttempt(a) - lastAttempt(b) ||
+        internal(b) - internal(a) ||
+        Math.min(...a) - Math.min(...b),
+    )
+    // Give distinct, least-recently attempted components a turn. A component
+    // that splits or merges inherits its members' newest attempt timestamp.
     for (const component of components) {
-      if (component.length <= maximum) add(component)
-      else {
-        const first = closureFragments(component, active, maximum).next()
-        if (!first.done) add(first.value)
-      }
-    }
-    for (const component of components)
-      if (
+      if (proposals.length >= limit) break
+      const key = [...component].sort((a, b) => a - b).join(":"),
+        attempt = earlyComponentAttempts.get(key) ?? 0
+      let release = component
+      if (component.length > maximum) {
+        const fragments = closureFragments(component, active, maximum),
+          skip = attempt % Math.max(1, options.maxClosureFragments ?? 12)
+        let next = fragments.next()
+        if (next.done) continue
+        const first = next.value
+        for (let index = 0; index < skip && !next.done; index++)
+          next = fragments.next()
+        release = next.done ? first : next.value
+      } else if (
+        attempt % 2 === 1 &&
         component.length < maximum &&
         (options.maxClosureNeighbors ?? 4) > 0
       ) {
-        const neighbor = closureNeighbors(component, maximum >= 4)[0]
-        if (neighbor !== undefined) add([...component, neighbor])
+        const neighbor = closureNeighbors(component, maximum >= 4).find(
+          (index) => !busy.has(index),
+        )
+        if (neighbor !== undefined) release = [...component, neighbor]
       }
-    for (const component of components) {
-      if (proposals.length >= limit) break
-      for (const fragment of closureFragments(component, active, maximum)) {
-        add(fragment)
-        if (proposals.length >= limit) break
-      }
+      proposals.push({ release, key })
     }
     return proposals
   }
@@ -1183,6 +1214,7 @@ export function* negotiateSurfaceRoutes(
     const before = current.slice(),
       beforeCount = edges(current).length
     for (const component of proposals.slice(0, settings.maxProposals)) {
+      settings.onProposal?.(component)
       report("closure", component[0], settings.round ?? 0, beforeCount)
       const maxVias =
         settings.adaptViaBudget &&

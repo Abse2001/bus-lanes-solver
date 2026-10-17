@@ -200,3 +200,91 @@ test("ordinary matching can spend caller-owned TOP approach length while holding
       .matched,
   ).toBe(true)
 })
+
+test("ordinary escape matching includes supplied same-net copper in its target and matched-name report", () => {
+  const wire = (x: number, y: number, layer = "top"): Wire => ({
+      x,
+      y,
+      layer,
+      width: 0.1,
+      route_type: "wire",
+    }),
+    via = (y: number): Via => ({
+      x: 0,
+      y,
+      route_type: "via",
+      from_layer: "top",
+      to_layer: "bottom",
+      layers: ["top", "inner1", "inner2", "bottom"],
+      via_diameter: 0.3,
+      via_hole_diameter: 0.15,
+    }),
+    make = (name: string, id: string, route: Trace["route"]): Trace => ({
+      type: "pcb_trace",
+      pcb_trace_id: id,
+      connection_name: name,
+      route,
+    }),
+    carriers = [
+      make("data", "held-data", [wire(0, 4, "bottom"), wire(0, 8, "bottom")]),
+      make("peer", "held-peer", [wire(4, 0), wire(4, 12)]),
+    ],
+    escapes = [
+      make("data", "owned-source", [
+        wire(0, 0),
+        wire(0, 4),
+        via(4),
+        wire(0, 4, "bottom"),
+      ]),
+      make("data", "owned-target", [
+        wire(0, 10),
+        wire(0, 8),
+        via(8),
+        wire(0, 8, "bottom"),
+      ]),
+    ],
+    supplied = make("data", "supplied-data", [wire(-2, -1), wire(-1, -1)]),
+    input = {
+      layerCount: 4,
+      allowedLayers: ["top", "bottom"],
+      minTraceWidth: 0.1,
+      minTraceToPadEdgeClearance: 0.1,
+      minViaPadDiameter: 0.3,
+      minViaHoleDiameter: 0.15,
+      minViaHoleEdgeToViaHoleEdgeClearance: 0.1,
+      bounds: { minX: -4, maxX: 6, minY: -3, maxY: 14 },
+      obstacles: [],
+      connections: [
+        { name: "data", pointsToConnect: [wire(0, 0), wire(0, 10)] },
+        { name: "peer", pointsToConnect: [wire(4, 0), wire(4, 12)] },
+      ],
+      traces: [supplied, ...escapes],
+      buses: [
+        {
+          busId: "data-bus",
+          connectionNames: ["data", "peer"],
+          maxLengthSkew: 0.1,
+        },
+      ],
+    },
+    before = structuredClone({ input, carriers, escapes }),
+    work = tuneGeneratedOrdinaryEscapes(input, carriers, escapes, {
+      maxCandidatesPerEscape: 2048,
+    })
+  let next = work.next()
+  while (!next.done) next = work.next()
+  expect(next.value).toBeTruthy()
+  const result = next.value!
+  expect(result.matchedNames).toEqual(["data"])
+  expect(result.unfinishedNames).toEqual([])
+  expect(result.traces).toBe(carriers)
+  expect(result.input.traces).toContain(supplied)
+  const joined = joinSignalEscapes(carriers[0], result.escapes)
+  expect(length(joined.route)).toBeCloseTo(10.9, 6)
+  expect(length(joined.route) + length(supplied.route)).toBeCloseTo(11.9, 6)
+  expect(
+    busLengthReports({ ...input, traces: [supplied] }, [joined, carriers[1]])[0]
+      .matched,
+  ).toBe(true)
+  expect({ input, carriers, escapes }).toEqual(before)
+})

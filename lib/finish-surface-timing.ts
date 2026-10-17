@@ -13,6 +13,7 @@ import { busLengthReports, pairLengthReports } from "./route-lengths"
 import { runBoundedRouting } from "./run-bounded-routing"
 import { shortenPairApproaches } from "./shorten-pair-approaches"
 import { tuneGeneratedOrdinaryEscapes } from "./tune-generated-ordinary-escapes"
+import { tuneGeneratedOrdinaryEscapeRuns } from "./tune-generated-ordinary-escape-runs"
 import { tuneGeneratedPairEscapes } from "./tune-generated-pair-escapes"
 import type { SimpleRouteJson, SolverOptions, Trace, Wire } from "./types"
 import { fixedCopper, routeCopper, VectorScene } from "./vector-scene"
@@ -163,6 +164,18 @@ export function* finishSurfaceTiming(
           prepared.traces,
           prepared.escapes,
           { maxCandidatesPerEscape: 4096 },
+        ),
+        maxSteps,
+      )
+      if (tuned) prepared = tuned
+    }
+    if (!accepted()) {
+      const tuned = yield* runBoundedRouting(
+        tuneGeneratedOrdinaryEscapeRuns(
+          prepared.input,
+          prepared.traces,
+          prepared.escapes,
+          { maxCandidatesPerRun: 4096 },
         ),
         maxSteps,
       )
