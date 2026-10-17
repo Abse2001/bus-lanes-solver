@@ -43,9 +43,7 @@
     "availableWorkerAudits": 10,
     "inputUnchangedPasses": 10,
     "fixedFanoutPreservationPasses": 10,
-    "unavailableCases": [
-      "outer-layers"
-    ],
+    "unavailableCases": ["outer-layers"],
     "outerWorkerNote": "Raw zero counts, zero solve time and false preservation flags are placeholders for unavailable evidence, not an observed mutation"
   },
   "cases": [
@@ -366,9 +364,7 @@
           "y": -27
         }
       },
-      "allowedSignalLayers": [
-        "inner1"
-      ],
+      "allowedSignalLayers": ["inner1"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": null,
       "requestedSignals": 47,
@@ -1326,10 +1322,7 @@
           "y": -27
         }
       },
-      "allowedSignalLayers": [
-        "inner1",
-        "inner2"
-      ],
+      "allowedSignalLayers": ["inner1", "inner2"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": {
         "inner2": 23,
@@ -1631,10 +1624,7 @@
           "y": 0
         }
       },
-      "allowedSignalLayers": [
-        "inner1",
-        "inner2"
-      ],
+      "allowedSignalLayers": ["inner1", "inner2"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": null,
       "requestedSignals": 47,
@@ -1683,10 +1673,7 @@
           "y": 0
         }
       },
-      "allowedSignalLayers": [
-        "inner1",
-        "inner2"
-      ],
+      "allowedSignalLayers": ["inner1", "inner2"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": null,
       "requestedSignals": 47,
@@ -1735,10 +1722,7 @@
           "y": 27
         }
       },
-      "allowedSignalLayers": [
-        "inner1",
-        "inner2"
-      ],
+      "allowedSignalLayers": ["inner1", "inner2"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": null,
       "requestedSignals": 47,
@@ -1787,10 +1771,7 @@
           "y": -27
         }
       },
-      "allowedSignalLayers": [
-        "inner1",
-        "inner2"
-      ],
+      "allowedSignalLayers": ["inner1", "inner2"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": null,
       "requestedSignals": 47,
@@ -1839,10 +1820,7 @@
           "y": -27
         }
       },
-      "allowedSignalLayers": [
-        "top",
-        "bottom"
-      ],
+      "allowedSignalLayers": ["top", "bottom"],
       "allowedSignalLayersInterpretation": "explicit caller restriction",
       "acceptedCarrierLayerCounts": null,
       "requestedSignals": 47,
@@ -1913,11 +1891,7 @@
       "typecheckExit": 0,
       "packageExit": 0,
       "packageUnpackedBytes": 2830410,
-      "packageConsumers": [
-        "Node",
-        "browser",
-        "TypeScript"
-      ],
+      "packageConsumers": ["Node", "browser", "TypeScript"],
       "noAssertionFailures": true
     },
     "typecheck": {
@@ -1927,11 +1901,7 @@
     "package": {
       "status": "passed",
       "exitCode": 0,
-      "isolatedConsumers": [
-        "Node",
-        "browser",
-        "TypeScript"
-      ],
+      "isolatedConsumers": ["Node", "browser", "TypeScript"],
       "unpackedBytes": 2830410
     },
     "priorDefaultTimeoutIsolatedSuite": {
@@ -1954,10 +1924,7 @@
       "L3": "power/reference planes",
       "L4": "Bottom DDR signals/component connections"
     },
-    "signalWireLayers": [
-      "top",
-      "bottom"
-    ],
+    "signalWireLayers": ["top", "bottom"],
     "viaType": "full-depth through-vias",
     "dqMapping": "explicit reproduction-only within-byte mapping; generic solver preserves supplied connectivity",
     "note": "The managed environment restarted after the last observed pulse at 3126.112 s of a configured 3600 s run. The process died before a final solver report or accepted output. This is interruption, not solver-budget exhaustion. Progress counters do not establish independent complete connectivity, matching or DRC acceptance. Runtime input immutability after interruption could not be checked.",
