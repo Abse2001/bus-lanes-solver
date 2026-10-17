@@ -4,6 +4,11 @@ A self-contained AM3352BZCZ100 and MT41K256M16TW-107:P placement using the
 fixture, loader, CLI and debugger structure of the
 [AM3352 SBC reproduction](am3352-sbc-reproduction.md).
 
+**Routing status:** the revised reproduction does not yet have a complete 49-signal
+route that passes both copper DRC and all length/coupling checks. See the
+[current validation report](g350-four-layer-benchmark/comparison.md). The DQ
+netlist repair below is explicit and reproduction-only.
+
 ## Input
 
 The CPU is at `(0,20)`, rotation 0; RAM is at `(0,6)`, rotation 270.

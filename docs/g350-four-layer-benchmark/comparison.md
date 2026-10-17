@@ -1,31 +1,32 @@
-Frozen checkpoint: **5/11 accepted, six timeouts, exit 1** with `--require-all-solved`.
-Each accepted case connected all 47 signals and passed combined copper DRC and full-copper length matching. These are the eleven legacy placements, not the exact 49-signal G350 board.
+# AM3352 benchmark: current source
 
-The measured source was copied into an immutable snapshot before later fixes. Its **217-file** source/harness/fixture SHA-256 is `116838825126711b3b228b06cf3f71d8e2f7c9327cd7b7c65f080bc5ed1105c2` (captured 2026-10-17 16:48:56 UTC). All 217 hashes matched before and after execution. [report.json](report.json) contains the manifest, reconstruction patch and per-case input hashes.
+**5/11 legacy placements accepted; six timed out.** Each accepted case connects all 47 signals and passes combined copper DRC and full-copper bus/pair matching. The exact 49-signal G350 fresh run was interrupted by an environment restart; no fully accepted G350 route is claimed.
 
-Workers ran serially in fresh Bun 1.4.3 processes, with a 180 s solve budget and a 195 s parent process deadline. The committed comparison used 3600 s per case and accepted 11/11. Machine load and dependency/runtime conditions are not controlled between historical runs.
+Measured source: local `11526d11fcf72ebe197646cc5090ea1f11ac9e68`, equivalent published `9f3ea4b3711992f27831bd442bb091d866f0b660`, Git tree `df7b629ae550da4485127f0d57ef8199712c9592`. The immutable snapshot verified 920 tracked files. [report.json](report.json) records normalized results, source hashes and accepted snapshot provenance.
 
-| Case | Historical s (3600 s cap) | Checkpoint s (180 s cap) | Connectivity / DRC / matching |
+Workers ran serially in fresh Bun 1.4.3 processes, with a 180 s solve budget and 195 s parent deadline. The table distinguishes solver time from worker wall time, which includes preparation/validation. A synchronous step can overrun the nominal solve budget. There is no controlled same-budget baseline comparison and no speedup claim.
+
+| Case | Solver s | Worker wall s | Accepted connectivity / DRC / matching |
 | --- | ---: | ---: | --- |
-| control | 69.153 | 114.173 | 47/47; pass / pass |
-| control-inner1 | 1906.120 | 180.175 timeout | 47 provisional traces; unaudited |
-| right | 54.406 | 71.444 | 47/47; pass / pass |
-| left | 69.314 | 104.173 | 47/47; pass / pass |
-| above | 80.479 | 114.591 | 47/47; pass / pass |
-| inner-layers | 105.011 | 118.302 | 47/47; pass / pass |
-| inner-layers-right | 141.706 | 180.796 timeout | 47 provisional traces; unaudited |
-| inner-layers-left | 210.172 | 180.000 timeout | 0 provisional traces; unaudited |
-| inner-layers-above | 261.317 | 180.001 timeout | 0 provisional traces; unaudited |
-| inner-layers-complete-ca | 314.996 | 180.000 timeout | 0 provisional traces; unaudited |
-| outer-layers | 1270.066 | 195.147 wall; killed | Worker report unavailable; unaudited |
+| control | 82.658 | 89.548 | 47/47; pass / pass |
+| control-inner1 | 190.627 | 191.327 | Timeout; 47 provisional traces, unaudited |
+| right | 82.594 | 88.505 | 47/47; pass / pass |
+| left | 89.275 | 93.899 | 47/47; pass / pass |
+| above | 81.151 | 86.371 | 47/47; pass / pass |
+| inner-layers | 121.658 | 124.823 | 47/47; pass / pass |
+| inner-layers-right | 181.219 | 181.477 | Timeout; 47 provisional traces, unaudited |
+| inner-layers-left | 180.002 | 180.227 | Timeout; 0 provisional traces, unaudited |
+| inner-layers-above | 180.000 | 180.238 | Timeout; 0 provisional traces, unaudited |
+| inner-layers-complete-ca | 180.000 | 180.275 | Timeout; 0 provisional traces, unaudited |
+| outer-layers | unavailable | 195.111 | Worker audit unavailable |
 
-**Budget regression risk:** `inner-layers-right` timed out at 180.796 s, versus historical 141.706 s and an earlier live diagnostic at 177.776 s. The other five timed-out cases also exceeded 180 s historically. The differing budgets and timing conditions cannot establish that those five have lost routing capability or isolate the cause of the slower right case.
+Input immutability and preservation of all 161 supplied fixed fanouts passed **10/10 available worker audits**. The `outer-layers` worker exceeded its parent deadline at 195.111 s and returned no audit; its raw fallback zero counts/solve time and false preservation flags mean unavailable evidence. Timeout rows with `validation.valid: true` cover available input/fixed-copper checks only: completed routing DRC and matching did not pass. Provisional trace counts are not accepted connectivity.
 
-Both cases reporting 47 provisional traces lack a completed routed DRC and matching audit. The killed `outer-layers` worker returned no report: its raw fallback zero solve time, zero counts and false preservation flags mean unavailable evidence. Its measured wall time was 195.147 s. Input and fixed-fanout immutability passed **10/10 available audits**; the outer audit is unavailable. Each accepted output preserved all 161 fixed fanouts and contained 208 traces, including the 47 new signals.
+## Full-copper matching
 
-Accepted full-copper skews below include supplied fixed fanouts and new interconnect. BYTE0/BYTE1 tolerance is 0.635 mm; each pair tolerance is 0.127 mm. Values are rounded to six decimals; the JSON retains measured precision and validator verdicts. The complete-CA case timed out, so no CA matching pass is claimed.
+Lengths include supplied fixed fanouts and new interconnect. BYTE0/BYTE1 tolerance is 0.635 mm; each pair tolerance is 0.127 mm. Values below are rounded to six decimals; the JSON retains full precision and the validator verdicts. The complete-CA case timed out, so no command/address/clock bus matching pass is claimed.
 
-| Case | BYTE0 mm | BYTE1 mm | pair_0 mm | pair_1 mm | pair_2 mm |
+| Accepted case | BYTE0 mm | BYTE1 mm | pair_0 mm | pair_1 mm | pair_2 mm |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | control | 0.635000 | 0.635000 | 0.077868 | 0.127000 | 0.072830 |
 | right | 0.635000 | 0.635000 | 0.127000 | 0.121802 | 0.102644 |
@@ -33,33 +34,40 @@ Accepted full-copper skews below include supplied fixed fanouts and new intercon
 | above | 0.635000 | 0.635000 | 0.127000 | 0.127000 | 0.127000 |
 | inner-layers | 0.635000 | 0.589950 | 0.077868 | 0.127000 | 0.127000 |
 
-**Later source checks:** local revision `93f10c15f8488e3706c6b5984a4324981b79be18` (identical Git tree to [published commit 4aace54](https://github.com/Abse2001/bus-lanes-solver/commit/4aace54b1fa1b6a62838075d77b24e6d55e54b84)) passed `bun test` (**583 pass, 0 fail**, 185 files), `bun run typecheck`, and `bun run test:package` (isolated Node, browser and TypeScript consumers). These are checks of that later commit, not results for the frozen checkpoint. After the checkpoint, this commit skips singleton shortcut searches, spreads generated pair approaches at both package ends including outermost columns, repeats spreading after refinement, and preserves qualified seed geometry during revalidation. The four changed library files are listed in the JSON. Any subsequent working-tree edits are outside both reported revisions.
+## Layer permissions and G350 scope
 
-To reconstruct the exact measured source from the later commit, run from this repository in a separate worktree. The JSON patch restores only the four differing library files; the script verifies every measured file and the combined digest before benchmarking:
+These legacy cases use their own layer permissions. `control`, `right`, `left` and `above` retain default permissions and route carriers on inner1/inner2/Bottom; `inner-layers` restricts carriers to inner1/inner2. Their success does not prove the exact G350 49 case with DDR wires restricted to Top/Bottom. The legacy `outer-layers` case timed out.
 
-```sh
-git worktree add --detach /tmp/g350-benchmark-checkpoint 4aace54b1fa1b6a62838075d77b24e6d55e54b84
-python3 - docs/g350-four-layer-benchmark/report.json /tmp/g350-benchmark-checkpoint <<'PY'
-import hashlib, json, subprocess, sys
-from pathlib import Path
-checkpoint = json.loads(Path(sys.argv[1]).read_text())["checkpoint"]
-root = Path(sys.argv[2])
-patch = "\n".join(checkpoint["currentToCheckpointPatchLines"]) + "\n"
-subprocess.run(["git", "apply", "-"], cwd=root, input=patch, text=True, check=True)
-digest = hashlib.sha256()
-for name, expected in sorted(checkpoint["fileSha256"].items()):
-    content = (root / name).read_bytes()
-    assert hashlib.sha256(content).hexdigest() == expected, name
-    digest.update(name.encode() + b"\0" + content + b"\0")
-assert digest.hexdigest() == checkpoint["sourceHarnessAndFixturesSha256"]
-PY
-cd /tmp/g350-benchmark-checkpoint
-bun install
-./benchmark.sh --timeout-seconds 180 --require-all-solved \
-  --output /tmp/g350-checkpoint-report.json \
-  --routes-directory /tmp/g350-checkpoint-routes
-```
+The proposed G350 stack is L1 Top signals, L2 continuous GND, L3 power/reference planes and L4 Bottom signals. Full-depth through-vias span the planes; they do not permit signal wires on those planes. The explicit within-byte DQ permutation belongs only to the reproduction netlist; the generic solver preserves supplied connectivity. Plane copper, support-net routing, PDN, SI/impedance/return paths, electrical via/package flight time and fabrication are not signed off. Matching here is planar copper length; `fabricationReady` and electrical timing verification remain false.
 
-The source reconstruction was exercised successfully. Dependency installation and host load can change timings; the original run reused its installed dependency tree. This directory commits only report data, with no route artifacts or images.
+**Exact G350 49-signal fresh result: interrupted and unaccepted.** The managed environment restarted after the last observed pulse at 3126.112 s of a configured 3600 s run. The process died without a final solver report or accepted output; this was not a 3600 s solver timeout. A post-restart audit verified all 920 working-tree and snapshot files against source `11526d11`. The terminated process's final input hash is unavailable. Progress counters, warm diagnostics and geometric-only routes do not establish independent full-route acceptance.
 
-A subsequent checked source tree, local `18491580f3875b9b5cba16c7a8a49c8741293606` (identical to [published commit d2976c0](https://github.com/Abse2001/bus-lanes-solver/commit/d2976c007e79165758e0df3d711cf2365f372ee0)), passed all **600 tests** across 191 files, type checking, and the isolated Node/browser/TypeScript package checks. It adds fair sparse conflict repairs and tuning within generated multivia approaches. These checks do not extend the benchmark results to that source revision or establish complete G350 routing.
+## Current checks
+
+**Verified full suite: 602 passes, 0 failures** using `taskset -c 0 bun test --timeout 30000`: 191 files, 1,011,346 assertions, 141.21 s. The explicit flag sets Bun's default per-test timeout to 30 s; this is the command that passed.
+
+Separate earlier runs remain recorded: the isolated run using Bun's default timeout had 601 passes and one default 5 s wall-clock timeout (229.19 s); the shared-load run had 599 passes and three timeouts (322.65 s), followed by 6 passing tests across all three affected files with 0 failures. These are separate results, not a single default-timeout 602/0 run. Typecheck and package checks passed, including isolated Node, browser and TypeScript consumers, before the environment interruption.
+
+## Accepted snapshots
+
+The five PNGs below correspond only to completed, independently validated routes and completed visual review. Their SHA-256 hashes and route/input provenance are in the JSON. No failed or provisional route image is included.
+
+### control
+
+![Accepted 47-signal control placement](snapshots/control-solved.png)
+
+### right
+
+![Accepted 47-signal right placement](snapshots/right-solved.png)
+
+### left
+
+![Accepted 47-signal left placement](snapshots/left-solved.png)
+
+### above
+
+![Accepted 47-signal above placement](snapshots/above-solved.png)
+
+### inner-layers
+
+![Accepted 47-signal inner-layers placement](snapshots/inner-layers-solved.png)
