@@ -44,6 +44,24 @@ Run the fixture and acceptance regression tests with
 For interactive debugging, run `bun start` and open
 `g350-am3352-outer-layers`.
 
+## Snapshot
+
+![G350 reproduction input: CPU/RAM detail and complete fixture, not routed copper](g350-am3352/g350-input.png)
+
+The input snapshot shows the exact fixture placement. Dashed lines represent
+logical connections, not routed copper. Regenerate it with:
+
+```sh
+bun scripts/snapshot-g350-am3352.ts --input docs/g350-am3352
+```
+
+As in the merged SBC reproduction, exporting a routed snapshot requires complete
+connectivity and independent DRC and matching acceptance before writing files:
+
+```sh
+bun scripts/snapshot-g350-am3352.ts /tmp/g350-routed.json /tmp/g350-snapshot
+```
+
 ## Fixture verification
 
 File hashes, part identities and component/net mappings are recorded in

@@ -1,0 +1,11 @@
+{
+  "kind": "input",
+  "routingAccepted": false,
+  "inputFixtureSha256": "d77ad8c4e8e72a44976dfd7d947d09233f307fe7cb469b8ac6368918ed322064",
+  "signalCount": 49,
+  "padObstacleCount": 854,
+  "filesSha256": {
+    "g350-input.svg": "386584ee39c17acf1574b51556040c0c0a072a4358c00f1022569b076829e1ab",
+    "g350-input.png": "c3772baeaa374c4465b4c0ae361c82981118d770130591d0f87235f322598e48"
+  }
+}
