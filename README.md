@@ -30,11 +30,8 @@ The `BusLanesSolver` core requires exactly two terminals on the same fixed layer
 
 ## Matched single-layer routing
 
-For the G350's rotated AM3352/RAM placement, all 49 DDR signals and their power,
-clock, reset and capacitor geometry, see the
-[G350 reproduction](docs/g350-am3352-reproduction.md). It follows the merged
-AM3352 SBC fixture/loader/runner/debugger structure; complete routing is still
-unresolved.
+For a G350 AM3352/RAM placement with 49 DDR signals and its support circuitry,
+see the self-contained [G350 reproduction](docs/g350-am3352-reproduction.md).
 
 The `control-inner1` AM3352 sample uses the pipeline's default matched goal.
 Supply the native power connections so the independent copper checker retains

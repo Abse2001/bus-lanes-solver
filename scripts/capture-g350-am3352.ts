@@ -9,10 +9,10 @@ import metadata from "../tests/fixtures/g350-am3352/metadata.json"
  * only the committed fixtures and this repository's regular dependencies.
  */
 if (import.meta.main) {
-  const [coreArgument, sourceArgument, ...extra] = process.argv.slice(2)
+  const [coreArgument, ...extra] = process.argv.slice(2)
   if (!coreArgument || extra.length)
     throw Error(
-      "Usage: bun scripts/capture-g350-am3352.ts /path/to/core/dist/index.js [full-layout.circuit.json]",
+      "Usage: bun scripts/capture-g350-am3352.ts /path/to/core/dist/index.js",
     )
   const coreEntry = resolve(coreArgument)
   const corePackage = JSON.parse(
@@ -24,16 +24,7 @@ if (import.meta.main) {
   )
     throw Error("Use the recorded Core version to reproduce the capture")
   const root = resolve(import.meta.dir, "../tests/fixtures/g350-am3352")
-  const sourcePath = sourceArgument
-    ? resolve(sourceArgument)
-    : resolve(root, "circuit.json")
-  const bytes = readFileSync(sourcePath)
-  if (
-    sourceArgument &&
-    createHash("sha256").update(bytes).digest("hex") !==
-      metadata.sourceCaptureSha256
-  )
-    throw Error("Full source capture differs from the recorded G350 layout")
+  const bytes = readFileSync(resolve(root, "circuit.json"))
   const full = JSON.parse(bytes.toString()) as Array<Record<string, any>>
   const names = new Set(Object.values(metadata.componentNames))
   const netNames = new Set(Object.values(metadata.netNames))

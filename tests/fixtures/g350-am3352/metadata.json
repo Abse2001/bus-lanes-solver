@@ -1,8 +1,5 @@
 {
-  "source": "https://github.com/Abse2001/g350-linux-handheld/tree/codex/cloud-handoff",
-  "sourceCommit": "3f02b9114d3de3755eb4d9180762399b39f147b6",
-  "sourceCapture": "dist/g350-ddr-clear-cpu-ram-corridor-1081/fresh-layout.circuit.json",
-  "sourceCaptureSha256": "9ed86875ab52717a660ab1798fcd8c6a33e9cac143d10f019e0a1ce19c06b97b",
+  "source": "https://github.com/Abse2001/g350-linux-handheld",
   "capturedWith": {
     "tscircuit": "0.0.2821",
     "core": "0.0.2107",
@@ -350,8 +347,6 @@
   "supportNetsUnrouted": 68,
   "fixedFanouts": 0,
   "fabricationReady": false,
-  "sourceConstraintCapture": "dist/g350-ddr-outer-only-ram270-public-bus-lanes-1052/input.simple-route.json",
-  "sourceConstraintCaptureSha256": "8658909847497a60d06499f87448673a2794b7175237bcb88271b69d45fc48f0",
   "filesSha256": {
     "circuit.json": "584923a0f43680d260bab975ef797c01ad4aa5dcc68169a093b11582f4bb757a",
     "cpu-ball-map.json": "f936e408a702a5eb42d68d2cd834d7ccefb98930eda205ac234144c0c10213df",
