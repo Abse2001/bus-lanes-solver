@@ -8,6 +8,7 @@ import { planSharedPairCorridors } from "./plan-shared-pair-corridors"
 import { refineGeneratedPairSeed } from "./refine-generated-pair-seed"
 import { retargetGeneratedEscape } from "./retarget-generated-escape"
 import { surfaceBusShortcutCandidates } from "./surface-bus-shortcuts"
+import { routeSurfaceTimingBankRetry } from "./route-surface-timing-bank-retry"
 import { spreadGeneratedPairViaColumns } from "./spread-generated-pair-via-columns"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import type { SimpleRouteJson, SolverOptions, Trace, Wire } from "./types"
@@ -201,8 +202,9 @@ export function* routeJointSurfaceBuses(
                 result.value,
                 {
                   maxVias: 4,
-                  maxAttempts: 12,
+                  maxAttempts: 24,
                   maxExpansions: 150000,
+                  maxClosureNeighbors: 2,
                 },
               )
               // Try the smaller bus targets first while retaining the original
@@ -226,6 +228,18 @@ export function* routeJointSurfaceBuses(
                     escapes: finished.escapes,
                   }
               }
+              const banked = yield* routeSurfaceTimingBankRetry(
+                checkpoints.at(-1)!,
+                solverOptions,
+                negotiation,
+                options.onConnectivityCheckpoint,
+              )
+              if (banked)
+                return {
+                  input: banked.pending,
+                  traces: [...banked.retained, ...banked.traces],
+                  escapes: banked.escapes,
+                }
             }
           } finally {
             if (!result.done) work.return(null)

@@ -4,7 +4,8 @@ import { generatedEscapeHolesConflict } from "./expanded-signal-sites"
 import type { FlexibleSignalState } from "./flexible-signal-state"
 import { GridHistoryProjector } from "./grid-visibility"
 import { VectorScene } from "./vector-scene"
-import { distance, segmentDistance } from "./geometry"
+import { distance, length, segmentDistance } from "./geometry"
+import { maximumCarrierLength } from "./route-lengths"
 import { joinSignalEscapes } from "./join-signal-escapes"
 import { minimizeSignalCandidateConflicts } from "./minimize-signal-candidate-conflicts"
 import { improveSignalCandidateConflicts } from "./improve-signal-candidate-conflicts"
@@ -52,6 +53,9 @@ export interface SurfaceNegotiationOptions {
    * replacement against that proposal before minimizing the candidate pool. */
   rerouteNearbyClearSignals?: boolean
   maxRounds?: number
+  /** Try a small atomic repair after a full stagnant outer-surface sweep.
+   * Failed probes retain candidate domains and resume negotiated history. */
+  earlyClosure?: boolean
   maxExpansions?: number
   /** First candidates can use a cheaper provisional soft-copper search;
    * later reroutes retain the full negotiated expansion budget. */
@@ -180,6 +184,8 @@ export function* negotiateSurfaceRoutes(
           !owners.includes(trace.source_trace_id ?? ""),
       )
     return (
+      length(value.joined.route) <=
+        maximumCarrierLength(native, connection.name) + 1e-8 &&
       !value.joined.route.some(
         (point) =>
           point.route_type === "via" &&
@@ -416,6 +422,7 @@ export function* negotiateSurfaceRoutes(
     reverse = false,
     endpointFirst = false,
     attachmentBudget: "early" | "closure" = "early",
+    supplementalDomains = true,
   ): Generator<void, Candidate | null> {
     const key = JSON.stringify([
       index,
@@ -425,6 +432,7 @@ export function* negotiateSurfaceRoutes(
       reverse,
       endpointFirst,
       attachmentBudget,
+      supplementalDomains,
       historyEpoch,
       options.heuristicWeight,
       options.nonPreferredLayerCost,
@@ -449,6 +457,7 @@ export function* negotiateSurfaceRoutes(
       softTraces: soft,
     }
     const allowAttachments =
+        supplementalDomains &&
         !innerOnly &&
         settings.maxVias === 4 &&
         options.endpointViaAttachments !== false &&
@@ -487,6 +496,7 @@ export function* negotiateSurfaceRoutes(
       )
     if (
       !result &&
+      supplementalDomains &&
       !innerOnly &&
       !settings.gridOrigin &&
       options.criticalGridOrigins !== false &&
@@ -633,6 +643,10 @@ export function* negotiateSurfaceRoutes(
   lastAttempt.fill(-100)
   lastFailure.fill(-100)
   lastClearAttempt.fill(-100)
+  const maximumClosure = Math.min(4, options.maxClosureSize ?? 3),
+    earlySweep = Math.max(1, targets.length)
+  let lastEarlyClosure = -earlySweep,
+    continueEarlyClosure = false
   for (let round = 0; round < (options.maxRounds ?? 120); round++) {
     const active = edges(current),
       counts = new Uint16Array(targets.length)
@@ -647,7 +661,56 @@ export function* negotiateSurfaceRoutes(
       lastImprovement = round
       checkpoint(best as Candidate[], bestCount)
     }
-    if (round - lastImprovement > (useHistory ? 1000 : 35)) break
+    if (
+      !innerOnly &&
+      options.earlyClosure !== false &&
+      (continueEarlyClosure ||
+        (round - lastImprovement >= earlySweep &&
+          round - lastEarlyClosure >= earlySweep))
+    ) {
+      lastEarlyClosure = round
+      continueEarlyClosure = false
+      const proposals = earlyClosureProposals(active, maximumClosure, 3)
+      if (
+        yield* repairClosure(proposals, {
+          gridStep: 0.1,
+          maxVias: 4,
+          softPenalty: 20,
+          orientation: 0,
+          originVariant: 0,
+          maxExpansions: Math.min(25000, options.maxClosureExpansions ?? 25000),
+          maxOrders: 2,
+          maxProposals: 3,
+          supplementalDomains: false,
+          adaptViaBudget: true,
+          round,
+        })
+      ) {
+        const remaining = edges(current).length
+        if (!remaining) {
+          report("complete", -1, round)
+          checkpoint(current as Candidate[], 0)
+          return compose(current as Candidate[])
+        }
+        if (remaining < bestCount) {
+          best = current.slice()
+          bestCount = remaining
+          lastImprovement = round
+          checkpoint(current as Candidate[], remaining)
+        }
+        // Each follow-up must remove another global edge. If it cannot,
+        // resume history with the same domains instead of abandoning this seed.
+        continueEarlyClosure = true
+        yield
+        continue
+      }
+    }
+    const plateauLimit = useHistory
+      ? 1000
+      : !innerOnly && options.earlyClosure !== false
+        ? Math.max(35, earlySweep * 2)
+        : 35
+    if (round - lastImprovement > plateauLimit) break
     for (const [first, second] of active) {
       if (history && historyProjector) {
         const hit = conflicts.firstConflict(
@@ -904,7 +967,6 @@ export function* negotiateSurfaceRoutes(
     checkpoint(best as Candidate[], finalConflicts)
   }
   current.splice(0, current.length, ...best)
-  const maximumClosure = Math.min(4, options.maxClosureSize ?? 3)
   while (edges(current).length) {
     const active = edges(current)
     if (active.length < bestCount) {
@@ -970,9 +1032,8 @@ export function* negotiateSurfaceRoutes(
         for (let orientation = 0; orientation < 4; orientation++)
           for (const { originVariant, softPenalty } of closurePolicies(maxVias))
             for (const proposal of proposals) {
-              report("closure", proposal[0], 0, active.length)
               if (
-                (yield* repairClosure(proposal, {
+                (yield* repairClosure([proposal], {
                   gridStep,
                   maxVias,
                   softPenalty,
@@ -1054,15 +1115,101 @@ export function* negotiateSurfaceRoutes(
       .sort((first, second) => score(first) - score(second))
   }
 
+  interface ClosureSettings {
+    gridStep: number
+    maxVias: 2 | 4
+    softPenalty: number
+    orientation: number
+    originVariant: number
+    maxExpansions?: number
+    maxOrders?: number
+    maxProposals?: number
+    supplementalDomains?: boolean
+    adaptViaBudget?: boolean
+    round?: number
+  }
+
+  function earlyClosureProposals(
+    active: Array<[number, number]>,
+    maximum: number,
+    limit: number,
+  ): number[][] {
+    const components = conflictComponents(active),
+      internal = (component: number[]) =>
+        active.filter(
+          ([a, b]) => component.includes(a) && component.includes(b),
+        ).length,
+      proposals: number[][] = [],
+      seen = new Set<string>(),
+      add = (component: number[]) => {
+        const key = [...component].sort((a, b) => a - b).join(":")
+        if (component.length && !seen.has(key) && proposals.length < limit) {
+          seen.add(key)
+          proposals.push(component)
+        }
+      }
+    components.sort((a, b) => internal(b) - internal(a) || a.length - b.length)
+    // Give each component a first attempt before spending the small budget
+    // on more fragments or nearby clear blockers from the same component.
+    for (const component of components) {
+      if (component.length <= maximum) add(component)
+      else {
+        const first = closureFragments(component, active, maximum).next()
+        if (!first.done) add(first.value)
+      }
+    }
+    for (const component of components)
+      if (
+        component.length < maximum &&
+        (options.maxClosureNeighbors ?? 4) > 0
+      ) {
+        const neighbor = closureNeighbors(component, maximum >= 4)[0]
+        if (neighbor !== undefined) add([...component, neighbor])
+      }
+    for (const component of components) {
+      if (proposals.length >= limit) break
+      for (const fragment of closureFragments(component, active, maximum)) {
+        add(fragment)
+        if (proposals.length >= limit) break
+      }
+    }
+    return proposals
+  }
+
   function* repairClosure(
+    proposals: number[][],
+    settings: ClosureSettings,
+  ): Generator<void, boolean> {
+    const before = current.slice(),
+      beforeCount = edges(current).length
+    for (const component of proposals.slice(0, settings.maxProposals)) {
+      report("closure", component[0], settings.round ?? 0, beforeCount)
+      const maxVias =
+        settings.adaptViaBudget &&
+        settings.maxVias === 4 &&
+        !component.some(
+          (index) =>
+            (timed.has(targets[index].name)
+              ? (options.maxTimedVias ?? 2)
+              : (options.maxUntimedVias ?? 4)) >= 4,
+        )
+          ? 2
+          : settings.maxVias
+      if (
+        (yield* repairClosureProposal(component, { ...settings, maxVias })) &&
+        edges(current).length < beforeCount
+      )
+        return true
+      // Candidate generation remains useful even when the atomic assignment
+      // makes no progress. Keep domains, costs and history; restore only choices.
+      current.splice(0, current.length, ...before)
+    }
+    return false
+  }
+
+  function* repairClosureProposal(
     component: number[],
-    settings: {
-      gridStep: number
-      maxVias: 2 | 4
-      softPenalty: number
-      orientation: number
-      originVariant: number
-    },
+    settings: ClosureSettings,
   ): Generator<void, boolean> {
     const stable = current.flatMap((value, index) =>
         value && !component.includes(index) ? [value] : [],
@@ -1083,7 +1230,9 @@ export function* negotiateSurfaceRoutes(
         settings.orientation
       ]
     if (!orientation) return false
+    let orders = 0
     for (const order of closureOrders(component)) {
+      if (++orders > (settings.maxOrders ?? Infinity)) break
       const gridOrigin =
           settings.originVariant > 0
             ? criticalSurfaceGridOrigins(input, targets[order[0]], gridStep)[
@@ -1108,17 +1257,19 @@ export function* negotiateSurfaceRoutes(
             maxGridCells: 4000000,
             maxVias: timed.has(targets[index].name)
               ? Math.min(options.maxTimedVias ?? 2, maxVias)
-              : maxVias,
+              : Math.min(options.maxUntimedVias ?? 4, maxVias),
             softPenalty: at ? 0 : softPenalty,
             viaPenalty: 2,
             maxExpansions:
-              gridStep >= 0.1
+              settings.maxExpansions ??
+              (gridStep >= 0.1
                 ? Math.min(options.maxClosureExpansions ?? 2000000, 200000)
-                : (options.maxClosureExpansions ?? 2000000),
+                : (options.maxClosureExpansions ?? 2000000)),
           },
           orientation[at],
           settings.originVariant === -1,
           "closure",
+          settings.supplementalDomains !== false,
         )
         if (
           !value ||

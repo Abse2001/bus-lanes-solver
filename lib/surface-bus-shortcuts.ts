@@ -7,10 +7,11 @@ import {
   surfaceBridgeEligible,
 } from "./route-surface-bridge"
 import { routeSurfaceViaAttachments } from "./route-surface-via-attachments"
+import { routeSurfaceShortcutClosure } from "./route-surface-shortcut-closure"
 import type { Wire } from "./types"
 
 /** Reduce a bus's length target before allocating its shared tuning space.
- * Try only its longest member, with every other route and supplied fanout hard.
+ * Try its longest member, with supplied fanouts and paired rails hard.
  * Paired rails remain atomic and immutable. Retain each computed checkpoint:
  * a shorter route can consume tuning space, so full matching must choose a
  * feasible candidate before any geometry is accepted. */
@@ -20,6 +21,8 @@ export function* surfaceBusShortcutCandidates(
     maxAttempts?: number
     maxExpansions?: number
     maxVias?: 2 | 4
+    /** Optionally move up to two actually hit ordinary neighbors atomically. */
+    maxClosureNeighbors?: number
   } = {},
 ): Generator<void, FlexibleSignalState[]> {
   let state = previous
@@ -94,18 +97,31 @@ export function* surfaceBusShortcutCandidates(
       })
     }
     let replacement = yield* shorterRoute(nextCeiling)
-    if (!replacement && nextCeiling < ceiling - 1e-6)
+    const replacements =
+      !replacement && (options.maxClosureNeighbors ?? 0) > 0
+        ? yield* routeSurfaceShortcutClosure(state, connection, nextCeiling, {
+            maxNeighbors: Math.min(2, options.maxClosureNeighbors!),
+            maxExpansions: options.maxExpansions ?? 750000,
+            maxVias: options.maxVias ?? 2,
+          })
+        : null
+    if (!replacement && !replacements && nextCeiling < ceiling - 1e-6)
       replacement = yield* shorterRoute(ceiling)
-    if (!replacement) continue
-    const improved = joinSignalEscapes(replacement.carrier, replacement.escapes)
+    if (!replacement && !replacements) continue
+    const tuples = replacements ?? new Map([[name, replacement!]]),
+      targetReplacement = tuples.get(name)!,
+      improved = joinSignalEscapes(
+        targetReplacement.carrier,
+        targetReplacement.escapes,
+      )
     if (length(improved.route) >= oldLength - 0.25 + 1e-8) continue
     const replace = (trace: (typeof carriers)[number]) =>
-      trace.connection_name === name ? replacement.carrier : trace
+      tuples.get(trace.connection_name!)?.carrier ?? trace
     const retained = state.retained.map(replace)
     const traces = state.traces.map(replace)
     const escapes = [
-      ...state.escapes.filter((escape) => escape.connection_name !== name),
-      ...replacement.escapes,
+      ...state.escapes.filter((escape) => !tuples.has(escape.connection_name!)),
+      ...[...tuples.values()].flatMap((tuple) => tuple.escapes),
     ]
     const byName = new Map(
       [...retained, ...traces].map((trace) => [trace.connection_name, trace]),
@@ -133,6 +149,9 @@ export function* surfaceBusShortcutCandidates(
       },
     }
     candidates.push(state)
+    // A neighbor moved by this checkpoint may unlock a previously failed
+    // driver. Retry against the new scene within the same global attempt cap.
+    tried.clear()
     yield
   }
   return candidates

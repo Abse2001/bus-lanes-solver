@@ -1,0 +1,223 @@
+import { expect, test } from "bun:test"
+import { validateRoutedCopperDrc } from "@tscircuit/fanout-solver"
+import type { FlexibleSignalState } from "../lib/flexible-signal-state"
+import { joinSignalEscapes } from "../lib/join-signal-escapes"
+import {
+  negotiateSurfaceRoutes,
+  type SurfaceNegotiationOptions,
+  type SurfaceNegotiationProgress,
+} from "../lib/negotiate-surface-routes"
+import type { SimpleRouteJson, Trace, Wire } from "../lib/types"
+
+const wire = (x: number, y: number): Wire => ({
+  x,
+  y,
+  route_type: "wire",
+  layer: "top",
+  width: 0.12,
+})
+
+function crossingState(locked = false): FlexibleSignalState {
+  const connections = locked
+      ? [
+          { name: "a", pointsToConnect: [wire(-2, -0.5), wire(2, 0.5)] },
+          { name: "b", pointsToConnect: [wire(-2, 0.5), wire(2, -0.5)] },
+        ]
+      : [
+          { name: "a", pointsToConnect: [wire(-2, 0), wire(2, 0)] },
+          { name: "b", pointsToConnect: [wire(0, -1), wire(0, 1)] },
+        ],
+    native: SimpleRouteJson = {
+      layerCount: 4,
+      allowedLayers: ["top", "bottom"],
+      minTraceWidth: 0.12,
+      minTraceToPadEdgeClearance: 0.08,
+      minViaPadDiameter: 0.3,
+      minViaHoleDiameter: 0.15,
+      minBoardEdgeClearance: 0,
+      bounds: locked
+        ? { minX: -2.06, maxX: 2.06, minY: -0.9, maxY: 0.9 }
+        : { minX: -3, maxX: 3, minY: -2, maxY: 2 },
+      connections,
+      buses: locked
+        ? []
+        : [
+            {
+              busId: "two_via_controls",
+              connectionNames: ["a", "b"],
+              maxLength: 12,
+            },
+          ],
+      obstacles: [
+        ...connections.flatMap((connection) =>
+          connection.pointsToConnect.map((point) => ({
+            center: { x: point.x, y: point.y },
+            width: 0.12,
+            height: 0.12,
+            layers: ["top"],
+            connectedTo: [connection.name],
+          })),
+        ),
+        ...(locked
+          ? [
+              {
+                // Full-stack barrels cannot cross this physical inner-plane
+                // keepout. Alternating terminals on the board boundary also
+                // prevent both crossing nets sharing their native surface.
+                center: { x: 0, y: 0 },
+                width: 4.12,
+                height: 1.8,
+                layers: ["inner1"],
+                connectedTo: [],
+              },
+            ]
+          : []),
+      ],
+    },
+    traces: Trace[] = connections.map((connection, side) => ({
+      type: "pcb_trace",
+      pcb_trace_id: connection.name,
+      connection_name: connection.name,
+      route: locked
+        ? [
+            connection.pointsToConnect[0],
+            wire(-0.5, side ? 0.5 : -0.5),
+            wire(0.5, side ? -0.5 : 0.5),
+            connection.pointsToConnect[1],
+          ]
+        : connection.pointsToConnect,
+    }))
+  return { native, pending: native, retained: [], escapes: [], traces }
+}
+
+function run(
+  state: FlexibleSignalState,
+  options: SurfaceNegotiationOptions = {},
+) {
+  const progress: SurfaceNegotiationProgress[] = [],
+    conflicts: number[] = []
+  let finalFallback = false
+  const work = negotiateSurfaceRoutes(state.native, state, {
+    congestionHistory: true,
+    maxRounds: 6,
+    // Ordinary reroutes have no expansion budget. Observe and cancel the
+    // final fallback so this harness measures only the early repair phase.
+    maxExpansions: 0,
+    maxInitialExpansions: 0,
+    maxInitialSoftExpansions: 0,
+    maxClosureExpansions: 25000,
+    maxClosureSize: 2,
+    maxClosureNeighbors: 0,
+    endpointViaAttachments: false,
+    criticalGridOrigins: false,
+    onProgress: (value) => {
+      progress.push(value)
+      if (value.stage === "closure" && value.round === 0) finalFallback = true
+    },
+    onProvisionalCheckpoint: (_, count) => conflicts.push(count),
+    ...options,
+  })
+  let next = work.next(),
+    steps = 0
+  try {
+    while (!next.done && !finalFallback && ++steps < 50000) next = work.next()
+    expect(next.done || finalFallback).toBe(true)
+    return { result: finalFallback ? null : next.value, progress, conflicts }
+  } finally {
+    if (!next.done) work.return(null)
+  }
+}
+
+test("a stagnant surface sweep invokes a bounded atomic repair before the final fallback", () => {
+  const state = crossingState(),
+    before = structuredClone(state),
+    disabled = run(state, { earlyClosure: false }),
+    noBudget = run(state, { maxClosureExpansions: 0 }),
+    enabled = run(state)
+  expect(disabled.result).toBeNull()
+  expect(noBudget.result).toBeNull()
+  expect(noBudget.conflicts).toEqual([1])
+  expect(enabled.result).toBeTruthy()
+  expect(state).toEqual(before)
+  const early = enabled.progress.find(
+    (value) => value.stage === "closure" && value.round > 0,
+  )!
+  expect(early.round).toBe(state.native.connections.length)
+  expect(enabled.progress.at(-1)).toMatchObject({
+    stage: "complete",
+    round: early.round,
+    conflicts: 0,
+  })
+  expect(enabled.conflicts).toEqual([1, 0])
+  const traces = enabled.result!.traces.map((trace) =>
+    joinSignalEscapes(
+      trace,
+      enabled.result!.escapes.filter(
+        (escape) => escape.connection_name === trace.connection_name,
+      ),
+    ),
+  )
+  for (const trace of traces) {
+    const connection = state.native.connections.find(
+      (value) => value.name === trace.connection_name,
+    )!
+    expect(trace.route[0]).toMatchObject(connection.pointsToConnect[0])
+    expect(trace.route.at(-1)).toMatchObject(connection.pointsToConnect[1])
+  }
+  expect(
+    validateRoutedCopperDrc({
+      inputSrj: state.native,
+      routedSrj: { ...state.native, traces },
+      clearance: 0.08,
+      allowBlindAndBuriedVias: false,
+    } as Parameters<typeof validateRoutedCopperDrc>[0]).valid,
+  ).toBe(true)
+}, 15000)
+
+test("a failed early repair preserves the assignment and resumes negotiated history", () => {
+  const state = crossingState(true),
+    before = structuredClone(state),
+    outcome = run(state, { maxRounds: 4 }),
+    earlyIndex = outcome.progress.findIndex(
+      (value) => value.stage === "closure" && value.round > 0,
+    ),
+    earlyRound = outcome.progress[earlyIndex].round
+  expect(outcome.result).toBeNull()
+  expect(state).toEqual(before)
+  expect(earlyRound).toBe(2)
+  expect(
+    outcome.progress
+      .slice(earlyIndex + 1)
+      .some(
+        (value) => value.stage === "negotiate" && value.round >= earlyRound,
+      ),
+  ).toBe(true)
+  expect(outcome.conflicts).toEqual([1])
+}, 15000)
+
+test("default early repair remains reachable after a large sweep without congestion history", () => {
+  const state = crossingState()
+  for (let index = 0; index < 34; index++) {
+    const name = `independent_${index}`,
+      x = 4 + (index % 7),
+      y = -1.5 + Math.floor(index / 7) * 0.5,
+      route = [wire(x, y), wire(x + 0.4, y)]
+    state.native.connections.push({ name, pointsToConnect: route })
+    state.traces.push({
+      type: "pcb_trace",
+      pcb_trace_id: name,
+      connection_name: name,
+      route,
+    })
+  }
+  state.native.bounds.maxX = 12
+  const before = structuredClone(state),
+    outcome = run(state, { congestionHistory: false, maxRounds: 40 }),
+    early = outcome.progress.find(
+      (value) => value.stage === "closure" && value.round > 0,
+    )!
+  expect(outcome.result).toBeTruthy()
+  expect(early.round).toBe(36)
+  expect(outcome.result!.traces).toHaveLength(36)
+  expect(state).toEqual(before)
+}, 15000)
