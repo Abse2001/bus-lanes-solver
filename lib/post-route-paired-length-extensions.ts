@@ -16,7 +16,8 @@ export interface PairedBodyLengthExtensionOptions {
   fixedEscapes: readonly Trace[]
   maximumCandidates?: number
   maximumAttempts?: number
-  /** Absolute Date.now() deadline. A complete physical audit is atomic; an
+  /** Absolute monotonic performance.now() deadline in milliseconds, using the
+   * same clock as routing stages. A complete physical audit is atomic; an
    * expired audit is never emitted as a proposal. */
   deadlineMs?: number
   /** Smaller, fully physical extensions remain useful to an external best-
@@ -298,7 +299,7 @@ export function* enumeratePairedBodyLengthExtensions(
   )
     throw Error("Invalid paired body extension request or budget")
   const expired = () =>
-    options.deadlineMs !== undefined && Date.now() >= options.deadlineMs
+    options.deadlineMs !== undefined && performance.now() >= options.deadlineMs
   if (!maximumCandidates || !maximumAttempts || expired()) return
   const pair = input.differentialPairs?.find((candidate) =>
     candidate.connectionNames.every((name) => connectionNames.includes(name)),

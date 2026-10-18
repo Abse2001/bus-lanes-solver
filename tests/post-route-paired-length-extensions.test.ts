@@ -305,8 +305,21 @@ test("foreign prefilter preserves clear native shared intervals and rejects a cr
   ).toBe(false)
 })
 
-test("expired deadlines stop before auditing or emitting and invalid deadlines reject", () => {
+test("monotonic deadlines accept future work, stop expired work, and reject invalid clocks", () => {
   const { input, joined, escapes } = fixture()
+  const future = proposals(
+    enumeratePairedBodyLengthExtensions(input, joined, {
+      connectionNames: ["rail_0", "rail_1"],
+      minimumLength: 23,
+      maximumLength: 23.635,
+      fixedEscapes: escapes,
+      maximumCandidates: 1,
+      maximumAttempts: 8,
+      deadlineMs: performance.now() + 60_000,
+    }),
+  )
+  expect(future).toHaveLength(1)
+  expect(future[0].withinTargetBand).toBe(true)
   expect(
     proposals(
       enumeratePairedBodyLengthExtensions(input, joined, {
@@ -314,7 +327,7 @@ test("expired deadlines stop before auditing or emitting and invalid deadlines r
         minimumLength: 23,
         maximumLength: 23.635,
         fixedEscapes: escapes,
-        deadlineMs: Date.now() - 1,
+        deadlineMs: performance.now() - 1,
       }),
     ),
   ).toEqual([])
