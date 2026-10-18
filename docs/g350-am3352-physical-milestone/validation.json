@@ -8,7 +8,7 @@
   "stage": "experimental-saved-layout-physical-milestone",
   "freshSolverGeneration": false,
   "sourceLayoutDescription": "Previously generated experimental complete layout, freshly checked against the trusted repaired native input. This command does not run a solver.",
-  "sourceRevision": "1da127aaa71b82f7adcc4406686148bfe3df4a41",
+  "sourceRevision": "e3bb624110315fe4c3bbee51e58672ac153672a7",
   "sourceFilesSha256": {
     "scripts/verify-g350-am3352-physical-milestone.ts": "a594e2655675d5139f46ed821e298d24b389ed36809852ff3f80d423221e2d33",
     "scripts/validate-g350-am3352-sample.ts": "20212df49e74047e7086d5457093e73e255b00e00800bbba57a6651d8a146fe0",
@@ -586,5 +586,5 @@
       "matched": true
     }
   ],
-  "verificationRuntimeSeconds": 1.8355519299999998
+  "verificationRuntimeSeconds": 1.583382427
 }
