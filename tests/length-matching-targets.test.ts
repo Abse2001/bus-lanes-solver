@@ -171,6 +171,76 @@ describe("generic feasible matching targets", () => {
     expect(capped.plans[0].bands.P.maximum).toBe(5.05)
     expect(capped.plans[0].bands.N.maximum).toBe(5.05)
   })
+  test("preserve-pairs seed avoids shortening a matched pair to a needless low bus anchor", () => {
+    const p = deriveLengthMatchingTargets({
+      nets: [
+        { name: "ordinary", currentLengthMm: 10, lowerBoundMm: 4 },
+        { name: "P", currentLengthMm: 7, lowerBoundMm: 1 },
+        { name: "N", currentLengthMm: 7.127, lowerBoundMm: 1 },
+      ],
+      buses: [
+        {
+          busId: "byte",
+          connectionNames: ["ordinary", "P", "N"],
+          maxLengthSkew: 0.635,
+        },
+      ],
+      differentialPairs: [
+        { connectionNames: ["P", "N"], lengthTolerance: 0.127 },
+      ],
+    })
+    const plan = p.plans.find((plan) => plan.id === "preserve-pairs")!
+    expect(plan).toBeDefined()
+    expect(plan.targets.P).toBe(7)
+    expect(plan.targets.N).toBe(7.127)
+    expect(plan.bands.P.minimum).toBe(7)
+    expect(plan.bands.N.maximum).toBe(7.127)
+    expect(plan.constraintWindows["bus:0:byte"].maximum).toBe(7.127)
+    expect(plan.targets.ordinary).toBeCloseTo(6.492, 10)
+    expect(p.plans.length).toBeLessThanOrEqual(16)
+    const lifted = deriveLengthMatchingTargets({
+      nets: [
+        { name: "ordinary", currentLengthMm: 10, lowerBoundMm: 9 },
+        { name: "P", currentLengthMm: 7, lowerBoundMm: 1 },
+        { name: "N", currentLengthMm: 7.127, lowerBoundMm: 1 },
+      ],
+      buses: [
+        {
+          busId: "byte",
+          connectionNames: ["ordinary", "P", "N"],
+          maxLengthSkew: 0.635,
+        },
+      ],
+      differentialPairs: [
+        { connectionNames: ["P", "N"], lengthTolerance: 0.127 },
+      ],
+    })
+    // Overlap closure must still lift an impossible preserved pair.
+    const seedTargets = leastFeasibleLengthTargets(
+      {
+        nets: [
+          { name: "ordinary", currentLengthMm: 10, lowerBoundMm: 9 },
+          { name: "P", currentLengthMm: 7, lowerBoundMm: 1 },
+          { name: "N", currentLengthMm: 7.127, lowerBoundMm: 1 },
+        ],
+        buses: [
+          {
+            busId: "byte",
+            connectionNames: ["ordinary", "P", "N"],
+            maxLengthSkew: 0.635,
+          },
+        ],
+        differentialPairs: [
+          { connectionNames: ["P", "N"], lengthTolerance: 0.127 },
+        ],
+      },
+      { P: 7, N: 7.127 },
+    )
+    expect(seedTargets.feasible).toBe(true)
+    if (seedTargets.feasible)
+      expect(seedTargets.targets.P).toBeCloseTo(8.365, 10)
+    expect(lifted.plans.length).toBeLessThanOrEqual(16)
+  })
   test("absolute bounds and zero tolerance constrain all overlapping memberships", () => {
     const problem: LengthMatchingProblem = {
       nets: [

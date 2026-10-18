@@ -246,6 +246,18 @@ export function deriveLengthMatchingTargets(
     { id: "least-length-bound", requested: {} },
     { id: "non-shortening", requested: current },
   ]
+  const pairNames = new Set(
+    (problem.differentialPairs ?? []).flatMap((pair) => [
+      ...pair.connectionNames,
+    ]),
+  )
+  if (pairNames.size)
+    seeds.push({
+      id: "preserve-pairs",
+      requested: Object.fromEntries(
+        [...pairNames].map((name) => [name, current[name]]),
+      ),
+    })
   for (const c of constraints)
     seeds.push({
       id: `shorten:${c.id}`,
