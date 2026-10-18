@@ -8,6 +8,8 @@ import {
 } from "node:fs"
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
+import { runInNewContext } from "node:vm"
+import { lengthTuningConsumerSource } from "./package-length-tuning-consumer"
 
 const root = resolve(import.meta.dir, "..")
 const temporary = mkdtempSync(join(tmpdir(), "solver-package-"))
@@ -71,13 +73,11 @@ try {
     if (Object.keys(installed[field] ?? {}).length)
       throw new Error(`Unexpected consumer ${field}`)
   }
-  const names = [
-    "BusLanesSolver",
-    "BusLanesPipelineSolver",
-    "SingleLayerConnectivitySolver",
-  ]
-  const source = `import { ${names.join(", ")} } from "${name}";\n${names.map((n) => `if (typeof ${n} !== "function") throw new Error("Missing ${n}");`).join("\n")}\n`
-  writeFileSync(join(consumer, "consumer.js"), source)
+  const source = lengthTuningConsumerSource
+  writeFileSync(
+    join(consumer, "consumer.js"),
+    new Bun.Transpiler({ loader: "ts" }).transformSync(source),
+  )
   writeFileSync(join(consumer, "consumer.ts"), source)
   run("node", ["consumer.js"], consumer)
   writeFileSync(
@@ -107,12 +107,27 @@ try {
   const browser = await Bun.build({
     entrypoints: [join(consumer, "consumer.js")],
     target: "browser",
+    format: "iife",
     outdir: join(temporary, "browser"),
   })
   if (!browser.success)
     throw new AggregateError(browser.logs, "Browser consumer build failed")
+  // Execute without Node globals too: bundling alone misses eager runtime leaks.
+  runInNewContext(
+    await browser.outputs[0].text(),
+    {
+      structuredClone,
+      performance,
+      console,
+      setTimeout,
+      clearTimeout,
+      TextEncoder,
+      TextDecoder,
+    },
+    { timeout: 30000 },
+  )
   console.log(
-    `${packed.name}: ${packed.files.length} files, ${packed.unpackedSize} bytes unpacked; isolated Node, browser, and TypeScript consumers passed`,
+    `${packed.name}: ${packed.files.length} files, ${packed.unpackedSize} bytes unpacked; isolated Node, browser runtime, and strict TypeScript length-tuning consumers passed`,
   )
 } finally {
   rmSync(temporary, { recursive: true, force: true })
