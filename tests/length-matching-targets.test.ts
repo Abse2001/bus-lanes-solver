@@ -529,4 +529,40 @@ describe("transactional best checkpoint", () => {
     )
     expect(c.snapshot().best).toEqual(state())
   })
+  test("infeasible configured timing bounds preserve a complete physical baseline", () => {
+    const impossible: LengthMatchingProblem = {
+      ...problem,
+      buses: [
+        {
+          busId: "contradiction",
+          connectionNames: ["A", "B"],
+          minLength: 20,
+          maxLength: 10,
+        },
+      ],
+    }
+    expect(leastFeasibleLengthTargets(impossible).feasible).toBe(false)
+    const portfolio = deriveLengthMatchingTargets(impossible)
+    expect(portfolio.plans).toEqual([])
+    expect(portfolio.failures.length).toBeGreaterThan(0)
+    const c = new LengthMatchingCheckpoint(state(), {
+      problem: impossible,
+      portfolio,
+      measure: (s) => ({
+        fullLengthsMm: s.lengths,
+        totalWireLengthMm: 13,
+        viaCount: s.vias,
+      }),
+      validate: () => ({
+        physicalValid: true,
+        complete: true,
+        fixedEscapesExact: true,
+      }),
+      fingerprint: JSON.stringify,
+      netFingerprint: (s, name) => JSON.stringify(s.lengths[name]),
+    })
+    expect(c.snapshot().evaluation.timingSolved).toBe(false)
+    expect(c.snapshot().evaluation.actualConstraintFailures).toBeGreaterThan(0)
+    expect(c.transaction(() => null).best).toEqual(state())
+  })
 })

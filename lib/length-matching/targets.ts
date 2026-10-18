@@ -130,12 +130,6 @@ export function normalizeLengthMatchingProblem(problem: LengthMatchingProblem) {
       throw Error(`${c.id} has empty, duplicate, or unknown members`)
     for (const key of ["minimum", "maximum", "tolerance"] as const)
       if (c[key] !== undefined) nonnegative(c[key]!, `${c.id} ${key}`)
-    if (
-      c.minimum !== undefined &&
-      c.maximum !== undefined &&
-      c.minimum > c.maximum
-    )
-      throw Error(`${c.id} minimum exceeds maximum`)
   }
   const bounds: Record<string, { minimum: number; maximum: number }> =
     Object.fromEntries(
@@ -167,6 +161,13 @@ export function leastFeasibleLengthTargets(
   | { feasible: true; targets: Record<string, number> }
   | { feasible: false; reason: string } {
   const { constraints, bounds } = normalizeLengthMatchingProblem(problem)
+  for (const c of constraints)
+    if (
+      c.minimum !== undefined &&
+      c.maximum !== undefined &&
+      c.minimum > c.maximum
+    )
+      return { feasible: false, reason: `${c.id} minimum exceeds maximum` }
   for (const net of problem.nets)
     if (net.fixedLength)
       for (const c of constraints)
