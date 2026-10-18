@@ -1,7 +1,6 @@
 import { checkPcbTraceSelfShorts } from "@tscircuit/checks"
 import {
   getCopperLayerNames,
-  type RoutedCopperDrcReport,
   validateRoutedCopperDrc,
 } from "@tscircuit/fanout-solver"
 import { all_layers, type AnyCircuitElement, type LayerRef } from "circuit-json"
@@ -16,6 +15,94 @@ import type { SimpleRouteJson, Trace, Via } from "./types"
 export interface PhysicalRoutingAcceptanceOptions {
   /** Immutable generated or supplied escape paths, before joining. */
   escapes?: readonly Trace[]
+}
+
+/** Public report values stay independent of native checker package types. */
+export interface PhysicalRoutingDrcIssue {
+  code:
+    | "unknown-trace-connection"
+    | "unsupported-route-point"
+    | "disconnected-trace"
+    | "via-at-endpoint"
+    | "trace-obstacle-clearance"
+    | "via-obstacle-clearance"
+    | "different-net-trace-clearance"
+    | "different-net-trace-via-clearance"
+    | "different-net-via-clearance"
+  message: string
+  traceId: string
+  connectionName?: string
+  otherTraceId?: string
+  otherConnectionName?: string
+  layer?: string
+  obstacleId?: string
+}
+
+export interface PhysicalRoutingDrcReport {
+  valid: boolean
+  checkedTraceCount: number
+  checkedSegmentCount: number
+  checkedViaCount: number
+  issues: PhysicalRoutingDrcIssue[]
+}
+
+export interface PhysicalRoutingSelfShort {
+  type: "pcb_trace_error"
+  error_type: "pcb_trace_error"
+  pcb_trace_error_id: string
+  pcb_trace_id: string
+  source_trace_id: string
+  message: string
+  center?: { x: number; y: number }
+  pcb_component_ids: string[]
+  pcb_port_ids: string[]
+  subcircuit_id?: string
+  is_fatal?: boolean
+}
+
+export interface PhysicalRoutingAcceptanceGates {
+  complete: boolean
+  exactlyOneJoinedTracePerConnection: boolean
+  originalGeometryPreserved: boolean
+  originalFixedCopperPreserved: boolean
+  routeGeometryValid: boolean
+  physicalLayersValid: boolean
+  allowedLayersValid: boolean
+  viaRulesValid: boolean
+  drillSpacingValid: boolean
+  zeroNativeDrcIssues: boolean
+  zeroSelfShorts: boolean
+  boardBoundaryValid: boolean
+  conventionalAngles: boolean
+  differentialPairsMatched: boolean
+  sharedPairSpacingValid: boolean
+  exteriorPairCouplingValid: boolean
+  pairCouplingValid: boolean
+  escapesPreserved: boolean
+}
+
+export interface PhysicalRoutingAcceptanceReport {
+  physicalRoutingAccepted: boolean
+  ddrTimingAccepted: boolean
+  requestedSignals: number
+  connectedSignals: number
+  missingSignals: string[]
+  duplicateSignals: string[]
+  unexpectedSignals: string[]
+  gates: PhysicalRoutingAcceptanceGates
+  nativeDrc: PhysicalRoutingDrcReport
+  selfShorts: PhysicalRoutingSelfShort[]
+  boardBoundary: ReturnType<typeof boardBoundaryReports>
+  buses: ReturnType<typeof busLengthReports>
+  pairs: ReturnType<typeof pairLengthReports>
+  sharedPairSpacing: ReturnType<typeof sharedPairSpacingReports>
+  exteriorPairSpacing: ReturnType<typeof exteriorPairSpacingReports>
+  pairCoupling: ReturnType<typeof pairCouplingReports>
+  escapes: readonly Trace[]
+  escapesPreserved: boolean
+  missingEscapes: string[]
+  errors: string[]
+  output: SimpleRouteJson
 }
 
 /** Sort keys without rounding coordinates or dropping extra point fields. */
@@ -187,7 +274,7 @@ export function physicalRoutingAcceptance(
   input: SimpleRouteJson,
   traces: readonly Trace[],
   options: PhysicalRoutingAcceptanceOptions = {},
-) {
+): PhysicalRoutingAcceptanceReport {
   const fresh = [...traces]
   const all = [...(input.traces ?? []), ...fresh]
   const output: SimpleRouteJson = { ...input, traces: all }
@@ -385,14 +472,14 @@ export function physicalRoutingAcceptance(
     .map((escape) => escape.pcb_trace_id)
   const escapesPreserved = missingEscapes.length === 0
   const safe = routeGeometryValid && physicalLayersValid && viaRulesValid
-  let nativeDrc: RoutedCopperDrcReport = {
+  let nativeDrc: PhysicalRoutingDrcReport = {
     valid: false,
     checkedTraceCount: 0,
     checkedSegmentCount: 0,
     checkedViaCount: 0,
     issues: [],
   }
-  let selfShorts: ReturnType<typeof checkPcbTraceSelfShorts> = []
+  let selfShorts: PhysicalRoutingSelfShort[] = []
   let selfShortCheckValid = false
   let boardBoundary: ReturnType<typeof boardBoundaryReports> = {
     valid: false,

@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test"
-import { physicalRoutingAcceptance } from "../lib/physical-routing-acceptance"
+import {
+  physicalRoutingAcceptance,
+  type PhysicalRoutingAcceptanceReport,
+} from "../lib/physical-routing-acceptance"
 import type { SimpleRouteJson, Trace, Wire } from "../lib/types"
 
 const wire = (x: number, y: number, layer = "top"): Wire => ({
@@ -53,7 +56,10 @@ test("complete clear routes pass physical acceptance while impossible bus limits
     },
   ]
   const before = structuredClone(input)
-  const report = physicalRoutingAcceptance(input, traces)
+  const report: PhysicalRoutingAcceptanceReport = physicalRoutingAcceptance(
+    input,
+    traces,
+  )
   expect(report.physicalRoutingAccepted).toBe(true)
   expect(report.ddrTimingAccepted).toBe(false)
   expect(report.buses[0]).toMatchObject({
