@@ -17,6 +17,8 @@ An explicit SRJ path can precede `--report`; its canonical `fixed-escapes.json` 
 
 Exit status 0 means the physical routing milestone passes. DDR timing acceptance is reported separately and may be false. The JSON report records the actual source revision, verification-source hashes, exact native hash, exact routed-file hash, all physical gates, and full validation measurements. Existing full-acceptance snapshot exporters and their solver-success/matching gates are unchanged.
 
+The generated JSON artifacts are excluded from automatic source formatting so their byte-level provenance hashes stay stable. Their geometry and contents are checked by the verifier.
+
 Among 30 saved experimental states (15 distinct geometries), this is the best verified clearance-clean candidate under the requested order: fewest timed signals outside their optimal native bus windows, then smallest summed length error. It has 37/48 outside those windows and 396.352201 mm total error; maximum error is 21.601753 mm. These are full-owned XY length errors, not measured electrical delays. The numeric comparison follows the native 0.635 mm skew rule with its 1e-7 mm floating-point tolerance. This is a finite candidate comparison, not a global optimality claim. See `timing-score.json`.
 
 The saved layout has these total joined copper length spreads, including fixed fanouts:
