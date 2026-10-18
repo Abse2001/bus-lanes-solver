@@ -285,20 +285,23 @@ export function deriveLengthMatchingTargets(
     )
     const constraintWindows: Record<string, LengthBand> = {}
     for (const c of constraints) {
+      const targetMinimum = Math.min(...c.names.map((n) => solved.targets[n]))
+      const targetMaximum = Math.max(...c.names.map((n) => solved.targets[n]))
       const maximum =
-        c.tolerance === undefined
-          ? (c.maximum ?? Infinity)
-          : Math.max(...c.names.map((n) => solved.targets[n]))
+        c.kind === "pair"
+          ? Math.max(targetMaximum, targetMinimum + c.tolerance!)
+          : c.tolerance === undefined
+            ? (c.maximum ?? Infinity)
+            : targetMaximum
       const minimum =
-        c.tolerance === undefined
-          ? (c.minimum ?? 0)
-          : Math.max(
-              c.minimum ?? 0,
-              Math.min(
-                maximum - c.tolerance,
-                Math.min(...c.names.map((n) => solved.targets[n])),
-              ),
-            )
+        c.kind === "pair"
+          ? targetMinimum
+          : c.tolerance === undefined
+            ? (c.minimum ?? 0)
+            : Math.max(
+                c.minimum ?? 0,
+                Math.min(maximum - c.tolerance, targetMinimum),
+              )
       const upper = Math.min(maximum, c.maximum ?? Infinity)
       constraintWindows[c.id] = {
         minimum,

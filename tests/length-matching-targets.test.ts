@@ -123,6 +123,54 @@ describe("generic feasible matching targets", () => {
     expect(portfolio.plans.some((p) => p.id === "non-shortening")).toBe(true)
     expect(portfolio.shorteningPotential[0].potentialReductionMm).toBe(7)
   })
+  test("a pair at the bus floor retains configured skew headroom for shared extension", () => {
+    const tolerance = 0.127
+    const p = deriveLengthMatchingTargets({
+      nets: [
+        { name: "anchor", currentLengthMm: 10, lowerBoundMm: 10 },
+        { name: "P", currentLengthMm: 5, lowerBoundMm: 1 },
+        { name: "N", currentLengthMm: 5 + tolerance, lowerBoundMm: 1 },
+      ],
+      buses: [
+        {
+          busId: "byte",
+          connectionNames: ["anchor", "P", "N"],
+          maxLengthSkew: 0.635,
+        },
+      ],
+      differentialPairs: [
+        { connectionNames: ["P", "N"], lengthTolerance: tolerance },
+      ],
+    })
+    const plan = p.plans[0]
+    expect(plan.targets.P).toBe(plan.targets.N)
+    expect(plan.bands.P.minimum).toBeCloseTo(9.365, 10)
+    expect(plan.bands.P.maximum! - plan.bands.P.minimum).toBeCloseTo(
+      tolerance,
+      10,
+    )
+    expect(plan.bands.N).toEqual(plan.bands.P)
+    for (const c of p.constraints)
+      for (const a of c.names)
+        for (const b of c.names)
+          expect(
+            plan.bands[a].maximum! - plan.bands[b].minimum,
+          ).toBeLessThanOrEqual(c.tolerance! + 1e-7)
+    const capped = deriveLengthMatchingTargets({
+      nets: [
+        { name: "P", currentLengthMm: 5, lowerBoundMm: 5 },
+        { name: "N", currentLengthMm: 5, lowerBoundMm: 5 },
+      ],
+      buses: [
+        { busId: "ceiling", connectionNames: ["P", "N"], maxLength: 5.05 },
+      ],
+      differentialPairs: [
+        { connectionNames: ["P", "N"], lengthTolerance: tolerance },
+      ],
+    })
+    expect(capped.plans[0].bands.P.maximum).toBe(5.05)
+    expect(capped.plans[0].bands.N.maximum).toBe(5.05)
+  })
   test("absolute bounds and zero tolerance constrain all overlapping memberships", () => {
     const problem: LengthMatchingProblem = {
       nets: [
