@@ -123,6 +123,11 @@ console.log(result.timingSolved, result.reason, result.acceptance.buses)
 Calling `tuning.return(...)` after search starts also returns its best verified
 checkpoint. Invalid or physically incomplete starting layouts are rejected.
 
+The [saved AM3352 post-processing result](./docs/g350-am3352-postprocess)
+preserves all 49 signals and zero native DRC issues while recording four verified
+length improvements. Its three bus length constraints still fail; the original
+layout remains available separately.
+
 The default matched goal and full-acceptance snapshot exporters retain their
 existing timing requirements. This API adds a fresh routing opportunity; it does
 not promise that every finite search budget will complete a particular board.

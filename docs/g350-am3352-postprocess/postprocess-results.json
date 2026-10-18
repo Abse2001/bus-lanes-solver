@@ -1,0 +1,1268 @@
+{
+  "stage": "saved-complete-layout-generic-postprocessing",
+  "freshSolverGeneration": false,
+  "physicalRoutingAccepted": true,
+  "ddrTimingAccepted": false,
+  "supportRoutingVerified": false,
+  "electricalTimingVerified": false,
+  "fabricationReady": false,
+  "originalLayoutPreserved": "../g350-am3352-physical-milestone/routed.json",
+  "originalRoutedSha256": "99a909ce742425b9e9adac9fc0dcc3d0aaf2cc78d76fca4236a86cf7b8785374",
+  "bestRoutedSha256": "66774a5d372f431d6500d3fed6aed2654fc73377d3c84f29f28a66d5ef125f44",
+  "fixedEscapesSha256": "f4602ca38a6aae7fb6fcb4a30d6adf0141efe933357800b94d55763a065e97d2",
+  "verificationSha256": "43490bdeeda95c61411619b0a7d21c95dc41b0b7bd05dcf9dcd0db06d1a98a00",
+  "comparison": {
+    "kind": "saved49-postrouting-small-progress-v2-comparison",
+    "baselineSha256": "99a909ce742425b9e9adac9fc0dcc3d0aaf2cc78d76fca4236a86cf7b8785374",
+    "bestSha256": "66774a5d372f431d6500d3fed6aed2654fc73377d3c84f29f28a66d5ef125f44",
+    "changedOwners": [
+      {
+        "connectionName": "source_trace_1",
+        "signalName": "DDR_D8",
+        "beforeFullOwnedMm": 11.022539674441617,
+        "afterFullOwnedMm": 11.045133145473642,
+        "deltaMm": 0.02259347103202458,
+        "beforePTHs": 0,
+        "afterPTHs": 0,
+        "beforePoints": 9,
+        "afterPoints": 259
+      },
+      {
+        "connectionName": "source_trace_12",
+        "signalName": "DDR_D11",
+        "beforeFullOwnedMm": 18.988225099390856,
+        "afterFullOwnedMm": 18.995260591077653,
+        "deltaMm": 0.007035491686796291,
+        "beforePTHs": 2,
+        "afterPTHs": 2,
+        "beforePoints": 15,
+        "afterPoints": 62
+      },
+      {
+        "connectionName": "source_trace_21",
+        "signalName": "DDR_BA2",
+        "beforeFullOwnedMm": 15.821995984126474,
+        "afterFullOwnedMm": 15.841906278687164,
+        "deltaMm": 0.019910294560689934,
+        "beforePTHs": 4,
+        "afterPTHs": 4,
+        "beforePoints": 33,
+        "afterPoints": 80
+      },
+      {
+        "connectionName": "source_trace_23",
+        "signalName": "DDR_A2",
+        "beforeFullOwnedMm": 10.194112549695426,
+        "afterFullOwnedMm": 10.441330584843719,
+        "deltaMm": 0.24721803514829332,
+        "beforePTHs": 2,
+        "afterPTHs": 2,
+        "beforePoints": 17,
+        "afterPoints": 71
+      }
+    ],
+    "totalAddedPlanarMm": 0.29675729242780413,
+    "timingRanking": {
+      "beforeOutOfBand": 38,
+      "afterOutOfBand": 38,
+      "beforeErrorMm": 478.63600838672994,
+      "afterErrorMm": 478.3392510943021,
+      "note": "Finite target-portfolio ranking, distinct from actual native bus skew."
+    },
+    "nativeBusSpreads": [
+      {
+        "busId": "DDR_BYTE0",
+        "nativeToleranceMm": 0.635,
+        "before": {
+          "min": 7.472792206135789,
+          "max": 21.270205614730322,
+          "spread": 13.797413408594533
+        },
+        "after": {
+          "min": 7.472792206135789,
+          "max": 21.270205614730322,
+          "spread": 13.797413408594533
+        },
+        "spreadImprovementMm": 0.0,
+        "matched": false
+      },
+      {
+        "busId": "DDR_BYTE1",
+        "nativeToleranceMm": 0.635,
+        "before": {
+          "min": 7.925483399593907,
+          "max": 23.225296843025586,
+          "spread": 15.299813443431677
+        },
+        "after": {
+          "min": 7.925483399593907,
+          "max": 23.225296843025586,
+          "spread": 15.299813443431677
+        },
+        "spreadImprovementMm": 0.0,
+        "matched": false
+      },
+      {
+        "busId": "DDR_COMMAND_CLOCK",
+        "nativeToleranceMm": 0.635,
+        "before": {
+          "min": 4.414213562373096,
+          "max": 26.650966799187806,
+          "spread": 22.23675323681471
+        },
+        "after": {
+          "min": 4.414213562373096,
+          "max": 26.650966799187806,
+          "spread": 22.23675323681471
+        },
+        "spreadImprovementMm": 0.0,
+        "matched": false
+      }
+    ],
+    "nativePairReports": [
+      {
+        "busId": "pair_0",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.12700000000003975,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_15",
+            "carrierLengthMm": 10.628336022607376,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 10.628336022607376
+          },
+          {
+            "name": "source_trace_16",
+            "carrierLengthMm": 10.755336022607416,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 10.755336022607416
+          }
+        ]
+      },
+      {
+        "busId": "pair_1",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.12700000000000244,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_28",
+            "carrierLengthMm": 14.117446198742103,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 14.117446198742103
+          },
+          {
+            "name": "source_trace_27",
+            "carrierLengthMm": 14.244446198742105,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 14.244446198742105
+          }
+        ]
+      },
+      {
+        "busId": "pair_2",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.127,
+        "skewMm": 0.12700000000003087,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_33",
+            "carrierLengthMm": 14.26394022463662,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 14.26394022463662
+          },
+          {
+            "name": "source_trace_34",
+            "carrierLengthMm": 14.13694022463659,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 14.13694022463659
+          }
+        ]
+      }
+    ],
+    "timingAccepted": false,
+    "gates": {
+      "all49ExactlyOnce": true,
+      "pairedSixByteExact": true,
+      "all80PTHRecordsExact": true,
+      "all98ExactNativeFinalAudit": true,
+      "fullPhysicalAndNativePairs": true,
+      "sourceHashesEqualDuringExecution": true,
+      "progressHashExact": true,
+      "bestBoundToStandardVerification": true
+    }
+  },
+  "attempts": [
+    {
+      "sourceRevisionAtBuild": "eefbe30b2c1eaa6cbeb497fcbb18e77898f5646e",
+      "budgetMs": 300000,
+      "maximumOperatorTimeMs": 1500,
+      "actualRuntimeSeconds": 301.38570969999995,
+      "statistics": {
+        "steps": 4477,
+        "passes": 0,
+        "checkedCandidates": 0,
+        "acceptedCandidates": 0,
+        "rejectedCandidates": 0,
+        "trialAcceptedCandidates": 0,
+        "elapsedMilliseconds": 301373.246291
+      },
+      "reason": "budget",
+      "gates": {
+        "completePhysicalBestCheckpoint": true,
+        "independentAuditMatchesFinalBestBytes": true,
+        "exact98SavedPaths": true,
+        "immutableFrozenInputsAndTransitiveSources": true,
+        "immutableCallerObjects": true,
+        "all48TimedOwnersReported": true,
+        "bestScoreNoWorseThanBaseline": true,
+        "zeroBudgetIdentical": true,
+        "matchingZeroBudgetPreflight": true,
+        "noHarnessFailure": true
+      },
+      "bestOutputSha256": "99a909ce742425b9e9adac9fc0dcc3d0aaf2cc78d76fca4236a86cf7b8785374",
+      "identicalBaseline": true,
+      "baselineEvaluation": {
+        "timingSolved": false,
+        "targetPlanId": "non-shortening",
+        "outOfBandNames": [
+          "source_trace_15",
+          "source_trace_16",
+          "source_trace_28",
+          "source_trace_27",
+          "source_trace_33",
+          "source_trace_34",
+          "source_trace_0",
+          "source_trace_1",
+          "source_trace_2",
+          "source_trace_3",
+          "source_trace_4",
+          "source_trace_5",
+          "source_trace_6",
+          "source_trace_7",
+          "source_trace_8",
+          "source_trace_9",
+          "source_trace_12",
+          "source_trace_13",
+          "source_trace_18",
+          "source_trace_19",
+          "source_trace_20",
+          "source_trace_21",
+          "source_trace_22",
+          "source_trace_23",
+          "source_trace_24",
+          "source_trace_25",
+          "source_trace_26",
+          "source_trace_30",
+          "source_trace_31",
+          "source_trace_35",
+          "source_trace_38",
+          "source_trace_39",
+          "source_trace_40",
+          "source_trace_41",
+          "source_trace_42",
+          "source_trace_43",
+          "source_trace_44",
+          "source_trace_45"
+        ],
+        "sumBandErrorMm": 478.63600838672994,
+        "actualConstraintFailures": 3,
+        "actualExcessMm": 49.42898008884091,
+        "maximumActualExcessMm": 21.6017532368147,
+        "reports": [
+          {
+            "id": "bus:1:DDR_BYTE0",
+            "kind": "bus",
+            "minimumMm": 7.472792206135789,
+            "maximumMm": 21.270205614730322,
+            "spreadMm": 13.797413408594533,
+            "skewExcessMm": 13.162413408594533,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:2:DDR_BYTE1",
+            "kind": "bus",
+            "minimumMm": 7.925483399593907,
+            "maximumMm": 23.225296843025582,
+            "spreadMm": 15.299813443431674,
+            "skewExcessMm": 14.664813443431674,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:3:DDR_COMMAND_CLOCK",
+            "kind": "bus",
+            "minimumMm": 4.414213562373096,
+            "maximumMm": 26.6509667991878,
+            "spreadMm": 22.236753236814703,
+            "skewExcessMm": 21.6017532368147,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "pair:0",
+            "kind": "pair",
+            "minimumMm": 10.628336022607376,
+            "maximumMm": 10.755336022607416,
+            "spreadMm": 0.12700000000003975,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:1",
+            "kind": "pair",
+            "minimumMm": 14.117446198742103,
+            "maximumMm": 14.244446198742105,
+            "spreadMm": 0.12700000000000244,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:2",
+            "kind": "pair",
+            "minimumMm": 14.13694022463659,
+            "maximumMm": 14.26394022463662,
+            "spreadMm": 0.12700000000003087,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          }
+        ],
+        "score": [
+          1,
+          38,
+          478.63600838672994,
+          3,
+          49.42898008884091,
+          691.1088640438555,
+          80
+        ]
+      },
+      "evaluation": {
+        "timingSolved": false,
+        "targetPlanId": "non-shortening",
+        "outOfBandNames": [
+          "source_trace_15",
+          "source_trace_16",
+          "source_trace_28",
+          "source_trace_27",
+          "source_trace_33",
+          "source_trace_34",
+          "source_trace_0",
+          "source_trace_1",
+          "source_trace_2",
+          "source_trace_3",
+          "source_trace_4",
+          "source_trace_5",
+          "source_trace_6",
+          "source_trace_7",
+          "source_trace_8",
+          "source_trace_9",
+          "source_trace_12",
+          "source_trace_13",
+          "source_trace_18",
+          "source_trace_19",
+          "source_trace_20",
+          "source_trace_21",
+          "source_trace_22",
+          "source_trace_23",
+          "source_trace_24",
+          "source_trace_25",
+          "source_trace_26",
+          "source_trace_30",
+          "source_trace_31",
+          "source_trace_35",
+          "source_trace_38",
+          "source_trace_39",
+          "source_trace_40",
+          "source_trace_41",
+          "source_trace_42",
+          "source_trace_43",
+          "source_trace_44",
+          "source_trace_45"
+        ],
+        "sumBandErrorMm": 478.63600838672994,
+        "actualConstraintFailures": 3,
+        "actualExcessMm": 49.42898008884091,
+        "maximumActualExcessMm": 21.6017532368147,
+        "reports": [
+          {
+            "id": "bus:1:DDR_BYTE0",
+            "kind": "bus",
+            "minimumMm": 7.472792206135789,
+            "maximumMm": 21.270205614730322,
+            "spreadMm": 13.797413408594533,
+            "skewExcessMm": 13.162413408594533,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:2:DDR_BYTE1",
+            "kind": "bus",
+            "minimumMm": 7.925483399593907,
+            "maximumMm": 23.225296843025582,
+            "spreadMm": 15.299813443431674,
+            "skewExcessMm": 14.664813443431674,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:3:DDR_COMMAND_CLOCK",
+            "kind": "bus",
+            "minimumMm": 4.414213562373096,
+            "maximumMm": 26.6509667991878,
+            "spreadMm": 22.236753236814703,
+            "skewExcessMm": 21.6017532368147,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "pair:0",
+            "kind": "pair",
+            "minimumMm": 10.628336022607376,
+            "maximumMm": 10.755336022607416,
+            "spreadMm": 0.12700000000003975,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:1",
+            "kind": "pair",
+            "minimumMm": 14.117446198742103,
+            "maximumMm": 14.244446198742105,
+            "spreadMm": 0.12700000000000244,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:2",
+            "kind": "pair",
+            "minimumMm": 14.13694022463659,
+            "maximumMm": 14.26394022463662,
+            "spreadMm": 0.12700000000003087,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          }
+        ],
+        "score": [
+          1,
+          38,
+          478.63600838672994,
+          3,
+          49.42898008884091,
+          691.1088640438555,
+          80
+        ]
+      },
+      "options": {
+        "maximumPlans": 4,
+        "maximumPasses": 2,
+        "maximumCandidatesPerOperator": 8
+      },
+      "frozenManifestSha256": "9ce3c500d716e72d21d38fbeda372919a3fe36f1135e918d2c6814302411fee2",
+      "completedManifestSha256": "b1ef9298cd3c9740bd69b94fb025bd87fdee3fd6f3b040242b7f3af07ac9bfd6",
+      "rawReportSha256": "fb0f11b5dbf9d57f1c6d461786a1ee04b0c1433d4539e6a988c7e3c101dfd47f"
+    },
+    {
+      "sourceRevisionAtBuild": "534e34115cd5e1e2c662c2c0d4c2347652759053",
+      "budgetMs": 90000,
+      "maximumOperatorTimeMs": 3000,
+      "actualRuntimeSeconds": 91.747208987,
+      "statistics": {
+        "steps": 2854,
+        "passes": 0,
+        "checkedCandidates": 4,
+        "acceptedCandidates": 4,
+        "rejectedCandidates": 0,
+        "trialAcceptedCandidates": 4,
+        "elapsedMilliseconds": 91725.244872
+      },
+      "reason": "budget",
+      "gates": {
+        "completePhysicalBestCheckpoint": true,
+        "postSearchIndependentAudit": true,
+        "independentAuditMatchesFinalBestBytes": true,
+        "exact98SavedPaths": true,
+        "immutableFrozenInputsAndTransitiveSources": true,
+        "immutableCallerObjects": true,
+        "all48TimedOwnersReported": true,
+        "bestScoreNoWorseThanBaseline": true,
+        "zeroBudgetIdentical": true,
+        "matchingZeroBudgetPreflight": true,
+        "noHarnessFailure": true
+      },
+      "bestOutputSha256": "66774a5d372f431d6500d3fed6aed2654fc73377d3c84f29f28a66d5ef125f44",
+      "identicalBaseline": false,
+      "baselineEvaluation": {
+        "timingSolved": false,
+        "targetPlanId": "non-shortening",
+        "outOfBandNames": [
+          "source_trace_15",
+          "source_trace_16",
+          "source_trace_28",
+          "source_trace_27",
+          "source_trace_33",
+          "source_trace_34",
+          "source_trace_0",
+          "source_trace_1",
+          "source_trace_2",
+          "source_trace_3",
+          "source_trace_4",
+          "source_trace_5",
+          "source_trace_6",
+          "source_trace_7",
+          "source_trace_8",
+          "source_trace_9",
+          "source_trace_12",
+          "source_trace_13",
+          "source_trace_18",
+          "source_trace_19",
+          "source_trace_20",
+          "source_trace_21",
+          "source_trace_22",
+          "source_trace_23",
+          "source_trace_24",
+          "source_trace_25",
+          "source_trace_26",
+          "source_trace_30",
+          "source_trace_31",
+          "source_trace_35",
+          "source_trace_38",
+          "source_trace_39",
+          "source_trace_40",
+          "source_trace_41",
+          "source_trace_42",
+          "source_trace_43",
+          "source_trace_44",
+          "source_trace_45"
+        ],
+        "sumBandErrorMm": 478.63600838672994,
+        "actualConstraintFailures": 3,
+        "actualExcessMm": 49.42898008884091,
+        "maximumActualExcessMm": 21.6017532368147,
+        "reports": [
+          {
+            "id": "bus:1:DDR_BYTE0",
+            "kind": "bus",
+            "minimumMm": 7.472792206135789,
+            "maximumMm": 21.270205614730322,
+            "spreadMm": 13.797413408594533,
+            "skewExcessMm": 13.162413408594533,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:2:DDR_BYTE1",
+            "kind": "bus",
+            "minimumMm": 7.925483399593907,
+            "maximumMm": 23.225296843025582,
+            "spreadMm": 15.299813443431674,
+            "skewExcessMm": 14.664813443431674,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:3:DDR_COMMAND_CLOCK",
+            "kind": "bus",
+            "minimumMm": 4.414213562373096,
+            "maximumMm": 26.6509667991878,
+            "spreadMm": 22.236753236814703,
+            "skewExcessMm": 21.6017532368147,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "pair:0",
+            "kind": "pair",
+            "minimumMm": 10.628336022607376,
+            "maximumMm": 10.755336022607416,
+            "spreadMm": 0.12700000000003975,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:1",
+            "kind": "pair",
+            "minimumMm": 14.117446198742103,
+            "maximumMm": 14.244446198742105,
+            "spreadMm": 0.12700000000000244,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:2",
+            "kind": "pair",
+            "minimumMm": 14.13694022463659,
+            "maximumMm": 14.26394022463662,
+            "spreadMm": 0.12700000000003087,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          }
+        ],
+        "score": [
+          1,
+          38,
+          478.63600838672994,
+          3,
+          49.42898008884091,
+          691.1088640438555,
+          80
+        ]
+      },
+      "evaluation": {
+        "timingSolved": false,
+        "targetPlanId": "non-shortening",
+        "outOfBandNames": [
+          "source_trace_15",
+          "source_trace_16",
+          "source_trace_28",
+          "source_trace_27",
+          "source_trace_33",
+          "source_trace_34",
+          "source_trace_0",
+          "source_trace_1",
+          "source_trace_2",
+          "source_trace_3",
+          "source_trace_4",
+          "source_trace_5",
+          "source_trace_6",
+          "source_trace_7",
+          "source_trace_8",
+          "source_trace_9",
+          "source_trace_12",
+          "source_trace_13",
+          "source_trace_18",
+          "source_trace_19",
+          "source_trace_20",
+          "source_trace_21",
+          "source_trace_22",
+          "source_trace_23",
+          "source_trace_24",
+          "source_trace_25",
+          "source_trace_26",
+          "source_trace_30",
+          "source_trace_31",
+          "source_trace_35",
+          "source_trace_38",
+          "source_trace_39",
+          "source_trace_40",
+          "source_trace_41",
+          "source_trace_42",
+          "source_trace_43",
+          "source_trace_44",
+          "source_trace_45"
+        ],
+        "sumBandErrorMm": 478.3392510943021,
+        "actualConstraintFailures": 3,
+        "actualExcessMm": 49.42898008884091,
+        "maximumActualExcessMm": 21.6017532368147,
+        "reports": [
+          {
+            "id": "bus:1:DDR_BYTE0",
+            "kind": "bus",
+            "minimumMm": 7.472792206135789,
+            "maximumMm": 21.270205614730322,
+            "spreadMm": 13.797413408594533,
+            "skewExcessMm": 13.162413408594533,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:2:DDR_BYTE1",
+            "kind": "bus",
+            "minimumMm": 7.925483399593907,
+            "maximumMm": 23.225296843025582,
+            "spreadMm": 15.299813443431674,
+            "skewExcessMm": 14.664813443431674,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "bus:3:DDR_COMMAND_CLOCK",
+            "kind": "bus",
+            "minimumMm": 4.414213562373096,
+            "maximumMm": 26.6509667991878,
+            "spreadMm": 22.236753236814703,
+            "skewExcessMm": 21.6017532368147,
+            "absoluteErrorMm": 0,
+            "matched": false
+          },
+          {
+            "id": "pair:0",
+            "kind": "pair",
+            "minimumMm": 10.628336022607376,
+            "maximumMm": 10.755336022607416,
+            "spreadMm": 0.12700000000003975,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:1",
+            "kind": "pair",
+            "minimumMm": 14.117446198742103,
+            "maximumMm": 14.244446198742105,
+            "spreadMm": 0.12700000000000244,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          },
+          {
+            "id": "pair:2",
+            "kind": "pair",
+            "minimumMm": 14.13694022463659,
+            "maximumMm": 14.26394022463662,
+            "spreadMm": 0.12700000000003087,
+            "skewExcessMm": 0,
+            "absoluteErrorMm": 0,
+            "matched": true
+          }
+        ],
+        "score": [
+          1,
+          38,
+          478.3392510943021,
+          3,
+          49.42898008884091,
+          691.4056213362834,
+          80
+        ]
+      },
+      "options": {
+        "maximumPlans": 4,
+        "maximumPasses": 2,
+        "maximumCandidatesPerOperator": 8
+      },
+      "frozenManifestSha256": "6ab3659f57a4353dd1581bbe29163aec86c2070844cf7bef1cc6cd9a64f861e8",
+      "completedManifestSha256": "3ce024a4aeea6ae996a55a08859dc6f1e4ced917b3b260fbc89b37f5656ad1ed",
+      "rawReportSha256": "ceb997f04b2fec9c751e07815ed58b853e591d602c3adaed446f15878a037653"
+    }
+  ],
+  "validation": {
+    "fullTests": {
+      "sourceRevision": "534e34115cd5e1e2c662c2c0d4c2347652759053",
+      "passed": 711,
+      "failed": 0,
+      "files": 203,
+      "assertions": 1012572,
+      "runtimeSeconds": 156.34,
+      "command": "bun test --timeout 30000"
+    },
+    "typecheck": true,
+    "isolatedNodeBrowserAndStrictTypeScriptPackageConsumers": true,
+    "controlBenchmark": {
+      "sample": "control",
+      "cpu": {
+        "x": 0,
+        "y": 0
+      },
+      "ram": {
+        "x": 0,
+        "y": -27
+      },
+      "allowedLayers": null,
+      "carrierLayerCounts": {
+        "inner2": 16,
+        "inner1": 19,
+        "bottom": 12
+      },
+      "status": "solved",
+      "solved": true,
+      "timeoutSeconds": 180,
+      "solveMilliseconds": 59595.374487,
+      "milliseconds": 62656.989128,
+      "iterations": 51147,
+      "requestedSignals": 47,
+      "routedSignals": 47,
+      "fixedPowerDogbones": 161,
+      "inputUnchanged": true,
+      "fixedPowerPreserved": true,
+      "inputSha256": "b7a4e9d09a22fe0ed131a544548b14eef20fbf4e88b6dc6ffaa11ca44e6bfe59",
+      "failureCode": null,
+      "error": null,
+      "validation": {
+        "valid": true,
+        "complete": true,
+        "matched": true,
+        "fixedPowerTraces": 161,
+        "fixedPowerVias": 161,
+        "fixedPowerPadJoins": 161,
+        "fixedDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "combinedDrc": {
+          "valid": true,
+          "checkedTraceCount": 208,
+          "checkedSegmentCount": 16457,
+          "checkedViaCount": 255,
+          "issues": []
+        },
+        "busLengths": [
+          {
+            "busId": "DDR_BYTE0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000001304039,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_14",
+                "carrierLengthMm": 35.29024652358628,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.29024652358628
+              },
+              {
+                "name": "source_trace_30",
+                "carrierLengthMm": 35.20230784972909,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.20230784972909
+              },
+              {
+                "name": "source_trace_3",
+                "carrierLengthMm": 34.815944885564306,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564306
+              },
+              {
+                "name": "source_trace_40",
+                "carrierLengthMm": 34.815944885590156,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885590156
+              },
+              {
+                "name": "source_trace_17",
+                "carrierLengthMm": 34.81594488556293,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488556293
+              },
+              {
+                "name": "source_trace_41",
+                "carrierLengthMm": 35.450944885652575,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.450944885652575
+              },
+              {
+                "name": "source_trace_4",
+                "carrierLengthMm": 34.81594488552217,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488552217
+              },
+              {
+                "name": "source_trace_31",
+                "carrierLengthMm": 34.815944885585054,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885585054
+              },
+              {
+                "name": "source_trace_29",
+                "carrierLengthMm": 35.14387628465016,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.14387628465016
+              },
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 34.815944885564,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 34.893813210145474,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.893813210145474
+              }
+            ]
+          },
+          {
+            "busId": "DDR_BYTE1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000000734681,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_28",
+                "carrierLengthMm": 32.46909308697712,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697712
+              },
+              {
+                "name": "source_trace_12",
+                "carrierLengthMm": 32.46909308694399,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308694399
+              },
+              {
+                "name": "source_trace_39",
+                "carrierLengthMm": 32.4690930869773,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.4690930869773
+              },
+              {
+                "name": "source_trace_2",
+                "carrierLengthMm": 33.10409308701746,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 33.10409308701746
+              },
+              {
+                "name": "source_trace_25",
+                "carrierLengthMm": 32.46909308697719,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697719
+              },
+              {
+                "name": "source_trace_1",
+                "carrierLengthMm": 32.46909308697724,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697724
+              },
+              {
+                "name": "source_trace_38",
+                "carrierLengthMm": 32.4690930869772,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.4690930869772
+              },
+              {
+                "name": "source_trace_11",
+                "carrierLengthMm": 32.46909308697711,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697711
+              },
+              {
+                "name": "source_trace_13",
+                "carrierLengthMm": 32.469093087021,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.469093087021
+              },
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 32.51521792061114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.51521792061114
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 32.6422179206111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.6422179206111
+              }
+            ]
+          }
+        ],
+        "pairLengths": [
+          {
+            "busId": "pair_0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.0778683245814733,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 34.815944885564,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 34.893813210145474,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.893813210145474
+              }
+            ]
+          },
+          {
+            "busId": "pair_1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.1269999999999598,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 32.51521792061114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.51521792061114
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 32.6422179206111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.6422179206111
+              }
+            ]
+          },
+          {
+            "busId": "pair_2",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.07282965286481868,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_32",
+                "carrierLengthMm": 25.3727889372299,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 25.3727889372299
+              },
+              {
+                "name": "source_trace_33",
+                "carrierLengthMm": 25.445618590094718,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 25.445618590094718
+              }
+            ]
+          }
+        ],
+        "quality": {
+          "signalCount": 47,
+          "footprint": {
+            "bounds": {
+              "minX": -6.7500009999999975,
+              "maxX": 5.750005000000003,
+              "minY": -33.55,
+              "maxY": -3.45,
+              "widthMm": 12.500006,
+              "heightMm": 30.099999999999998,
+              "areaMm2": 376.2501806
+            },
+            "allCopperBounds": {
+              "minX": -7.401000000000001,
+              "maxX": 7.401000000000001,
+              "minY": -33.576121,
+              "maxY": 7.401000000000001,
+              "widthMm": 14.802000000000001,
+              "heightMm": 40.977121000000004,
+              "areaMm2": 606.5433450420002
+            },
+            "layers": [
+              {
+                "layer": "top",
+                "minX": -6.05,
+                "maxX": 4.150000000000001,
+                "minY": -33.55,
+                "maxY": -3.5500000000000003,
+                "widthMm": 10.200000000000001,
+                "heightMm": 29.999999999999996,
+                "areaMm2": 306
+              },
+              {
+                "layer": "inner1",
+                "minX": -6.749999999999997,
+                "maxX": 5.750005000000003,
+                "minY": -33.55,
+                "maxY": -3.45,
+                "widthMm": 12.500005000000002,
+                "heightMm": 30.099999999999998,
+                "areaMm2": 376.2501505
+              },
+              {
+                "layer": "inner2",
+                "minX": -6.7500009999999975,
+                "maxX": 5.050000000000003,
+                "minY": -33.55,
+                "maxY": -3.8499999999999996,
+                "widthMm": 11.800001000000002,
+                "heightMm": 29.699999999999996,
+                "areaMm2": 350.4600297
+              },
+              {
+                "layer": "bottom",
+                "minX": -6.149999999999998,
+                "maxX": 4.400000000000005,
+                "minY": -33.55,
+                "maxY": -3.8499999999999996,
+                "widthMm": 10.550000000000002,
+                "heightMm": 29.699999999999996,
+                "areaMm2": 313.33500000000004
+              }
+            ],
+            "middleRegionMaxCenterOffsetMm": 6.7500009999999975,
+            "middleRegionVacancy": {
+              "layers": [
+                {
+                  "layer": "inner2",
+                  "envelopeAreaMm2": 153.67298242313305,
+                  "unoccupiedAreaMm2": 37.04554929412624,
+                  "unoccupiedFraction": 0.24106741933414588,
+                  "largestFreeRectangleMm2": 4.376855744170317,
+                  "gridResolutionMm": 0.1
+                },
+                {
+                  "layer": "inner1",
+                  "envelopeAreaMm2": 162.78922761566503,
+                  "unoccupiedAreaMm2": 43.87793975900241,
+                  "unoccupiedFraction": 0.2695383496910215,
+                  "largestFreeRectangleMm2": 14.083546409497739,
+                  "gridResolutionMm": 0.1
+                },
+                {
+                  "layer": "bottom",
+                  "envelopeAreaMm2": 137.39405315000005,
+                  "unoccupiedAreaMm2": 81.59936312314925,
+                  "unoccupiedFraction": 0.5939075327668155,
+                  "largestFreeRectangleMm2": 22.321833782687605,
+                  "gridResolutionMm": 0.1
+                }
+              ],
+              "envelopeAreaMm2": 453.8562631887981,
+              "unoccupiedAreaMm2": 162.5228521762779
+            }
+          },
+          "totalPlanarLengthMm": 1522.0586384096096,
+          "maxDetourRatio": 2.2164181526749336,
+          "meanDetourRatio": 1.5305262093203014,
+          "ordinaryTurns": 635,
+          "shortJogs": 169,
+          "acuteCorners": 0,
+          "sharpCurveCorners": 0,
+          "illegalOrdinaryCorners": 0,
+          "nonOctilinearOrdinarySegments": 0,
+          "pairGaps": [
+            {
+              "connectionNames": [
+                "source_trace_15",
+                "source_trace_16"
+              ],
+              "requestedGapMm": 0.12,
+              "sharedSectionPresent": true,
+              "minEdgeGapMm": 0.11981206684520283,
+              "maxEdgeGapMm": 0.137749499483309,
+              "maxSamplingErrorMm": 0.0009999999999999998,
+              "sharedCopperMm": [
+                28.991963408025303,
+                29.356471342913615
+              ],
+              "maxAllowedEdgeGapMm": 0.14012628406432667,
+              "matched": true
+            },
+            {
+              "connectionNames": [
+                "source_trace_27",
+                "source_trace_26"
+              ],
+              "requestedGapMm": 0.12,
+              "sharedSectionPresent": true,
+              "minEdgeGapMm": 0.11981206684520283,
+              "maxEdgeGapMm": 0.13774737979900803,
+              "maxSamplingErrorMm": 0.000999999999999999,
+              "sharedCopperMm": [
+                27.661243430534746,
+                27.478989463090585
+              ],
+              "maxAllowedEdgeGapMm": 0.14012628406432667,
+              "matched": true
+            },
+            {
+              "connectionNames": [
+                "source_trace_32",
+                "source_trace_33"
+              ],
+              "requestedGapMm": 0.12,
+              "sharedSectionPresent": true,
+              "minEdgeGapMm": 0.11999999999999687,
+              "maxEdgeGapMm": 0.13774550089621196,
+              "maxSamplingErrorMm": 0.0009999518465479817,
+              "sharedCopperMm": [
+                14.733114233214458,
+                14.550860265770297
+              ],
+              "maxAllowedEdgeGapMm": 0.14012628406432667,
+              "matched": true
+            }
+          ],
+          "exteriorPairGaps": [
+            {
+              "connectionNames": [
+                "source_trace_15",
+                "source_trace_16"
+              ],
+              "applicable": true,
+              "matched": true,
+              "maxExteriorEdgeGapMm": 0.137749499483309,
+              "maxSamplingErrorMm": 0.0009999999999999998,
+              "separatedExteriorLengthMm": 0
+            },
+            {
+              "connectionNames": [
+                "source_trace_27",
+                "source_trace_26"
+              ],
+              "applicable": true,
+              "matched": true,
+              "maxExteriorEdgeGapMm": 0.1377543771227771,
+              "maxSamplingErrorMm": 0.000999999999999999,
+              "separatedExteriorLengthMm": 0
+            },
+            {
+              "connectionNames": [
+                "source_trace_32",
+                "source_trace_33"
+              ],
+              "applicable": true,
+              "matched": true,
+              "maxExteriorEdgeGapMm": 0.13774542516830407,
+              "maxSamplingErrorMm": 0.0009999654712014834,
+              "separatedExteriorLengthMm": 0
+            }
+          ],
+          "issues": []
+        },
+        "issues": []
+      },
+      "envelopeOptimization": {
+        "beforeAreaMm2": 406.34999999999997,
+        "afterAreaMm2": 376.2501806,
+        "milliseconds": 14099.779815999995
+      }
+    }
+  },
+  "routeImage": {
+    "file": "routing.png",
+    "sha256": "b6932a45b13482bbe6fe01241da7de15e616ddc0e13c0bbf20024526f67282ae",
+    "visuallyInspected": true,
+    "actualWidthsDrawnToScale": true,
+    "regionContainsAll49Signals": true
+  }
+}

@@ -7,6 +7,7 @@
       "!examples/data/**",
       "!examples/fanout-solver-outputs/**",
       "!docs/g350-am3352-physical-milestone/*.json",
+      "!docs/g350-am3352-postprocess/*.json",
       "!cosmos-export/**",
       "!node_modules/**",
       "!dist/**",
