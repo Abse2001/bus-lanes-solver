@@ -581,7 +581,7 @@ export function* enumeratePairedBodyLengthExtensions(
         ...diagnostic,
         accepted: false,
         reason: "physical",
-        physicalGates: acceptance.gates,
+        physicalGates: { ...acceptance.gates },
       })
       continue
     }
@@ -589,7 +589,7 @@ export function* enumeratePairedBodyLengthExtensions(
       ...diagnostic,
       accepted: true,
       reason: "accepted",
-      physicalGates: acceptance.gates,
+      physicalGates: { ...acceptance.gates },
     })
     emitted++
     yield {

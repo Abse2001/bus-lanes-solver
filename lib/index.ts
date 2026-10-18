@@ -13,6 +13,9 @@ export {
   type PostRoutingLengthTuningOptions,
   type PostRoutingLengthTuningResult,
   type PostRoutingLengthProgress,
+  type PostRoutingLengthContext,
+  type PostRoutingLengthProposal,
+  type PostRoutingLengthProposalFactory,
 } from "./post-routing-length-tuning"
 export type { NativeSingleCarrierOptions } from "./route-matched-native-single-carrier"
 
@@ -27,3 +30,8 @@ export {
   type OrdinaryLengthExcursionOptions,
   type OrdinaryLengthExcursionProposal,
 } from "./post-route-ordinary-length-excursions"
+export {
+  extendOrdinaryRouteLength,
+  type OrdinaryLengthExtensionOptions,
+  type OrdinaryLengthExtensionProposal,
+} from "./post-route-ordinary-length-extensions"

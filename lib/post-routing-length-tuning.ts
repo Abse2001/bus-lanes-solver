@@ -47,6 +47,8 @@ export interface PostRoutingLengthTuningOptions {
   maximumPasses?: number
   maximumPlans?: number
   maximumCandidatesPerOperator?: number
+  /** Bound one operator so blocked owners cannot consume the whole search. */
+  maximumOperatorTimeMs?: number
   /** Additional proposal operators share the same physical and checkpoint gates. */
   proposalFactories?: readonly PostRoutingLengthProposalFactory[]
 }
@@ -61,6 +63,9 @@ export interface PostRoutingLengthProgress {
   timingSolved: boolean
   outOfBandSignals: number
   totalLengthErrorMm: number
+  operator?: string
+  decision?: "best" | "trial" | "rejected"
+  rejectionReason?: string
 }
 
 export interface PostRoutingLengthTuningResult {
@@ -78,6 +83,7 @@ export interface PostRoutingLengthTuningResult {
     checkedCandidates: number
     acceptedCandidates: number
     rejectedCandidates: number
+    trialAcceptedCandidates: number
     elapsedMilliseconds: number
   }
   errors: string[]
@@ -209,9 +215,12 @@ export function* postProcessRoutedLengths(
   const maximumSteps = options.maximumSteps ?? 200000
   const maximumPasses = options.maximumPasses ?? 4
   const maximumCandidates = options.maximumCandidatesPerOperator ?? 8
+  const maximumOperatorTime = options.maximumOperatorTimeMs ?? 5000
   if (
     !Number.isFinite(timeBudget) ||
     timeBudget < 0 ||
+    !Number.isFinite(maximumOperatorTime) ||
+    maximumOperatorTime < 0 ||
     [maximumSteps, maximumPasses, maximumCandidates].some(
       (value) => !Number.isInteger(value) || value < 0,
     )
@@ -288,6 +297,11 @@ export function* postProcessRoutedLengths(
   let checkedCandidates = 0
   let acceptedCandidates = 0
   let rejectedCandidates = 0
+  let trialAcceptedCandidates = 0
+  let lastDecision: Pick<
+    PostRoutingLengthProgress,
+    "operator" | "decision" | "rejectionReason"
+  > = {}
   let active: ReturnType<PostRoutingLengthProposalFactory> | undefined
   let finished = false
   const expired = () =>
@@ -309,6 +323,7 @@ export function* postProcessRoutedLengths(
       timingSolved: evaluation.timingSolved,
       outOfBandSignals: evaluation.outOfBandNames.length,
       totalLengthErrorMm: evaluation.sumBandErrorMm,
+      ...lastDecision,
     }
   }
   try {
@@ -333,13 +348,18 @@ export function* postProcessRoutedLengths(
         for (const factory of options.proposalFactories ??
           defaultPostRoutingLengthProposalFactories(input)) {
           let candidates = 0
+          const operatorDeadline = Math.min(
+            deadline,
+            performance.now() + maximumOperatorTime,
+          )
+          lastDecision = {}
           try {
             active = factory({
               input: structuredClone(input),
               traces: structuredClone(trial),
               fixedEscapes: structuredClone(fixedEscapes),
               plan: structuredClone(plan),
-              deadlineMs: deadline,
+              deadlineMs: operatorDeadline,
               maximumCandidates,
             })
             while (true) {
@@ -347,6 +367,7 @@ export function* postProcessRoutedLengths(
                 reason = "budget"
                 break search
               }
+              if (performance.now() >= operatorDeadline) break
               const next = active.next()
               steps++
               if (next.done) break
@@ -356,6 +377,7 @@ export function* postProcessRoutedLengths(
               }
               checkedCandidates++
               const proposal = next.value
+              lastDecision = { operator: proposal.operator }
               const replacements = new Map<string, Trace>()
               let validOwners = true
               for (const trace of proposal.replacements) {
@@ -409,13 +431,31 @@ export function* postProcessRoutedLengths(
                 (!improvesPlan && !report.ddrTimingAccepted)
               ) {
                 rejectedCandidates++
+                lastDecision = {
+                  ...lastDecision,
+                  decision: "rejected",
+                  rejectionReason: !validOwners
+                    ? "owner-or-endpoint-changed"
+                    : untimedChanged
+                      ? "untimed-copper-changed"
+                      : !report?.physicalRoutingAccepted
+                        ? "physical-rejection"
+                        : expired()
+                          ? "budget"
+                          : "no-plan-improvement",
+                }
               } else {
                 trial = structuredClone(candidate)
+                trialAcceptedCandidates++
                 const transaction = checkpoint.consider(candidate, {
                   deadlineMs: deadline,
                 })
                 if (transaction.accepted) acceptedCandidates++
                 else rejectedCandidates++
+                lastDecision = {
+                  ...lastDecision,
+                  decision: transaction.accepted ? "best" : "trial",
+                }
                 if (transaction.evaluation.timingSolved) {
                   reason = "matched"
                   yield progress("checkpoint", plan.id)
@@ -478,6 +518,7 @@ export function* postProcessRoutedLengths(
         checkedCandidates,
         acceptedCandidates,
         rejectedCandidates,
+        trialAcceptedCandidates,
         elapsedMilliseconds: performance.now() - started,
       },
       errors,

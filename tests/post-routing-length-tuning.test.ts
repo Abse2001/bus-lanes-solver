@@ -96,6 +96,70 @@ test("postprocessor reaches all configured limits without changing native input"
   expect(output).toEqual(beforeOutput)
 })
 
+test("default tuning reaches native bus matching without adding vias", () => {
+  const { input, output } = fixture()
+  const result = run(
+    postProcessRoutedLengths(input, output, { timeBudgetMs: 1000 }),
+  )
+  expect(result.timingSolved).toBe(true)
+  expect(result.acceptance.buses[0].skewMm).toBeLessThanOrEqual(0.1 + 1e-7)
+  expect(result.statistics.acceptedCandidates).toBeGreaterThan(0)
+  expect(
+    result.output
+      .traces!.flatMap((trace) => trace.route)
+      .filter((point) => point.route_type === "via"),
+  ).toHaveLength(0)
+  expect(result.acceptance.nativeDrc.issues).toHaveLength(0)
+})
+
+test("an operator budget gives later operators a turn and preserves decision evidence", () => {
+  const { input, output, traces } = fixture()
+  const blocked: PostRoutingLengthProposalFactory = function* () {
+    while (true) yield undefined
+  }
+  const valid: PostRoutingLengthProposalFactory = function* () {
+    yield { replacements: [extended(traces[0], 2)], operator: "valid-later" }
+  }
+  const work = postProcessRoutedLengths(input, output, {
+    proposalFactories: [blocked, valid],
+    maximumOperatorTimeMs: 10,
+    maximumSteps: 1000000,
+  })
+  let next = work.next()
+  let sawBestDecision = false
+  while (!next.done) {
+    sawBestDecision ||=
+      next.value.operator === "valid-later" && next.value.decision === "best"
+    next = work.next()
+  }
+  expect(next.value.timingSolved).toBe(true)
+  expect(next.value.statistics.trialAcceptedCandidates).toBe(1)
+  expect(sawBestDecision).toBe(true)
+})
+
+test("zero operator budget preserves the baseline without invoking proposals", () => {
+  const { input, output } = fixture()
+  let invoked = false
+  const proposal: PostRoutingLengthProposalFactory = function* () {
+    invoked = true
+    yield undefined
+  }
+  const result = run(
+    postProcessRoutedLengths(input, output, {
+      maximumOperatorTimeMs: 0,
+      proposalFactories: [proposal],
+    }),
+  )
+  expect(invoked).toBe(false)
+  expect(result.output).toEqual(output)
+  expect(result.statistics.checkedCandidates).toBe(0)
+  expect(() =>
+    postProcessRoutedLengths(input, output, {
+      maximumOperatorTimeMs: -1,
+    }).next(),
+  ).toThrow("budgets")
+})
+
 test("later worse, shorted and throwing attempts retain the best partial result", () => {
   const { input, output, traces } = fixture()
   const proposal: PostRoutingLengthProposalFactory = function* () {
