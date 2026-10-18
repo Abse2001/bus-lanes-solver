@@ -60,6 +60,35 @@ after complete connectivity, native DRC, length matching and coupling pass.
 `./benchmark.sh --require-all-solved --routes-directory work/benchmark-routes`
 retains only successfully audited routes for snapshot export.
 
+## Physical Top/Bottom routing
+
+Request `goal: "physical"` to generate a complete native-pad Top/Bottom route
+before bus length matching. This mode supports two-terminal component pads,
+automatic fanout, and `allowedLayers: ["top", "bottom"]`:
+
+```ts
+const solver = new BusLanesPipelineSolver(input, { goal: "physical" })
+solver.solve()
+if (!solver.solved) throw Error(solver.error ?? "Physical routing failed")
+const output = solver.getOutput()
+const acceptance = solver.getAcceptanceReport()!
+console.log(acceptance.physicalRoutingAccepted, acceptance.ddrTimingAccepted)
+console.log(solver.getLengthReports().buses)
+```
+
+The joint surface search computes fresh approaches and carriers from native
+geometry. Acceptance requires every requested connection, unchanged supplied
+copper, exact retained escape paths, native copper/drill clearance, legal layers
+and via stacks, board containment, valid ordinary geometry, and hard differential
+pair skew and coupling. The original input and its timing constraints remain in
+the output. Bus skew and minimum/maximum length failures are reported separately;
+`solved` means the explicitly requested physical goal passed. This mode uses the
+joint surface search regardless of the compact-site strategy preference.
+
+The default matched goal and full-acceptance snapshot exporters retain their
+existing timing requirements. This API adds a fresh routing opportunity; it does
+not promise that every finite search budget will complete a particular board.
+
 ## Connectivity-only mode
 
 The powered AM3352 control can route all 47 signals on `inner1` using the

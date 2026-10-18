@@ -35,7 +35,8 @@ import { routeBackwardPackageBuses } from "./route-backward-package-buses"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { shortenPairApproaches } from "./shorten-pair-approaches"
-import { busLengthReports } from "./route-lengths"
+import { busLengthReports, pairLengthReports } from "./route-lengths"
+import { physicalRoutingAcceptance } from "./physical-routing-acceptance"
 import { extendPackageCoupling } from "./extend-package-coupling"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
@@ -58,9 +59,10 @@ export interface BusLanesPipelineOptions extends SolverOptions {
   fanout?: "auto" | "none"
   /** Surface approach search policy; auto uses joint negotiation for large buses. */
   surfaceRouting?: SurfaceRoutingStrategy
-  /** Default matched goal includes timing and differential coupling. Connectivity
-   * explicitly requests only pad-to-pad routing and copper DRC on one carrier. */
-  goal?: "matched" | "connectivity"
+  /** Default matched goal includes bus timing. Physical requests full native
+   * Top/Bottom pad routing with hard pair coupling and separate timing reports.
+   * Connectivity requests pad-to-pad routing and DRC on one carrier. */
+  goal?: "matched" | "physical" | "connectivity"
   connectivity?: SingleLayerConnectivityOptions
   /** Native paired backbones, whole-copper matching and movable controllers
    * on a single inner carrier. All numerical settings are board-space mm. */
@@ -114,6 +116,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private connectivitySolver?: SingleLayerConnectivitySolver
   private nativeSingleCarrier?: Generator<void, Trace[] | null>
   private acceptedTraces?: Trace[]
+  private physicalAcceptance?: ReturnType<typeof physicalRoutingAcceptance>
   private envelopeOptimization?: Generator<void, void>
   /** Runs only after a complete accepted route exists. A budget interrupt or
    * exception restores that private snapshot, never mutable work-in-progress. */
@@ -411,6 +414,17 @@ export class BusLanesPipelineSolver extends BaseSolver {
     super()
     this.input = structuredClone(input)
     this.options = { smoothTuning: true, denseSearch: true, ...options }
+    if (
+      options.goal === "physical" &&
+      (options.fanout === "none" ||
+        input.allowedLayers?.length !== 2 ||
+        !input.allowedLayers.includes("top") ||
+        !input.allowedLayers.includes("bottom") ||
+        !canRouteOnPadLayers(this.input))
+    )
+      throw Error(
+        "Physical routing requires native Top/Bottom component-pad terminals and automatic fanout",
+      )
     // Surface routing negotiates carrier layers and owned approaches before
     // matching and control repair. Its aggregate work reserve includes those
     // stages; an explicitly supplied search budget remains authoritative.
@@ -462,6 +476,19 @@ export class BusLanesPipelineSolver extends BaseSolver {
     return {
       ...this.input,
       traces: [...(this.input.traces ?? []), ...this.traces],
+    }
+  }
+  /** Physical-goal acceptance is separate from DDR bus length acceptance. */
+  getAcceptanceReport() {
+    return this.physicalAcceptance
+      ? structuredClone(this.physicalAcceptance)
+      : null
+  }
+  getLengthReports() {
+    if (!this.solved) throw Error("Length reports require completed routing")
+    return {
+      buses: busLengthReports(this.input, this.traces),
+      pairs: pairLengthReports(this.input, this.traces),
     }
   }
   tryFinalAcceptance() {
@@ -835,11 +862,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
       traces: [...(this.input.traces ?? []), ...this.escapes],
     }
     if (
-      this.attempt === 0 &&
-      this.options.smoothTuning &&
-      this.options.denseSearch &&
-      (this.input.buses?.length ?? 0) > 1 &&
-      canRouteOnPadLayers(this.input)
+      this.options.goal === "physical" ||
+      (this.attempt === 0 &&
+        this.options.smoothTuning &&
+        this.options.denseSearch &&
+        (this.input.buses?.length ?? 0) > 1 &&
+        canRouteOnPadLayers(this.input))
     ) {
       this.sharedPackages = routeSurfaceBusPortfolio(
         this.input,
@@ -849,6 +877,16 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.childOptions(),
         {
           strategy: this.options.surfaceRouting,
+          goal: this.options.goal === "physical" ? "physical" : "matched",
+          onConnectivityCheckpoint: (state) => {
+            this.stats = {
+              ...this.stats,
+              surfacePhysicalCheckpoint: {
+                routedSignals: state.retained.length + state.traces.length,
+                requestedSignals: this.input.connections.length,
+              },
+            }
+          },
           onProgress: (surfaceRouting) => {
             this.stats = { ...this.stats, surfaceRouting }
           },
@@ -1127,6 +1165,35 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.sharedPackages = undefined
         if (!state.value) throw Error("Shared-layer bus routing exhausted")
         this.escapes = state.value.escapes
+        if (this.options.goal === "physical") {
+          const joined = state.value.traces.map((trace) =>
+            joinSignalEscapes(
+              trace,
+              state.value!.escapes.filter(
+                (escape) => escape.connection_name === trace.connection_name,
+              ),
+            ),
+          )
+          const acceptance = physicalRoutingAcceptance(this.input, joined, {
+            escapes: state.value.escapes,
+          })
+          if (!acceptance.physicalRoutingAccepted)
+            throw Error(
+              "Fresh surface candidate failed whole-native physical acceptance",
+            )
+          this.physicalAcceptance = acceptance
+          this.acceptCompleteTraces(joined)
+          this.finishAccepted(false)
+          this.stats = {
+            ...this.stats,
+            goal: "physical",
+            physicalRoutingAccepted: true,
+            ddrTimingAccepted: acceptance.ddrTimingAccepted,
+            busLengths: acceptance.buses,
+            pairLengths: acceptance.pairs,
+          }
+          return
+        }
         this.child = BusLanesSolver.forValidation(
           state.value.input,
           state.value.traces,

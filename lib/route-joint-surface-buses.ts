@@ -1,4 +1,6 @@
 import { finishSurfaceTiming } from "./finish-surface-timing"
+import { joinSignalEscapes } from "./join-signal-escapes"
+import { physicalRoutingAcceptance } from "./physical-routing-acceptance"
 import type { FlexibleSignalState } from "./flexible-signal-state"
 import {
   negotiateSurfaceRoutes,
@@ -14,6 +16,8 @@ import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import type { SimpleRouteJson, SolverOptions, Trace, Wire } from "./types"
 
 export interface JointSurfaceBusOptions {
+  /** Physical routing retains hard pair requirements while reporting bus timing. */
+  goal?: "matched" | "physical"
   negotiation?: SurfaceNegotiationOptions
   maxPairPlans?: number
   /** A computed connectivity checkpoint still needs timing refinement and
@@ -41,6 +45,18 @@ export function* routeJointSurfaceBuses(
   solverOptions: SolverOptions,
   options: JointSurfaceBusOptions = {},
 ): Generator<void, RepairedBusDogbones | null> {
+  // Bus timing is optional only for the explicit physical goal. Geometry,
+  // manufacturing rules, supplied copper and differential pairs stay intact.
+  // Acceptance and output always use the caller's complete original input.
+  const routingNative =
+    options.goal === "physical"
+      ? {
+          ...native,
+          buses: native.buses?.map(
+            ({ maxLength, minLength, maxLengthSkew, ...bus }) => bus,
+          ),
+        }
+      : native
   const negotiation: SurfaceNegotiationOptions = {
     congestionHistory: true,
     heuristicWeight: 4,
@@ -66,7 +82,7 @@ export function* routeJointSurfaceBuses(
     pairedNames.has(escape.connection_name!),
   )
   const pairInput: SimpleRouteJson = {
-    ...native,
+    ...routingNative,
     connections: allocation.connections,
     traces: [...(native.traces ?? []), ...pairEscapes],
   }
@@ -117,7 +133,7 @@ export function* routeJointSurfaceBuses(
       }
       pairPlan++
       const rawRetained = plan.value,
-        spread = spreadGeneratedPairViaColumns(native, rawRetained),
+        spread = spreadGeneratedPairViaColumns(routingNative, rawRetained),
         variants = spread.some((trace, index) => trace !== rawRetained[index])
           ? [spread, rawRetained]
           : [rawRetained]
@@ -133,7 +149,7 @@ export function* routeJointSurfaceBuses(
           }),
           refined = pairedNames.size
             ? yield* refineGeneratedPairSeed(
-                native,
+                routingNative,
                 proposed,
                 generatedEscapes,
                 solverOptions,
@@ -144,13 +160,13 @@ export function* routeJointSurfaceBuses(
         // channel. Offer its widened, fully revalidated tuple first, retaining
         // the already qualified tuple if ordinary routing needs another exit.
         const finalSpread = pairedNames.size
-            ? spreadGeneratedPairViaColumns(native, refined.retained)
+            ? spreadGeneratedPairViaColumns(routingNative, refined.retained)
             : refined.retained,
           finalRefined = finalSpread.some(
             (trace, index) => trace !== refined.retained[index],
           )
             ? yield* refineGeneratedPairSeed(
-                native,
+                routingNative,
                 finalSpread,
                 refined.escapes,
                 solverOptions,
@@ -164,12 +180,12 @@ export function* routeJointSurfaceBuses(
           if (attemptedSeeds.has(key)) continue
           attemptedSeeds.add(key)
           const seed: FlexibleSignalState = {
-            native,
+            native: routingNative,
             escapes,
             retained,
             traces: [],
             pending: {
-              ...native,
+              ...routingNative,
               traces: [...(native.traces ?? []), ...escapes, ...retained],
             },
           }
@@ -180,7 +196,7 @@ export function* routeJointSurfaceBuses(
             pairedSignals: retained.length,
             iterations: 0,
           })
-          const work = negotiateSurfaceRoutes(native, seed, negotiation)
+          const work = negotiateSurfaceRoutes(routingNative, seed, negotiation)
           let result = work.next(),
             iterations = 0
           try {
@@ -197,7 +213,37 @@ export function* routeJointSurfaceBuses(
               result = work.next()
             }
             if (result.value) {
-              options.onConnectivityCheckpoint?.(result.value)
+              const checkpoint =
+                options.goal === "physical"
+                  ? {
+                      ...result.value,
+                      native,
+                      pending: { ...result.value.pending, buses: native.buses },
+                    }
+                  : result.value
+              options.onConnectivityCheckpoint?.(checkpoint)
+              if (options.goal === "physical") {
+                const traces = [...checkpoint.retained, ...checkpoint.traces]
+                const joined = traces.map((trace) =>
+                  joinSignalEscapes(
+                    trace,
+                    checkpoint.escapes.filter(
+                      (escape) =>
+                        escape.connection_name === trace.connection_name,
+                    ),
+                  ),
+                )
+                const acceptance = physicalRoutingAcceptance(native, joined, {
+                  escapes: checkpoint.escapes,
+                })
+                if (acceptance.physicalRoutingAccepted)
+                  return {
+                    input: checkpoint.pending,
+                    traces,
+                    escapes: checkpoint.escapes,
+                  }
+                continue
+              }
               const checkpoints = yield* surfaceBusShortcutCandidates(
                 result.value,
                 {

@@ -3,6 +3,7 @@ import {
   type SurfaceSeedOptions,
 } from "./route-fresh-surface-buses"
 import { routeJointSurfaceBuses } from "./route-joint-surface-buses"
+import type { FlexibleSignalState } from "./flexible-signal-state"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import type {
   SimpleRouteJson,
@@ -13,6 +14,12 @@ import type {
 
 export type { SurfaceRoutingStrategy } from "./types"
 
+export interface SurfaceBusPortfolioOptions extends SurfaceSeedOptions {
+  strategy?: SurfaceRoutingStrategy
+  goal?: "matched" | "physical"
+  onConnectivityCheckpoint?: (state: FlexibleSignalState) => void
+}
+
 /** Large surface buses need whole-pad approach choices before fixing local
  * dogbones. Keep the compact-site search as a fallback, with the same native
  * geometry, matching requirements and aggregate parent work budget. */
@@ -22,7 +29,7 @@ export function* routeSurfaceBusPortfolio(
   escapes: Trace[],
   terminalLayers: ReadonlyMap<string, string[]>,
   options: SolverOptions,
-  settings: SurfaceSeedOptions & { strategy?: SurfaceRoutingStrategy } = {},
+  settings: SurfaceBusPortfolioOptions = {},
 ): Generator<void, RepairedBusDogbones | null> {
   const pairs = new Set(
     native.differentialPairs?.flatMap((pair) => pair.connectionNames),
@@ -31,6 +38,7 @@ export function* routeSurfaceBusPortfolio(
     (connection) => !pairs.has(connection.name),
   ).length
   const jointFirst =
+    settings.goal === "physical" ||
     settings.strategy === "joint" ||
     (settings.strategy !== "sites" &&
       native.allowedLayers?.length === 2 &&
@@ -45,6 +53,8 @@ export function* routeSurfaceBusPortfolio(
       terminalLayers,
       options,
       {
+        goal: settings.goal,
+        onConnectivityCheckpoint: settings.onConnectivityCheckpoint,
         negotiation: {
           onProgress: (progress) =>
             settings.onProgress?.({
@@ -71,6 +81,7 @@ export function* routeSurfaceBusPortfolio(
       },
     )
     if (joint) return joint
+    if (settings.goal === "physical") return null
   }
   return yield* routeFreshSurfaceBuses(
     native,
