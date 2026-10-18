@@ -8,6 +8,10 @@ import { generatedEscapeHolesConflict } from "./expanded-signal-sites"
 import { joinSignalEscapes } from "./join-signal-escapes"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { MinHeap } from "./min-heap"
+import {
+  nativeTerminalPoints,
+  nativeTerminalTolerance,
+} from "./native-terminal-sites"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { signalWidth } from "./repair-bus-dogbones"
 import { SoftCopperCostIndex } from "./soft-copper-cost"
@@ -230,10 +234,7 @@ export function* routeSurfaceBridge(
     oldVias = (input.traces ?? []).flatMap((trace) =>
       trace.route.filter((point): point is Via => point.route_type === "via"),
     ),
-    nativePads = [
-      ...input.connections.flatMap((item) => item.pointsToConnect),
-      ...pads,
-    ],
+    nativePads = nativeTerminalPoints(input, connection),
     envelope = surfaceSearchBounds(
       input,
       connection,
@@ -284,7 +285,7 @@ export function* routeSurfaceBridge(
     lands = new Uint8Array(size),
     nativePadCells = new Set<number>()
   // Match the endpoint coincidence tolerance in validateRoutedCopperDrc.
-  const nativeEndpointTolerance = 1e-6
+  const nativeEndpointTolerance = nativeTerminalTolerance
   for (const pad of nativePads) {
     const firstX = Math.max(
         0,

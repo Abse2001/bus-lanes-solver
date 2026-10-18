@@ -2,6 +2,10 @@ import { getCopperLayerNames } from "@tscircuit/fanout-solver"
 import { chamferOrdinaryCorners } from "./chamfer-ordinary-corners"
 import { distance, length } from "./geometry"
 import { GridVisibilitySearch } from "./grid-visibility"
+import {
+  nativeTerminalPoints,
+  nativeTerminalTolerance,
+} from "./native-terminal-sites"
 import { tuningPathIsSelfClear } from "./length-tuning"
 import { reduceOrdinaryTurns } from "./reduce-ordinary-turns"
 import { signalWidth } from "./repair-bus-dogbones"
@@ -214,6 +218,7 @@ export function* expandedSignalSites(
   const existingVias = (input.traces ?? []).flatMap((t) =>
     t.route.filter((p) => p.route_type === "via"),
   ) as Via[]
+  const nativePads = nativeTerminalPoints(input, connection)
   for (const end of [0, 1]) {
     const pad = connection.pointsToConnect[end]
     if (pad.layer === targetLayer) {
@@ -272,6 +277,12 @@ export function* expandedSignalSites(
         ),
     )
     for (const point of candidates) {
+      if (
+        nativePads.some(
+          (pad) => distance(point, pad) <= nativeTerminalTolerance,
+        )
+      )
+        continue
       if (viaScenes.some((scene) => !scene.visible(point, point))) continue
       if (
         existingVias.some(

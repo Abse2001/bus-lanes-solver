@@ -1,5 +1,6 @@
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
 import { boardBoundaryReports } from "./board-boundary"
+import { localDogboneInput } from "./local-dogbone-input"
 import { routeLocalSignalDogbones } from "@tscircuit/fanout-solver"
 import type { SimpleRouteJson, Point, Trace } from "./types"
 
@@ -66,7 +67,9 @@ export function routeAlternateSignalDogbones(
     })),
   }
   const result = routeLocalSignalDogbones(
-    rotated as Parameters<typeof routeLocalSignalDogbones>[0],
+    localDogboneInput(rotated) as Parameters<
+      typeof routeLocalSignalDogbones
+    >[0],
     options,
   )
   const generated = {

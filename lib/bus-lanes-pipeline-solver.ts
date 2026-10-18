@@ -73,6 +73,8 @@ class PipelineBoardBoundaryError extends Error {
   }
 }
 
+class PipelineSignalCoverageError extends Error {}
+
 function canRouteOnPadLayers(input: SimpleRouteJson) {
   const physical = getCopperLayerNames(input.layerCount)
   const singleInner =
@@ -348,8 +350,30 @@ export class BusLanesPipelineSolver extends BaseSolver {
   }
 
   private acceptCompleteTraces(traces: Trace[]) {
+    this.assertCompleteSignalCoverage(traces)
     this.assertCompleteCopperBoundary(traces)
     this.acceptedTraces = structuredClone(traces)
+  }
+
+  /** Child routing and refinement may partition requests, but a published
+   * snapshot must retain exactly one complete trace for every native owner. */
+  private assertCompleteSignalCoverage(traces: Trace[]) {
+    const remaining = new Set(
+      this.input.connections.map((connection) => connection.name),
+    )
+    if (traces.length !== this.input.connections.length)
+      throw new PipelineSignalCoverageError(
+        "Final signal coverage must contain exactly one trace per connection",
+      )
+    for (const trace of traces)
+      if (!trace.connection_name || !remaining.delete(trace.connection_name))
+        throw new PipelineSignalCoverageError(
+          "Final signal coverage contains a duplicate or unknown connection",
+        )
+    if (remaining.size)
+      throw new PipelineSignalCoverageError(
+        "Final signal coverage omits a connection",
+      )
   }
 
   private finishAccepted(early: boolean) {
@@ -360,6 +384,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
     } catch (error) {
       this.stats = { ...this.stats, optimizationCleanupError: String(error) }
     }
+    this.assertCompleteSignalCoverage(this.acceptedTraces!)
     this.assertCompleteCopperBoundary(this.acceptedTraces!)
     this.traces = structuredClone(this.acceptedTraces!)
     this.solved = true
@@ -1027,7 +1052,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.failureCode =
           error instanceof PipelineBoardBoundaryError
             ? "board_boundary_violation"
-            : "native_single_carrier_matching_failed"
+            : error instanceof PipelineSignalCoverageError
+              ? "signal_coverage_violation"
+              : "native_single_carrier_matching_failed"
         this.phase = "failed"
       }
       return
@@ -1045,6 +1072,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.error = solver.error
       if (solver.solved) {
         try {
+          this.assertCompleteSignalCoverage(solver.traces)
           this.assertCompleteCopperBoundary(solver.traces)
           this.traces = structuredClone(solver.traces)
           this.solved = true
@@ -1052,7 +1080,10 @@ export class BusLanesPipelineSolver extends BaseSolver {
           this.traces = []
           this.failed = true
           this.error = String(error)
-          this.failureCode = "board_boundary_violation"
+          this.failureCode =
+            error instanceof PipelineSignalCoverageError
+              ? "signal_coverage_violation"
+              : "board_boundary_violation"
           this.phase = "failed"
         }
       }
@@ -1262,7 +1293,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.failureCode =
         error instanceof PipelineBoardBoundaryError
           ? "board_boundary_violation"
-          : (this.child?.failureCode ?? "local_dogbone_failed")
+          : error instanceof PipelineSignalCoverageError
+            ? "signal_coverage_violation"
+            : (this.child?.failureCode ?? "local_dogbone_failed")
       this.error = error instanceof Error ? error.message : String(error)
       this.failed = true
       this.phase = "failed"

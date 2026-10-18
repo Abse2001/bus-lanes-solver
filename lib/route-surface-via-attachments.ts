@@ -4,6 +4,10 @@ import { criticalSurfaceGridOrigins } from "./critical-surface-grid-origins"
 import { generatedEscapeHolesConflict } from "./expanded-signal-sites"
 import { distance, length, simplify } from "./geometry"
 import { joinSignalEscapes } from "./join-signal-escapes"
+import {
+  nativeTerminalPoints,
+  nativeTerminalTolerance,
+} from "./native-terminal-sites"
 import { signalWidth } from "./repair-bus-dogbones"
 import { routeAnglesAreConventional } from "./route-angle-validation"
 import { maximumCarrierLength } from "./route-lengths"
@@ -129,10 +133,7 @@ export function* routeSurfaceViaAttachments(
     oldVias = (input.traces ?? []).flatMap((trace) =>
       trace.route.filter((point): point is Via => point.route_type === "via"),
     ),
-    nativePads = [
-      ...input.connections.flatMap((item) => item.pointsToConnect),
-      ...pads,
-    ],
+    nativePads = nativeTerminalPoints(input, connection),
     soft = options.softTraces?.length
       ? new SoftCopperCostIndex(
           input,
@@ -278,7 +279,9 @@ export function* routeSurfaceViaAttachments(
             physical.some((layer) => !via.layers!.includes(layer)))) ||
         last.route_type !== "wire" ||
         last.layer !== opposite ||
-        nativePads.some((native) => distance(native, via) <= 1e-6) ||
+        nativePads.some(
+          (native) => distance(native, via) <= nativeTerminalTolerance,
+        ) ||
         oldVias.some(
           (old) =>
             distance(old, via) <
