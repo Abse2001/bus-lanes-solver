@@ -159,15 +159,34 @@ export function* extendOrdinaryRouteLength(
         ? Math.min((maximumLength - minimumLength) / 2, 1e-4)
         : 0),
     deficit = desiredLength - previousLength,
-    fractions = options.allowPartialProgress ? [1, 0.75, 0.5, 0.25] : [1]
+    // Probe logarithmically smaller additions early, then fill the missing
+    // dyadic levels. A dense but finite bay may fit far less than a quarter
+    // of the requested deficit; these remain truthful partial proposals.
+    fractions = options.allowPartialProgress
+      ? [
+          1,
+          1 / 8,
+          1 / 64,
+          1 / 512,
+          1 / 4096,
+          1 / 2,
+          1 / 4,
+          1 / 16,
+          1 / 32,
+          1 / 128,
+          1 / 256,
+          1 / 1024,
+          1 / 2048,
+        ]
+      : [1]
   let attempts = 0,
     yielded = 0
   // Shapes are the outer loop: a blocked first edge cannot consume the
   // entire budget while a later free body remains untried.
   for (const lobes of [1, 2, 4, 8])
-    for (const side of [1, -1])
-      for (const create of [roundedTuningLobes, smoothTuningLobes])
-        for (const fraction of fractions)
+    for (const fraction of fractions)
+      for (const side of [1, -1])
+        for (const create of [roundedTuningLobes, smoothTuningLobes])
           for (const { edge, a, b } of spans) {
             if (
               expired() ||
@@ -245,9 +264,8 @@ export function* extendOrdinaryRouteLength(
               withinTargetBand = distanceToTargetBand <= epsilon
             if (
               seen.has(key) ||
-              (!withinTargetBand &&
-                (!options.allowPartialProgress ||
-                  distanceToTargetBand >= previousDistance - epsilon)) ||
+              distanceToTargetBand >= previousDistance - epsilon ||
+              (!withinTargetBand && !options.allowPartialProgress) ||
               !findFixedPathRanges(trace, fixedEscapes)
             )
               continue

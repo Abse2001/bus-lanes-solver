@@ -4,6 +4,7 @@ import { length } from "../lib/geometry"
 import { physicalRoutingAcceptance } from "../lib/physical-routing-acceptance"
 import { extendOrdinaryRouteLength } from "../lib/post-route-ordinary-length-extensions"
 import { fixedRouteLength } from "../lib/route-lengths"
+import { smoothTuningLobes } from "../lib/smooth-tuning"
 import type { SimpleRouteJson, Trace, Wire } from "../lib/types"
 
 type Options = Parameters<typeof extendOrdinaryRouteLength>[2]
@@ -266,7 +267,7 @@ test("partial progress is opt-in and stays truthfully below an unreachable band"
   const budget = {
     minimumLength: 12,
     maximumLength: 12.05,
-    maximumAttempts: 4,
+    maximumAttempts: 8,
     maximumCandidates: 1,
   }
   expect(proposals(input, [original, foreign], fixedEscapes, budget)).toEqual(
@@ -346,6 +347,114 @@ test("a foreign trace and native lower wall block planar extension on both sides
     }).physicalRoutingAccepted,
   ).toBe(true)
   expect(proposals(input, [original, foreign], fixedEscapes)).toEqual([])
+})
+
+test("a four-attempt budget reaches the clear opposite side after both positive-side methods fail", () => {
+  const { input, original, foreign, fixedEscapes } = fixture()
+  foreign.route = [wire(-1, 0.18), wire(7, 0.18)]
+  input.connections[1].pointsToConnect = [
+    { x: -1, y: 0.18, layer: "top" },
+    { x: 7, y: 0.18, layer: "top" },
+  ]
+  fixedEscapes[2] = {
+    ...fixedEscapes[2],
+    route: structuredClone(foreign.route),
+  }
+  const before = structuredClone({ input, original, foreign, fixedEscapes })
+  expect(
+    physicalRoutingAcceptance(input, [original, foreign], {
+      escapes: fixedEscapes,
+    }).physicalRoutingAccepted,
+  ).toBe(true)
+  const result = proposals(input, [original, foreign], fixedEscapes, {
+    maximumAttempts: 4,
+    maximumCandidates: 1,
+  })
+  expect(result).toHaveLength(1)
+  assertCandidate(input, original, foreign, fixedEscapes, result[0])
+  expect(result[0].withinTargetBand).toBe(true)
+  expect(result[0].trace.route.some((point) => point.y < -0.1)).toBe(true)
+  expect(result[0].trace.route.every((point) => point.y <= 0)).toBe(true)
+  expect({ input, original, foreign, fixedEscapes }).toEqual(before)
+})
+
+test("a narrow finite bay admits tiny truthful partial progress after coarse lobes fail", () => {
+  const { input, original, foreign, fixedEscapes } = fixture()
+  foreign.route = [wire(-1, 0.2), wire(7, 0.2)]
+  input.connections[1].pointsToConnect = [
+    { x: -1, y: 0.2, layer: "top" },
+    { x: 7, y: 0.2, layer: "top" },
+  ]
+  fixedEscapes[2] = {
+    ...fixedEscapes[2],
+    route: structuredClone(foreign.route),
+  }
+  input.obstacles = [
+    {
+      type: "rect",
+      center: { x: 3, y: -2.075 },
+      width: 10,
+      height: 3.85,
+      layers: ["top"],
+      connectedTo: ["lower-wall"],
+    },
+  ]
+  const before = structuredClone({ input, original, foreign, fixedEscapes })
+  expect(
+    physicalRoutingAcceptance(input, [original, foreign], {
+      escapes: fixedEscapes,
+    }).physicalRoutingAccepted,
+  ).toBe(true)
+  const coarse = smoothTuningLobes(
+    original.route[1],
+    original.route[2],
+    1.5,
+    1,
+    1,
+    0.12,
+  )
+  expect(coarse).not.toBeNull()
+  const coarseTrace: Trace = {
+    ...original,
+    route: [
+      original.route[0],
+      ...coarse!.map((point) => wire(point.x, point.y)),
+      original.route.at(-1)!,
+    ],
+    curvedSegments: coarse!.slice(1).map((_, index) => index + 2),
+  }
+  const coarseReport = physicalRoutingAcceptance(
+    input,
+    [coarseTrace, foreign],
+    { escapes: fixedEscapes },
+  )
+  expect(coarseReport.physicalRoutingAccepted).toBe(false)
+  expect(coarseReport.nativeDrc.valid).toBe(false)
+  const budget = {
+    minimumLength: 12,
+    maximumLength: 12.05,
+    maximumAttempts: 20,
+    maximumCandidates: 1,
+  }
+  expect(proposals(input, [original, foreign], fixedEscapes, budget)).toEqual(
+    [],
+  )
+  const result = proposals(input, [original, foreign], fixedEscapes, {
+    ...budget,
+    allowPartialProgress: true,
+  })
+  expect(result).toHaveLength(1)
+  assertCandidate(input, original, foreign, fixedEscapes, result[0])
+  expect(result[0].withinTargetBand).toBe(false)
+  expect(result[0].fullOwnedLength).toBeLessThan(6.01)
+  expect(result[0].distanceToTargetBand).toBeCloseTo(
+    12 - result[0].fullOwnedLength,
+    8,
+  )
+  expect(
+    result[0].previousDistanceToTargetBand - result[0].distanceToTargetBand,
+  ).toBeGreaterThan(1e-7)
+  expect({ input, original, foreign, fixedEscapes }).toEqual(before)
 })
 
 test("absent or changed fixed paths and incomplete complete-route input reject", () => {
