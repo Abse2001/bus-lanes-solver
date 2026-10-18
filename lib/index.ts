@@ -20,3 +20,10 @@ export {
   SingleLayerConnectivitySolver,
   type SingleLayerConnectivityOptions,
 } from "./single-layer-connectivity-solver"
+
+export {
+  enumerateOrdinaryTwoViaLengthExcursions,
+  type OrdinaryLengthExcursionBay,
+  type OrdinaryLengthExcursionOptions,
+  type OrdinaryLengthExcursionProposal,
+} from "./post-route-ordinary-length-excursions"
