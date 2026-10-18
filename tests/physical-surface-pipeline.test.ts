@@ -77,6 +77,10 @@ test("physical goal freshly routes native Top/Bottom pads and reports impossible
   ).toBe(true)
   expect(report.nativeDrc.valid).toBe(true)
   expect(report.nativeDrc.issues).toHaveLength(0)
+  expect(solver.getLengthTuningReport()?.timingSolved).toBe(false)
+  expect(
+    solver.getLengthTuningReport()?.portfolio.failures.length,
+  ).toBeGreaterThan(0)
 })
 
 test("default matched goal retains the impossible native bus bounds", () => {
@@ -105,4 +109,47 @@ test("physical goal rejects unsupported topology explicitly", () => {
         { goal: "physical" },
       ),
   ).toThrow("Top/Bottom")
+})
+
+test("stopping the post-route stage retains its complete physical checkpoint", () => {
+  const input = freshNativeBus()
+  for (const bus of input.buses!) {
+    delete bus.minLength
+    delete bus.maxLength
+  }
+  const solver = new BusLanesPipelineSolver(input, {
+    goal: "physical",
+    postRoutingLengthTuning: {
+      proposalFactories: [
+        function* () {
+          while (true) yield undefined
+        },
+      ],
+    },
+  })
+  for (
+    let step = 0;
+    step < 20000 && solver.phase !== "post_route_length_tuning";
+    step++
+  )
+    solver.step()
+  expect(solver.phase).toBe("post_route_length_tuning")
+  solver.step()
+  solver.tryFinalAcceptance()
+  expect(solver.solved).toBe(true)
+  expect(solver.getOutput().traces).toHaveLength(4)
+  expect(solver.getAcceptanceReport()?.physicalRoutingAccepted).toBe(true)
+  expect(solver.getLengthTuningReport()?.reason).toBe("interrupted")
+  expect(solver.getLengthTuningReport()?.timingSolved).toBe(false)
+})
+
+test("the physical-only option can skip post-route length tuning", () => {
+  const solver = new BusLanesPipelineSolver(freshNativeBus(), {
+    goal: "physical",
+    postRoutingLengthTuning: false,
+  })
+  solver.solve()
+  expect(solver.solved).toBe(true)
+  expect(solver.getAcceptanceReport()?.physicalRoutingAccepted).toBe(true)
+  expect(solver.getLengthTuningReport()).toBeNull()
 })

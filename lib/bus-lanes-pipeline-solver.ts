@@ -37,6 +37,11 @@ import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { shortenPairApproaches } from "./shorten-pair-approaches"
 import { busLengthReports, pairLengthReports } from "./route-lengths"
 import { physicalRoutingAcceptance } from "./physical-routing-acceptance"
+import {
+  postProcessRoutedLengths,
+  type PostRoutingLengthTuningOptions,
+  type PostRoutingLengthTuningResult,
+} from "./post-routing-length-tuning"
 import { extendPackageCoupling } from "./extend-package-coupling"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
@@ -63,6 +68,11 @@ export interface BusLanesPipelineOptions extends SolverOptions {
    * Top/Bottom pad routing with hard pair coupling and separate timing reports.
    * Connectivity requests pad-to-pad routing and DRC on one carrier. */
   goal?: "matched" | "physical" | "connectivity"
+  /** After a physical surface route, tune lengths while retaining its best
+   * DRC-clean checkpoint. False returns the physical route immediately. */
+  postRoutingLengthTuning?:
+    | false
+    | Omit<PostRoutingLengthTuningOptions, "fixedEscapes">
   connectivity?: SingleLayerConnectivityOptions
   /** Native paired backbones, whole-copper matching and movable controllers
    * on a single inner carrier. All numerical settings are board-space mm. */
@@ -117,6 +127,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private nativeSingleCarrier?: Generator<void, Trace[] | null>
   private acceptedTraces?: Trace[]
   private physicalAcceptance?: ReturnType<typeof physicalRoutingAcceptance>
+  private lengthTuning?: ReturnType<typeof postProcessRoutedLengths>
+  private lengthTuningResult?: PostRoutingLengthTuningResult
   private envelopeOptimization?: Generator<void, void>
   /** Runs only after a complete accepted route exists. A budget interrupt or
    * exception restores that private snapshot, never mutable work-in-progress. */
@@ -380,6 +392,17 @@ export class BusLanesPipelineSolver extends BaseSolver {
   }
 
   private finishAccepted(early: boolean) {
+    const lengthTuning = this.lengthTuning
+    this.lengthTuning = undefined
+    if (lengthTuning) {
+      try {
+        const result = lengthTuning.return(undefined as never)
+        if (result.done && result.value)
+          this.adoptLengthTuningResult(result.value)
+      } catch (error) {
+        this.stats = { ...this.stats, lengthTuningCleanupError: String(error) }
+      }
+    }
     const optimization = this.envelopeOptimization
     this.envelopeOptimization = undefined
     try {
@@ -489,6 +512,39 @@ export class BusLanesPipelineSolver extends BaseSolver {
     return {
       buses: busLengthReports(this.input, this.traces),
       pairs: pairLengthReports(this.input, this.traces),
+    }
+  }
+  /** Available after the bounded stage completes or final acceptance stops it. */
+  getLengthTuningReport() {
+    return this.lengthTuningResult
+      ? structuredClone(this.lengthTuningResult)
+      : null
+  }
+  private adoptLengthTuningResult(result: PostRoutingLengthTuningResult) {
+    if (
+      !result.physicalRoutingAccepted ||
+      !result.acceptance.physicalRoutingAccepted
+    )
+      throw Error("Length tuning did not return a complete physical checkpoint")
+    const traces = (result.output.traces ?? []).slice(
+      this.input.traces?.length ?? 0,
+    )
+    this.acceptCompleteTraces(traces)
+    this.physicalAcceptance = structuredClone(result.acceptance)
+    this.lengthTuningResult = structuredClone(result)
+    this.stats = {
+      ...this.stats,
+      goal: "physical",
+      physicalRoutingAccepted: true,
+      ddrTimingAccepted: result.timingSolved,
+      busLengths: result.acceptance.buses,
+      pairLengths: result.acceptance.pairs,
+      lengthTuning: {
+        reason: result.reason,
+        ...result.statistics,
+        timingSolved: result.timingSolved,
+        score: result.evaluation.score,
+      },
     }
   }
   tryFinalAcceptance() {
@@ -1069,6 +1125,23 @@ export class BusLanesPipelineSolver extends BaseSolver {
       )
   }
   _step() {
+    if (this.lengthTuning) {
+      try {
+        this.phase = "post_route_length_tuning"
+        const next = this.lengthTuning.next()
+        if (next.done) {
+          this.lengthTuning = undefined
+          this.adoptLengthTuningResult(next.value)
+          this.finishAccepted(false)
+        } else {
+          this.stats = { ...this.stats, lengthTuning: next.value }
+        }
+      } catch (error) {
+        this.stats = { ...this.stats, lengthTuningError: String(error) }
+        this.finishAccepted(true)
+      }
+      return
+    }
     if (this.nativeSingleCarrier) {
       try {
         const result = this.nativeSingleCarrier.next()
@@ -1183,6 +1256,21 @@ export class BusLanesPipelineSolver extends BaseSolver {
             )
           this.physicalAcceptance = acceptance
           this.acceptCompleteTraces(joined)
+          if (this.options.postRoutingLengthTuning !== false) {
+            this.lengthTuning = postProcessRoutedLengths(
+              this.input,
+              {
+                ...this.input,
+                traces: [...(this.input.traces ?? []), ...joined],
+              },
+              {
+                ...this.options.postRoutingLengthTuning,
+                fixedEscapes: this.escapes,
+              },
+            )
+            this.phase = "post_route_length_tuning"
+            return
+          }
           this.finishAccepted(false)
           this.stats = {
             ...this.stats,
