@@ -6,6 +6,7 @@ import { joinSignalEscapes } from "../lib/join-signal-escapes"
 import { physicalRoutingAcceptance } from "../lib/physical-routing-acceptance"
 import {
   enumeratePairedBodyLengthExtensions,
+  createPairedBodyForeignPrefilter,
   type PairedBodyLengthExtensionProposal,
 } from "../lib/post-route-paired-length-extensions"
 import { smoothTuningLobes } from "../lib/smooth-tuning"
@@ -171,7 +172,7 @@ for (const carrier of ["top", "bottom"])
         allowPartialProgress: false,
         onAttempt: (row) => {
           if (!row.accepted) rejected.push(row.reason)
-          if (row.physicalGates?.zeroNativeDrcIssues === false)
+          if (row.physicalGates?.foreignCopperClear === false)
             foreignCopperRejected = true
         },
       }),
@@ -211,6 +212,155 @@ for (const carrier of ["top", "bottom"])
     expect(foreignCopperRejected).toBe(true)
     expect({ input, joined, escapes }).toEqual(before)
   })
+
+test("a small attempt budget reaches a later clear span after the first span is blocked", () => {
+  const { input, joined, escapes } = fixture()
+  for (const rail of joined.slice(0, 2)) {
+    const [start, end] = rail.coupledSection!
+    const a = rail.route[start] as Wire
+    rail.route.splice(start + 1, 0, { ...a, x: 7 })
+    rail.coupledSection = [start, end + 1]
+    rail.curvedSegments = rail.curvedSegments?.map((index) =>
+      index > start ? index + 1 : index,
+    )
+  }
+  joined[2].route = [
+    { route_type: "wire", x: 3.1, y: 1, layer: "bottom", width: 0.1 },
+    { route_type: "wire", x: 6.9, y: 1, layer: "bottom", width: 0.1 },
+  ]
+  input.connections[2].pointsToConnect = joined[2].route.map((point) => ({
+    x: point.x,
+    y: point.y,
+    layer: "bottom",
+  }))
+  const initial = Math.max(
+    ...joined.slice(0, 2).map((trace) => length(trace.route)),
+  )
+  expect(
+    physicalRoutingAcceptance(input, joined, { escapes })
+      .physicalRoutingAccepted,
+  ).toBe(true)
+  const attempts: Array<{
+    indices: readonly [number, number]
+    accepted: boolean
+    foreign?: boolean
+  }> = []
+  const found = proposals(
+    enumeratePairedBodyLengthExtensions(input, joined, {
+      connectionNames: ["rail_0", "rail_1"],
+      minimumLength: initial + 3,
+      maximumLength: initial + 3.635,
+      fixedEscapes: escapes,
+      maximumAttempts: 2,
+      maximumCandidates: 1,
+      allowPartialProgress: false,
+      onAttempt: (row) =>
+        attempts.push({
+          indices: row.sharedEdgeEndingIndices,
+          accepted: row.accepted,
+          foreign: row.physicalGates?.foreignCopperClear,
+        }),
+    }),
+  )
+  expect(attempts).toHaveLength(2)
+  expect(attempts[0].foreign).toBe(false)
+  expect(attempts[1].indices[0]).toBe(attempts[0].indices[0] + 1)
+  expect(found).toHaveLength(1)
+  expect(found[0].attempt).toBe(2)
+  expect(found[0].sharedEdgeEndingIndices).toEqual(attempts[1].indices)
+  expect(
+    physicalRoutingAcceptance(input, [...found[0].traces, joined[2]], {
+      escapes,
+    }).physicalRoutingAccepted,
+  ).toBe(true)
+})
+
+test("foreign prefilter preserves clear native shared intervals and rejects a crossed foreign full-stack via", () => {
+  const { input, joined, escapes } = fixture()
+  const rails = joined.slice(0, 2) as [Trace, Trace]
+  const paths = rails.map((rail) =>
+    rail.route.slice(rail.coupledSection![0], rail.coupledSection![1] + 1),
+  ) as [Wire[], Wire[]]
+  expect(
+    physicalRoutingAcceptance(input, joined, { escapes })
+      .physicalRoutingAccepted,
+  ).toBe(true)
+  expect(
+    createPairedBodyForeignPrefilter(input, joined, ["rail_0", "rail_1"])(
+      rails,
+      paths,
+    ),
+  ).toBe(true)
+  // A foreign PTH remains full-depth copper even though its wire approach is
+  // on the opposite surface and its explicit via size/layers use native defaults.
+  joined[2].route = [
+    { route_type: "wire", x: 7, y: 0.11, layer: "top", width: 0.1 },
+    { route_type: "via", x: 7, y: 0.11, from_layer: "top", to_layer: "bottom" },
+  ]
+  expect(
+    createPairedBodyForeignPrefilter(input, joined, ["rail_0", "rail_1"])(
+      rails,
+      paths,
+    ),
+  ).toBe(false)
+})
+
+test("expired deadlines stop before auditing or emitting and invalid deadlines reject", () => {
+  const { input, joined, escapes } = fixture()
+  expect(
+    proposals(
+      enumeratePairedBodyLengthExtensions(input, joined, {
+        connectionNames: ["rail_0", "rail_1"],
+        minimumLength: 23,
+        maximumLength: 23.635,
+        fixedEscapes: escapes,
+        deadlineMs: Date.now() - 1,
+      }),
+    ),
+  ).toEqual([])
+  expect(() =>
+    proposals(
+      enumeratePairedBodyLengthExtensions(input, joined, {
+        connectionNames: ["rail_0", "rail_1"],
+        minimumLength: 23,
+        maximumLength: 23.635,
+        fixedEscapes: escapes,
+        deadlineMs: NaN,
+      }),
+    ),
+  ).toThrow("Invalid paired")
+})
+
+test("native pad ownership aliases do not falsely prune a clear shared interval", () => {
+  const { input, joined, escapes } = fixture()
+  input.obstacles
+    .find((obstacle) => obstacle.connectedTo.includes("rail_0"))!
+    .connectedTo.push("alias_0")
+  input.obstacles.push({
+    shape: "circle",
+    center: { x: 7, y: 0.11 },
+    width: 0.1,
+    height: 0.1,
+    layers: ["bottom"],
+    connectedTo: ["alias_0"],
+  })
+  const rails = joined.slice(0, 2) as [Trace, Trace]
+  const paths = rails.map((rail) =>
+    rail.route.slice(rail.coupledSection![0], rail.coupledSection![1] + 1),
+  ) as [Wire[], Wire[]]
+  const before = structuredClone({ input, joined, escapes })
+  expect(
+    physicalRoutingAcceptance(input, joined, { escapes })
+      .physicalRoutingAccepted,
+  ).toBe(true)
+  expect(
+    createPairedBodyForeignPrefilter(input, joined, ["rail_0", "rail_1"])(
+      rails,
+      paths,
+    ),
+  ).toBe(true)
+  expect({ input, joined, escapes }).toEqual(before)
+})
 
 test("physical partial progress is explicitly labelled and remains outside the full target", () => {
   const { input, joined, escapes } = fixture()
