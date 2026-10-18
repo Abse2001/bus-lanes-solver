@@ -1,3 +1,4 @@
+import { BoardBoundary } from "./board-boundary"
 import { highDemandPairedLanes } from "./tuning-bank-demands"
 import { routePairedNetwork } from "./route-paired-network"
 import { roundCoupledReturnBends } from "./round-coupled-return-bends"
@@ -155,10 +156,7 @@ export class BusLanesSolver extends BaseSolver {
   }
   private initialize() {
     const input = this.input
-    if (input.outline?.length) {
-      this.fail("unsupported_outline", "Custom board outlines are unsupported")
-      return
-    }
+    new BoardBoundary(input)
     const names = new Set<string>()
     for (const c of input.connections) {
       if (names.has(c.name)) throw Error(`Duplicate connection ${c.name}`)

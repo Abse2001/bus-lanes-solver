@@ -14,7 +14,7 @@ test("incomplete G350 copper cannot create routed snapshot artifacts", async () 
   const directory = await mkdtemp(join(tmpdir(), "g350-snapshot-"))
   try {
     await expect(
-      exportG350RoutedSnapshot(loadG350Am3352Sample(), directory),
+      exportG350RoutedSnapshot(loadG350Am3352Sample(), directory, "original"),
     ).rejects.toThrow("Refusing a G350 routed snapshot")
     expect(await readdir(directory)).toEqual([])
   } finally {
@@ -45,9 +45,9 @@ test("49 connected paths through foreign pads cannot create routed snapshots", a
   expect(validation.drc.valid).toBe(false)
   const directory = await mkdtemp(join(tmpdir(), "g350-snapshot-"))
   try {
-    await expect(exportG350RoutedSnapshot(output, directory)).rejects.toThrow(
-      "Refusing a G350 routed snapshot",
-    )
+    await expect(
+      exportG350RoutedSnapshot(output, directory, "original"),
+    ).rejects.toThrow("Refusing a G350 routed snapshot")
     expect(await readdir(directory)).toEqual([])
   } finally {
     await rm(directory, { recursive: true, force: true })

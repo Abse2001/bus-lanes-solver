@@ -2,6 +2,7 @@
 export class MinHeap<T extends { f: number }> {
   private entries: Array<{ value: T; sequence: number }> = []
   private sequence = 0
+  constructor(private readonly tieBreak?: (a: T, b: T) => number) {}
   get length() {
     return this.entries.length
   }
@@ -12,10 +13,9 @@ export class MinHeap<T extends { f: number }> {
     a: { value: T; sequence: number },
     b: { value: T; sequence: number },
   ) {
-    return (
-      a.value.f < b.value.f ||
-      (a.value.f === b.value.f && a.sequence < b.sequence)
-    )
+    if (a.value.f !== b.value.f) return a.value.f < b.value.f
+    const tied = this.tieBreak?.(a.value, b.value) ?? 0
+    return tied < 0 || (tied === 0 && a.sequence < b.sequence)
   }
   push(value: T) {
     const entry = { value, sequence: this.sequence++ }

@@ -1,6 +1,8 @@
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
+import { boardBoundaryReports } from "./board-boundary"
+import { localDogboneInput } from "./local-dogbone-input"
 import { routeLocalSignalDogbones } from "@tscircuit/fanout-solver"
-import type { SimpleRouteJson, Point } from "./types"
+import type { SimpleRouteJson, Point, Trace } from "./types"
 
 /** The site matcher's preferred quadrant is expressed in a routing frame.
  * Rotate the entire scene (including fixed copper), then invert only newly
@@ -58,16 +60,19 @@ export function routeAlternateSignalDogbones(
       center: rotate(o.center, turns),
       ccwRotationDegrees: (o.ccwRotationDegrees ?? 0) + 90 * turns,
     })),
+    outline: input.outline?.map((point) => rotate(point, turns)),
     traces: input.traces?.map((t) => ({
       ...t,
       route: t.route.map((p) => rotate(p, turns)),
     })),
   }
   const result = routeLocalSignalDogbones(
-    rotated as Parameters<typeof routeLocalSignalDogbones>[0],
+    localDogboneInput(rotated) as Parameters<
+      typeof routeLocalSignalDogbones
+    >[0],
     options,
   )
-  return {
+  const generated = {
     connections: result.connections.map((c) => ({
       ...c,
       pointsToConnect: c.pointsToConnect.map((p) => rotate(p, (4 - turns) % 4)),
@@ -80,4 +85,10 @@ export function routeAlternateSignalDogbones(
       }),
     })),
   }
+  // The local fanout matcher enforces rectangular bounds. Its generated
+  // approaches also need to fit the actual outline after returning to the
+  // native coordinate frame; another quadrant may remain physically legal.
+  if (!boardBoundaryReports(input, generated.traces as Trace[]).valid)
+    throw Error("No collision-free local dogbone assignment")
+  return generated
 }

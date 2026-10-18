@@ -1,8 +1,8 @@
 import { GenericSolverDebugger } from "@tscircuit/solver-utils/react"
 import { BusLanesPipelineSolver, BusLanesSolver } from "../lib"
-import { loadG350Am3352Sample } from "../scripts/g350-am3352-sample"
+import { loadG350Am3352RepairedSample } from "../scripts/g350-am3352-repaired-sample"
 
-const input = loadG350Am3352Sample()
+const input = loadG350Am3352RepairedSample()
 export default (
   <main style={{ fontFamily: "system-ui", padding: 20 }}>
     <h1>G350 AM3352 / 49 DDR signals on top and bottom</h1>
@@ -10,6 +10,11 @@ export default (
       AM3352BZCZ100 and MT41K256M16TW-107:P, RAM rotated 270°. Real geometry for
       194 components and 854 pads, including power, clock, reset and decoupling.
       No cached DDR paths or omitted NC pads.
+    </p>
+    <p>
+      This reproduction uses an explicit DQ permutation within each byte. The
+      solver keeps those input connections unchanged; DQS, data masks, address,
+      control and clock pins retain their captured mapping.
     </p>
     <p>
       Four physical layers; DDR wires use top and bottom. All three bus skew

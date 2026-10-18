@@ -60,6 +60,78 @@ after complete connectivity, native DRC, length matching and coupling pass.
 `./benchmark.sh --require-all-solved --routes-directory work/benchmark-routes`
 retains only successfully audited routes for snapshot export.
 
+## Physical Top/Bottom routing
+
+Request `goal: "physical"` to generate a complete native-pad Top/Bottom route
+before bus length matching. This mode supports two-terminal component pads,
+automatic fanout, and `allowedLayers: ["top", "bottom"]`:
+
+```ts
+const solver = new BusLanesPipelineSolver(input, { goal: "physical" })
+solver.solve()
+if (!solver.solved) throw Error(solver.error ?? "Physical routing failed")
+const output = solver.getOutput()
+const acceptance = solver.getAcceptanceReport()!
+console.log(acceptance.physicalRoutingAccepted, acceptance.ddrTimingAccepted)
+console.log(solver.getLengthReports().buses)
+console.log(solver.getLengthTuningReport()?.reason)
+```
+
+The joint surface search computes fresh approaches and carriers from native
+geometry. Acceptance requires every requested connection, unchanged supplied
+copper, exact retained escape paths, native copper/drill clearance, legal layers
+and via stacks, board containment, valid ordinary geometry, and hard differential
+pair skew and coupling. The original input and its timing constraints remain in
+the output. Bus skew and minimum/maximum length failures are reported separately;
+`solved` means the explicitly requested physical goal passed. This mode uses the
+joint surface search regardless of the compact-site strategy preference.
+
+After a complete physical route, this mode runs a bounded post-processing pass
+to shorten free bodies, add planar tuning lobes, extend coupled pairs together,
+or reach a remote tuning bay through two additional PTHs. Set
+`postRoutingLengthTuning: false` to skip it, or supply its time/step/operator
+budgets. Every proposed change must preserve complete connectivity, native DRC,
+fixed escapes, terminal metadata, pair coupling, and untimed routes.
+
+The original layout and the best verified improvement are separate checkpoints.
+Failed, worse, blocked, cancelled, or timed-out trials cannot overwrite the best
+layout. Partial timing progress is ranked by timing success, number of signals
+outside a fixed feasible target portfolio, summed target error, actual rule
+failures and excess, copper length, then via count. `timingSolved` and the full
+native bus/pair reports distinguish complete matching from partial progress.
+These are configured XY length checks; electrical delay and signal integrity
+need separate analysis.
+
+For an existing complete routed layout, use the same generic stage directly:
+
+```ts
+import { postProcessRoutedLengths } from "@tscircuit/bus-lanes-solver"
+
+const tuning = postProcessRoutedLengths(input, routedOutput, {
+  fixedEscapes, // original immutable fanout paths, already in routedOutput
+  timeBudgetMs: 60_000,
+  maximumOperatorTimeMs: 5_000,
+})
+let next = tuning.next()
+while (!next.done) next = tuning.next()
+const result = next.value
+// Always a complete, physically verified layout, including incomplete timing.
+const bestLayout = result.output
+console.log(result.timingSolved, result.reason, result.acceptance.buses)
+```
+
+Calling `tuning.return(...)` after search starts also returns its best verified
+checkpoint. Invalid or physically incomplete starting layouts are rejected.
+
+The [saved AM3352 post-processing result](./docs/g350-am3352-postprocess)
+preserves all 49 signals and zero native DRC issues while recording four verified
+length improvements. Its three bus length constraints still fail; the original
+layout remains available separately.
+
+The default matched goal and full-acceptance snapshot exporters retain their
+existing timing requirements. This API adds a fresh routing opportunity; it does
+not promise that every finite search budget will complete a particular board.
+
 ## Connectivity-only mode
 
 The powered AM3352 control can route all 47 signals on `inner1` using the

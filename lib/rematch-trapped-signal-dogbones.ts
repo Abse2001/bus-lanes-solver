@@ -5,6 +5,7 @@ import {
 import { distance } from "./geometry"
 import { GridVisibilitySearch } from "./grid-visibility"
 import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
+import { localDogboneInput } from "./local-dogbone-input"
 import type {
   Connection,
   Point,
@@ -273,7 +274,9 @@ export function* rematchTrappedSignalDogbones(
       let candidate: ReturnType<typeof routeLocalSignalDogbones>
       try {
         candidate = routeLocalSignalDogbones(
-          searchInput as Parameters<typeof routeLocalSignalDogbones>[0],
+          localDogboneInput(searchInput) as Parameters<
+            typeof routeLocalSignalDogbones
+          >[0],
           {
             targetLayers: new Map([
               [connection.name, connection.pointsToConnect[0].layer],

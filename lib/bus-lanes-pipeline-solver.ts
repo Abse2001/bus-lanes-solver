@@ -8,10 +8,11 @@ import {
   type NativeSingleCarrierOptions,
 } from "./route-matched-native-single-carrier"
 import { initialSignalDogbones } from "./initial-signal-dogbones"
+import { boardBoundaryReports } from "./board-boundary"
 import { retargetGeneratedEscape } from "./retarget-generated-escape"
 import { joinSignalEscapes } from "./join-signal-escapes"
 import { tuneGeneratedPairEscapes } from "./tune-generated-pair-escapes"
-import { routeFreshSurfaceBuses } from "./route-fresh-surface-buses"
+import { routeSurfaceBusPortfolio } from "./route-surface-bus-portfolio"
 import { rebalancePairEscapes } from "./rebalance-pair-escapes"
 import { createTerminalViaClearanceChecker } from "./terminal-via-clearance"
 import {
@@ -34,7 +35,13 @@ import { routeBackwardPackageBuses } from "./route-backward-package-buses"
 import type { RepairedBusDogbones } from "./repair-bus-dogbones"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { shortenPairApproaches } from "./shorten-pair-approaches"
-import { busLengthReports } from "./route-lengths"
+import { busLengthReports, pairLengthReports } from "./route-lengths"
+import { physicalRoutingAcceptance } from "./physical-routing-acceptance"
+import {
+  postProcessRoutedLengths,
+  type PostRoutingLengthTuningOptions,
+  type PostRoutingLengthTuningResult,
+} from "./post-routing-length-tuning"
 import { extendPackageCoupling } from "./extend-package-coupling"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import { backwardFacingPackageTerminals } from "./backward-facing-package-terminals"
@@ -46,18 +53,39 @@ import {
 import { BaseSolver } from "@tscircuit/solver-utils"
 import { getCopperLayerNames } from "@tscircuit/fanout-solver"
 import { BusLanesSolver } from "./bus-lanes-solver"
-import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
+import type {
+  SimpleRouteJson,
+  SolverOptions,
+  SurfaceRoutingStrategy,
+  Trace,
+} from "./types"
 
 export interface BusLanesPipelineOptions extends SolverOptions {
   fanout?: "auto" | "none"
-  /** Default matched goal includes timing and differential coupling. Connectivity
-   * explicitly requests only pad-to-pad routing and copper DRC on one carrier. */
-  goal?: "matched" | "connectivity"
+  /** Surface approach search policy; auto uses joint negotiation for large buses. */
+  surfaceRouting?: SurfaceRoutingStrategy
+  /** Default matched goal includes bus timing. Physical requests full native
+   * Top/Bottom pad routing with hard pair coupling and separate timing reports.
+   * Connectivity requests pad-to-pad routing and DRC on one carrier. */
+  goal?: "matched" | "physical" | "connectivity"
+  /** After a physical surface route, tune lengths while retaining its best
+   * DRC-clean checkpoint. False returns the physical route immediately. */
+  postRoutingLengthTuning?:
+    | false
+    | Omit<PostRoutingLengthTuningOptions, "fixedEscapes">
   connectivity?: SingleLayerConnectivityOptions
   /** Native paired backbones, whole-copper matching and movable controllers
    * on a single inner carrier. All numerical settings are board-space mm. */
   singleCarrier?: NativeSingleCarrierOptions
 }
+
+class PipelineBoardBoundaryError extends Error {
+  constructor() {
+    super("Final copper exceeds the board outline or edge clearance")
+  }
+}
+
+class PipelineSignalCoverageError extends Error {}
 
 function canRouteOnPadLayers(input: SimpleRouteJson) {
   const physical = getCopperLayerNames(input.layerCount)
@@ -98,6 +126,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private connectivitySolver?: SingleLayerConnectivitySolver
   private nativeSingleCarrier?: Generator<void, Trace[] | null>
   private acceptedTraces?: Trace[]
+  private physicalAcceptance?: ReturnType<typeof physicalRoutingAcceptance>
+  private lengthTuning?: ReturnType<typeof postProcessRoutedLengths>
+  private lengthTuningResult?: PostRoutingLengthTuningResult
   private envelopeOptimization?: Generator<void, void>
   /** Runs only after a complete accepted route exists. A budget interrupt or
    * exception restores that private snapshot, never mutable work-in-progress. */
@@ -211,7 +242,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
                 signalEnvelope(this.acceptedTraces!).areaMm2 - 1e-6
               ) {
                 improvedBest = true
-                this.acceptedTraces = structuredClone(complete)
+                this.acceptCompleteTraces(complete)
                 this.stats = {
                   ...this.stats,
                   envelopeOptimization: {
@@ -291,7 +322,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
                   if (!validator.solved && !validator.failed)
                     validator.tryFinalAcceptance()
                 }
-                this.acceptedTraces = structuredClone(complete)
+                this.acceptCompleteTraces(complete)
                 this.stats = {
                   ...this.stats,
                   envelopeOptimization: {
@@ -321,7 +352,57 @@ export class BusLanesPipelineSolver extends BaseSolver {
     }
   }
 
+  /** Carriers can be legal while a fixed fanout or owned approach crosses a
+   * cutout. Audit the complete output copper before retaining any snapshot. */
+  private assertCompleteCopperBoundary(traces: Trace[]) {
+    if (
+      !boardBoundaryReports(this.input, [
+        ...(this.input.traces ?? []),
+        ...traces,
+      ]).valid
+    )
+      throw new PipelineBoardBoundaryError()
+  }
+
+  private acceptCompleteTraces(traces: Trace[]) {
+    this.assertCompleteSignalCoverage(traces)
+    this.assertCompleteCopperBoundary(traces)
+    this.acceptedTraces = structuredClone(traces)
+  }
+
+  /** Child routing and refinement may partition requests, but a published
+   * snapshot must retain exactly one complete trace for every native owner. */
+  private assertCompleteSignalCoverage(traces: Trace[]) {
+    const remaining = new Set(
+      this.input.connections.map((connection) => connection.name),
+    )
+    if (traces.length !== this.input.connections.length)
+      throw new PipelineSignalCoverageError(
+        "Final signal coverage must contain exactly one trace per connection",
+      )
+    for (const trace of traces)
+      if (!trace.connection_name || !remaining.delete(trace.connection_name))
+        throw new PipelineSignalCoverageError(
+          "Final signal coverage contains a duplicate or unknown connection",
+        )
+    if (remaining.size)
+      throw new PipelineSignalCoverageError(
+        "Final signal coverage omits a connection",
+      )
+  }
+
   private finishAccepted(early: boolean) {
+    const lengthTuning = this.lengthTuning
+    this.lengthTuning = undefined
+    if (lengthTuning) {
+      try {
+        const result = lengthTuning.return(undefined as never)
+        if (result.done && result.value)
+          this.adoptLengthTuningResult(result.value)
+      } catch (error) {
+        this.stats = { ...this.stats, lengthTuningCleanupError: String(error) }
+      }
+    }
     const optimization = this.envelopeOptimization
     this.envelopeOptimization = undefined
     try {
@@ -329,6 +410,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
     } catch (error) {
       this.stats = { ...this.stats, optimizationCleanupError: String(error) }
     }
+    this.assertCompleteSignalCoverage(this.acceptedTraces!)
+    this.assertCompleteCopperBoundary(this.acceptedTraces!)
     this.traces = structuredClone(this.acceptedTraces!)
     this.solved = true
     this.failed = false
@@ -354,6 +437,17 @@ export class BusLanesPipelineSolver extends BaseSolver {
     super()
     this.input = structuredClone(input)
     this.options = { smoothTuning: true, denseSearch: true, ...options }
+    if (
+      options.goal === "physical" &&
+      (options.fanout === "none" ||
+        input.allowedLayers?.length !== 2 ||
+        !input.allowedLayers.includes("top") ||
+        !input.allowedLayers.includes("bottom") ||
+        !canRouteOnPadLayers(this.input))
+    )
+      throw Error(
+        "Physical routing requires native Top/Bottom component-pad terminals and automatic fanout",
+      )
     // Surface routing negotiates carrier layers and owned approaches before
     // matching and control repair. Its aggregate work reserve includes those
     // stages; an explicitly supplied search budget remains authoritative.
@@ -405,6 +499,52 @@ export class BusLanesPipelineSolver extends BaseSolver {
     return {
       ...this.input,
       traces: [...(this.input.traces ?? []), ...this.traces],
+    }
+  }
+  /** Physical-goal acceptance is separate from DDR bus length acceptance. */
+  getAcceptanceReport() {
+    return this.physicalAcceptance
+      ? structuredClone(this.physicalAcceptance)
+      : null
+  }
+  getLengthReports() {
+    if (!this.solved) throw Error("Length reports require completed routing")
+    return {
+      buses: busLengthReports(this.input, this.traces),
+      pairs: pairLengthReports(this.input, this.traces),
+    }
+  }
+  /** Available after the bounded stage completes or final acceptance stops it. */
+  getLengthTuningReport() {
+    return this.lengthTuningResult
+      ? structuredClone(this.lengthTuningResult)
+      : null
+  }
+  private adoptLengthTuningResult(result: PostRoutingLengthTuningResult) {
+    if (
+      !result.physicalRoutingAccepted ||
+      !result.acceptance.physicalRoutingAccepted
+    )
+      throw Error("Length tuning did not return a complete physical checkpoint")
+    const traces = (result.output.traces ?? []).slice(
+      this.input.traces?.length ?? 0,
+    )
+    this.acceptCompleteTraces(traces)
+    this.physicalAcceptance = structuredClone(result.acceptance)
+    this.lengthTuningResult = structuredClone(result)
+    this.stats = {
+      ...this.stats,
+      goal: "physical",
+      physicalRoutingAccepted: true,
+      ddrTimingAccepted: result.timingSolved,
+      busLengths: result.acceptance.buses,
+      pairLengths: result.acceptance.pairs,
+      lengthTuning: {
+        reason: result.reason,
+        ...result.statistics,
+        timingSolved: result.timingSolved,
+        score: result.evaluation.score,
+      },
     }
   }
   tryFinalAcceptance() {
@@ -778,18 +918,35 @@ export class BusLanesPipelineSolver extends BaseSolver {
       traces: [...(this.input.traces ?? []), ...this.escapes],
     }
     if (
-      this.attempt === 0 &&
-      this.options.smoothTuning &&
-      this.options.denseSearch &&
-      (this.input.buses?.length ?? 0) > 1 &&
-      canRouteOnPadLayers(this.input)
+      this.options.goal === "physical" ||
+      (this.attempt === 0 &&
+        this.options.smoothTuning &&
+        this.options.denseSearch &&
+        (this.input.buses?.length ?? 0) > 1 &&
+        canRouteOnPadLayers(this.input))
     ) {
-      this.sharedPackages = routeFreshSurfaceBuses(
+      this.sharedPackages = routeSurfaceBusPortfolio(
         this.input,
         laneInput,
         this.escapes,
         terminalLayers,
         this.childOptions(),
+        {
+          strategy: this.options.surfaceRouting,
+          goal: this.options.goal === "physical" ? "physical" : "matched",
+          onConnectivityCheckpoint: (state) => {
+            this.stats = {
+              ...this.stats,
+              surfacePhysicalCheckpoint: {
+                routedSignals: state.retained.length + state.traces.length,
+                requestedSignals: this.input.connections.length,
+              },
+            }
+          },
+          onProgress: (surfaceRouting) => {
+            this.stats = { ...this.stats, surfaceRouting }
+          },
+        },
       )
       return
     }
@@ -968,6 +1125,23 @@ export class BusLanesPipelineSolver extends BaseSolver {
       )
   }
   _step() {
+    if (this.lengthTuning) {
+      try {
+        this.phase = "post_route_length_tuning"
+        const next = this.lengthTuning.next()
+        if (next.done) {
+          this.lengthTuning = undefined
+          this.adoptLengthTuningResult(next.value)
+          this.finishAccepted(false)
+        } else {
+          this.stats = { ...this.stats, lengthTuning: next.value }
+        }
+      } catch (error) {
+        this.stats = { ...this.stats, lengthTuningError: String(error) }
+        this.finishAccepted(true)
+      }
+      return
+    }
     if (this.nativeSingleCarrier) {
       try {
         const result = this.nativeSingleCarrier.next()
@@ -977,15 +1151,21 @@ export class BusLanesPipelineSolver extends BaseSolver {
             throw Error(
               "Native single-carrier matching exhausted its routing plans",
             )
-          this.acceptedTraces = structuredClone(result.value)
+          this.acceptCompleteTraces(result.value)
           this.finishAccepted(false)
         }
       } catch (error) {
         this.nativeSingleCarrier?.return(null)
         this.nativeSingleCarrier = undefined
+        this.traces = []
         this.failed = true
         this.error = String(error)
-        this.failureCode = "native_single_carrier_matching_failed"
+        this.failureCode =
+          error instanceof PipelineBoardBoundaryError
+            ? "board_boundary_violation"
+            : error instanceof PipelineSignalCoverageError
+              ? "signal_coverage_violation"
+              : "native_single_carrier_matching_failed"
         this.phase = "failed"
       }
       return
@@ -1002,8 +1182,21 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.failed = solver.failed
       this.error = solver.error
       if (solver.solved) {
-        this.traces = structuredClone(solver.traces)
-        this.solved = true
+        try {
+          this.assertCompleteSignalCoverage(solver.traces)
+          this.assertCompleteCopperBoundary(solver.traces)
+          this.traces = structuredClone(solver.traces)
+          this.solved = true
+        } catch (error) {
+          this.traces = []
+          this.failed = true
+          this.error = String(error)
+          this.failureCode =
+            error instanceof PipelineSignalCoverageError
+              ? "signal_coverage_violation"
+              : "board_boundary_violation"
+          this.phase = "failed"
+        }
       }
       return
     }
@@ -1045,6 +1238,50 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.sharedPackages = undefined
         if (!state.value) throw Error("Shared-layer bus routing exhausted")
         this.escapes = state.value.escapes
+        if (this.options.goal === "physical") {
+          const joined = state.value.traces.map((trace) =>
+            joinSignalEscapes(
+              trace,
+              state.value!.escapes.filter(
+                (escape) => escape.connection_name === trace.connection_name,
+              ),
+            ),
+          )
+          const acceptance = physicalRoutingAcceptance(this.input, joined, {
+            escapes: state.value.escapes,
+          })
+          if (!acceptance.physicalRoutingAccepted)
+            throw Error(
+              "Fresh surface candidate failed whole-native physical acceptance",
+            )
+          this.physicalAcceptance = acceptance
+          this.acceptCompleteTraces(joined)
+          if (this.options.postRoutingLengthTuning !== false) {
+            this.lengthTuning = postProcessRoutedLengths(
+              this.input,
+              {
+                ...this.input,
+                traces: [...(this.input.traces ?? []), ...joined],
+              },
+              {
+                ...this.options.postRoutingLengthTuning,
+                fixedEscapes: this.escapes,
+              },
+            )
+            this.phase = "post_route_length_tuning"
+            return
+          }
+          this.finishAccepted(false)
+          this.stats = {
+            ...this.stats,
+            goal: "physical",
+            physicalRoutingAccepted: true,
+            ddrTimingAccepted: acceptance.ddrTimingAccepted,
+            busLengths: acceptance.buses,
+            pairLengths: acceptance.pairs,
+          }
+          return
+        }
         this.child = BusLanesSolver.forValidation(
           state.value.input,
           state.value.traces,
@@ -1177,7 +1414,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
           )
         )
           throw Error("Final absolute bus length violation")
-        this.acceptedTraces = structuredClone(this.traces)
+        this.acceptCompleteTraces(this.traces)
         this.phase = "optimize_envelope"
         this.envelopeOptimization = this.optimizeEnvelope()
       }
@@ -1208,7 +1445,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.phase = "retry_layers"
         return
       }
-      this.failureCode = this.child?.failureCode ?? "local_dogbone_failed"
+      this.failureCode =
+        error instanceof PipelineBoardBoundaryError
+          ? "board_boundary_violation"
+          : error instanceof PipelineSignalCoverageError
+            ? "signal_coverage_violation"
+            : (this.child?.failureCode ?? "local_dogbone_failed")
       this.error = error instanceof Error ? error.message : String(error)
       this.failed = true
       this.phase = "failed"

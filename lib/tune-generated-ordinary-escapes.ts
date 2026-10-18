@@ -57,6 +57,7 @@ export function* tuneGeneratedOrdinaryEscapes(
       )
   }
   const supplied = (input.traces ?? []).filter((t) => !owned.has(t))
+  const suppliedInput = { ...input, traces: supplied }
   let escapes = generatedEscapes
   let local: SimpleRouteJson = { ...input, traces: [...supplied, ...escapes] }
   const targets = minimumLengthTargets(local, carriers)
@@ -166,6 +167,8 @@ export function* tuneGeneratedOrdinaryEscapes(
         .map((e) => (e === escape ? replacement : e))
         .filter((e) => e.connection_name === name)
       const joined = joinSignalEscapes(carrier, ownEscapes)
+      const totalLength =
+        length(joined.route) + fixedRouteLength(suppliedInput, name)
       const others = carriers
         .filter((t) => t.connection_name !== name)
         .map((t) =>
@@ -194,8 +197,8 @@ export function* tuneGeneratedOrdinaryEscapes(
         })(tuned.route) ||
         !routeAnglesAreConventional([joined]) ||
         surfaceBridgeSelfShorts(input, originalConnection, joined) ||
-        length(joined.route) > maxLength + 1e-7 ||
-        length(joined.route) > targets.get(name)! + 1e-6
+        totalLength > maxLength + 1e-7 ||
+        totalLength > targets.get(name)! + 1e-6
       ) {
         yield
         continue
@@ -204,7 +207,7 @@ export function* tuneGeneratedOrdinaryEscapes(
       local = { ...local, traces: [...supplied, ...escapes] }
       changed = true
       yield
-      if (length(joined.route) >= targets.get(name)! - 1e-7) break
+      if (totalLength >= targets.get(name)! - 1e-7) break
     }
   }
   if (!changed) return null
@@ -212,12 +215,13 @@ export function* tuneGeneratedOrdinaryEscapes(
     unfinishedNames: string[] = []
   for (const carrier of eligible) {
     const name = carrier.connection_name!
-    const total = length(
-      joinSignalEscapes(
-        carrier,
-        escapes.filter((e) => e.connection_name === name),
-      ).route,
-    )
+    const total =
+      length(
+        joinSignalEscapes(
+          carrier,
+          escapes.filter((e) => e.connection_name === name),
+        ).route,
+      ) + fixedRouteLength(suppliedInput, name)
     ;(total >= targets.get(name)! - 1e-7 ? matchedNames : unfinishedNames).push(
       name,
     )

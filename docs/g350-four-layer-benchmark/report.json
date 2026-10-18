@@ -1,0 +1,1951 @@
+{
+  "schemaVersion": 1,
+  "reportKind": "am3352-legacy-placement-benchmark",
+  "source": {
+    "localCommit": "11526d11fcf72ebe197646cc5090ea1f11ac9e68",
+    "equivalentPublishedCommit": "9f3ea4b3711992f27831bd442bb091d866f0b660",
+    "gitTree": "df7b629ae550da4485127f0d57ef8199712c9592",
+    "equivalenceBasis": "final-v8-checks.json recorded source mapping",
+    "verifiedSnapshotTrackedFiles": 920,
+    "runtime": "Bun1.4.3",
+    "dependencies": "shared installed dependency tree; see package checks",
+    "rawBenchmarkReportSha256": "7fb21468a035e1393f425acffe375147e237682e06dd76d329c3d4f57005ff64",
+    "snapshotHashesFileSha256": "e4bd934fd3999f5251ef807f9c7bd9b26a26df7fa974afb48c060fd6b4561376",
+    "snapshotManifestSha256": "27292854cb65c00d0ed1df871c089faee955843087bf32457ebea71b332a061a",
+    "postEnvironmentRestartAudit": {
+      "sourceCommit": "11526d11fcf72ebe197646cc5090ea1f11ac9e68",
+      "verifiedTrackedFiles": 920,
+      "workingTreeAndSnapshotMatchGitTree": true,
+      "mismatchCount": 0,
+      "auditSha256": "fd256e3de2847400365e2ce7014e53eac0905727ca49d01cc009e387eb1b39a5"
+    }
+  },
+  "run": {
+    "sampleCount": 11,
+    "acceptedCount": 5,
+    "timeoutCount": 6,
+    "solveBudgetSeconds": 180,
+    "parentProcessDeadlineSeconds": 195,
+    "workers": "serial fresh processes",
+    "comparison": "No controlled same-budget baseline or speedup claim",
+    "allCasesAccepted": false
+  },
+  "scope": {
+    "signalsPerLegacyPlacement": 47,
+    "exactG35049Proof": false,
+    "layerPermissions": "Per-case native permissions; accepted cases use inner signal layers. This is not proof of G350 Top/Bottom-only DDR routing.",
+    "lengthMeasurement": "Complete planar copper: supplied fixed fanouts plus new owned interconnect; via-depth and package electrical delays excluded",
+    "fabricationReady": false,
+    "electricalTimingVerified": false,
+    "supportRoutingPdnSiSignoff": false
+  },
+  "immutability": {
+    "availableWorkerAudits": 10,
+    "inputUnchangedPasses": 10,
+    "fixedFanoutPreservationPasses": 10,
+    "unavailableCases": ["outer-layers"],
+    "outerWorkerNote": "Raw zero counts, zero solve time and false preservation flags are placeholders for unavailable evidence, not an observed mutation"
+  },
+  "cases": [
+    {
+      "sample": "control",
+      "status": "accepted",
+      "routingAccepted": true,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": -27
+        }
+      },
+      "allowedSignalLayers": null,
+      "allowedSignalLayersInterpretation": "default caller permissions",
+      "acceptedCarrierLayerCounts": {
+        "inner2": 16,
+        "inner1": 19,
+        "bottom": 12
+      },
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": 47,
+      "provisionalTraceCount": null,
+      "inputSha256": "b7a4e9d09a22fe0ed131a544548b14eef20fbf4e88b6dc6ffaa11ca44e6bfe59",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 82.65773580199999,
+        "workerWallSeconds": 89.54807134900001,
+        "iterations": 51147
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": true
+      },
+      "acceptedRouteValidation": {
+        "complete": true,
+        "matched": true,
+        "combinedDrc": {
+          "valid": true,
+          "checkedTraceCount": 208,
+          "checkedSegmentCount": 16457,
+          "checkedViaCount": 255,
+          "issues": []
+        },
+        "busLengths": [
+          {
+            "busId": "DDR_BYTE0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000001304039,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_14",
+                "carrierLengthMm": 35.29024652358628,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.29024652358628
+              },
+              {
+                "name": "source_trace_30",
+                "carrierLengthMm": 35.20230784972909,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.20230784972909
+              },
+              {
+                "name": "source_trace_3",
+                "carrierLengthMm": 34.815944885564306,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564306
+              },
+              {
+                "name": "source_trace_40",
+                "carrierLengthMm": 34.815944885590156,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885590156
+              },
+              {
+                "name": "source_trace_17",
+                "carrierLengthMm": 34.81594488556293,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488556293
+              },
+              {
+                "name": "source_trace_41",
+                "carrierLengthMm": 35.450944885652575,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.450944885652575
+              },
+              {
+                "name": "source_trace_4",
+                "carrierLengthMm": 34.81594488552217,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488552217
+              },
+              {
+                "name": "source_trace_31",
+                "carrierLengthMm": 34.815944885585054,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885585054
+              },
+              {
+                "name": "source_trace_29",
+                "carrierLengthMm": 35.14387628465016,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.14387628465016
+              },
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 34.815944885564,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 34.893813210145474,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.893813210145474
+              }
+            ]
+          },
+          {
+            "busId": "DDR_BYTE1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000000734681,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_28",
+                "carrierLengthMm": 32.46909308697712,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697712
+              },
+              {
+                "name": "source_trace_12",
+                "carrierLengthMm": 32.46909308694399,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308694399
+              },
+              {
+                "name": "source_trace_39",
+                "carrierLengthMm": 32.4690930869773,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.4690930869773
+              },
+              {
+                "name": "source_trace_2",
+                "carrierLengthMm": 33.10409308701746,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 33.10409308701746
+              },
+              {
+                "name": "source_trace_25",
+                "carrierLengthMm": 32.46909308697719,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697719
+              },
+              {
+                "name": "source_trace_1",
+                "carrierLengthMm": 32.46909308697724,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697724
+              },
+              {
+                "name": "source_trace_38",
+                "carrierLengthMm": 32.4690930869772,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.4690930869772
+              },
+              {
+                "name": "source_trace_11",
+                "carrierLengthMm": 32.46909308697711,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697711
+              },
+              {
+                "name": "source_trace_13",
+                "carrierLengthMm": 32.469093087021,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.469093087021
+              },
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 32.51521792061114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.51521792061114
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 32.6422179206111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.6422179206111
+              }
+            ]
+          }
+        ],
+        "pairLengths": [
+          {
+            "busId": "pair_0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.0778683245814733,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 34.815944885564,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 34.893813210145474,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.893813210145474
+              }
+            ]
+          },
+          {
+            "busId": "pair_1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.1269999999999598,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 32.51521792061114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.51521792061114
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 32.6422179206111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.6422179206111
+              }
+            ]
+          },
+          {
+            "busId": "pair_2",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.07282965286481868,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_32",
+                "carrierLengthMm": 25.3727889372299,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 25.3727889372299
+              },
+              {
+                "name": "source_trace_33",
+                "carrierLengthMm": 25.445618590094718,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 25.445618590094718
+              }
+            ]
+          }
+        ]
+      },
+      "failure": null,
+      "snapshot": {
+        "path": "snapshots/control-solved.png",
+        "sha256": "698b72708fb06a9c75f34f2f1a6520d43b665c1574b90d9cdc57235775d21a70",
+        "visuallyInspected": true,
+        "inspectionBasis": "completed team visual review reported for publication",
+        "provenance": {
+          "inputSha256": "b7a4e9d09a22fe0ed131a544548b14eef20fbf4e88b6dc6ffaa11ca44e6bfe59",
+          "outputSha256": "e71be84f152fa163a5aec825c9f64ac2ac1970f191dfcaa853c580fd82973c1e",
+          "signalTracesSha256": "6572f1fb91324aef72e9ff2a28e410f1168461d983e357f05fefaa6167227e50",
+          "fixedFanoutTracesSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+          "acceptedRouteFileSha256": "ee4efdba158b20da25dada35a4a3da4bb2d97233bbc03ebd499c74d936edcb9f"
+        }
+      }
+    },
+    {
+      "sample": "control-inner1",
+      "status": "timed_out",
+      "routingAccepted": false,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": -27
+        }
+      },
+      "allowedSignalLayers": ["inner1"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": null,
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": null,
+      "provisionalTraceCount": 47,
+      "inputSha256": "14b5b318540ce7bac367cf22338abd7f9fffd2f7ce6c2a12f903116f50ca9bde",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 190.626714343,
+        "workerWallSeconds": 191.32722186400002,
+        "iterations": 2574
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": false
+      },
+      "acceptedRouteValidation": null,
+      "failure": {
+        "code": null,
+        "error": "Routing exceeded 180 seconds",
+        "evidence": "worker timeout; routed DRC and matching incomplete"
+      },
+      "snapshot": null
+    },
+    {
+      "sample": "right",
+      "status": "accepted",
+      "routingAccepted": true,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 27,
+          "y": 0
+        }
+      },
+      "allowedSignalLayers": null,
+      "allowedSignalLayersInterpretation": "default caller permissions",
+      "acceptedCarrierLayerCounts": {
+        "inner2": 18,
+        "inner1": 21,
+        "bottom": 8
+      },
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": 47,
+      "provisionalTraceCount": null,
+      "inputSha256": "78c22c8d818ee2c2abe2eec9c6b6e408161a9d0eaf09afbafc3242e71e8f5778",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 82.5944277,
+        "workerWallSeconds": 88.50509635699999,
+        "iterations": 51525
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": true
+      },
+      "acceptedRouteValidation": {
+        "complete": true,
+        "matched": true,
+        "combinedDrc": {
+          "valid": true,
+          "checkedTraceCount": 208,
+          "checkedSegmentCount": 24316,
+          "checkedViaCount": 255,
+          "issues": []
+        },
+        "busLengths": [
+          {
+            "busId": "DDR_BYTE0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000000013551,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_14",
+                "carrierLengthMm": 39.51496565321081,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565321081
+              },
+              {
+                "name": "source_trace_30",
+                "carrierLengthMm": 39.51496565321134,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565321134
+              },
+              {
+                "name": "source_trace_3",
+                "carrierLengthMm": 39.51496565321103,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565321103
+              },
+              {
+                "name": "source_trace_40",
+                "carrierLengthMm": 40.149965653210685,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 40.149965653210685
+              },
+              {
+                "name": "source_trace_17",
+                "carrierLengthMm": 39.51496565321106,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565321106
+              },
+              {
+                "name": "source_trace_41",
+                "carrierLengthMm": 39.51496565321013,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565321013
+              },
+              {
+                "name": "source_trace_4",
+                "carrierLengthMm": 39.51496565321114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565321114
+              },
+              {
+                "name": "source_trace_31",
+                "carrierLengthMm": 39.51496565320987,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565320987
+              },
+              {
+                "name": "source_trace_29",
+                "carrierLengthMm": 39.514965653209515,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.514965653209515
+              },
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 39.51496565320933,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565320933
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 39.64196565320923,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.64196565320923
+              }
+            ]
+          },
+          {
+            "busId": "DDR_BYTE1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6349999999999696,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_28",
+                "carrierLengthMm": 46.0486496116291,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.0486496116291
+              },
+              {
+                "name": "source_trace_12",
+                "carrierLengthMm": 46.04864961162925,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.04864961162925
+              },
+              {
+                "name": "source_trace_39",
+                "carrierLengthMm": 46.0486496116545,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.0486496116545
+              },
+              {
+                "name": "source_trace_2",
+                "carrierLengthMm": 46.68364961162869,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.68364961162869
+              },
+              {
+                "name": "source_trace_25",
+                "carrierLengthMm": 46.04864961162872,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.04864961162872
+              },
+              {
+                "name": "source_trace_1",
+                "carrierLengthMm": 46.04864961162916,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.04864961162916
+              },
+              {
+                "name": "source_trace_38",
+                "carrierLengthMm": 46.04864961162898,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.04864961162898
+              },
+              {
+                "name": "source_trace_11",
+                "carrierLengthMm": 46.04864961162917,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.04864961162917
+              },
+              {
+                "name": "source_trace_13",
+                "carrierLengthMm": 46.0486496116293,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.0486496116293
+              },
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 46.17564961162864,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.17564961162864
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 46.05384730422515,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.05384730422515
+              }
+            ]
+          }
+        ],
+        "pairLengths": [
+          {
+            "busId": "pair_0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.12699999999990297,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 39.51496565320933,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.51496565320933
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 39.64196565320923,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 39.64196565320923
+              }
+            ]
+          },
+          {
+            "busId": "pair_1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.12180230740349174,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 46.17564961162864,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.17564961162864
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 46.05384730422515,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 46.05384730422515
+              }
+            ]
+          },
+          {
+            "busId": "pair_2",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.10264381675825973,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_32",
+                "carrierLengthMm": 38.567002499603,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 38.567002499603
+              },
+              {
+                "name": "source_trace_33",
+                "carrierLengthMm": 38.66964631636126,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 38.66964631636126
+              }
+            ]
+          }
+        ]
+      },
+      "failure": null,
+      "snapshot": {
+        "path": "snapshots/right-solved.png",
+        "sha256": "756613a6402f17e222106f2a13140bf75638e3a315948cf67a4d5148a31dc246",
+        "visuallyInspected": true,
+        "inspectionBasis": "completed team visual review reported for publication",
+        "provenance": {
+          "inputSha256": "78c22c8d818ee2c2abe2eec9c6b6e408161a9d0eaf09afbafc3242e71e8f5778",
+          "outputSha256": "6e9b05d9b9b14b0d94e07c8ba35bf6770cfaf95ec0324123c200ac0a794a41a8",
+          "signalTracesSha256": "f858d47b0afb64387d49269c019c42f4734e3bd62e4f60883a4565097b3fa66f",
+          "fixedFanoutTracesSha256": "00f35fe4ae6dd6789c431be9f29ae2d994088d4bb5f7ddc7de4e185106cc72b3",
+          "acceptedRouteFileSha256": "ec1c8ff90a850d910403ba101d26bea095d4abd5f2733ac48ebeb52402964da6"
+        }
+      }
+    },
+    {
+      "sample": "left",
+      "status": "accepted",
+      "routingAccepted": true,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": -27,
+          "y": 0
+        }
+      },
+      "allowedSignalLayers": null,
+      "allowedSignalLayersInterpretation": "default caller permissions",
+      "acceptedCarrierLayerCounts": {
+        "inner2": 20,
+        "inner1": 18,
+        "bottom": 9
+      },
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": 47,
+      "provisionalTraceCount": null,
+      "inputSha256": "6042ca0f0889a983a6ccf8f929a6a46b18cc57134e1b9f3b49c19063b936caa5",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 89.27453426,
+        "workerWallSeconds": 93.89942034399999,
+        "iterations": 82108
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": true
+      },
+      "acceptedRouteValidation": {
+        "complete": true,
+        "matched": true,
+        "combinedDrc": {
+          "valid": true,
+          "checkedTraceCount": 208,
+          "checkedSegmentCount": 24551,
+          "checkedViaCount": 255,
+          "issues": []
+        },
+        "busLengths": [
+          {
+            "busId": "DDR_BYTE0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000101077526,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_14",
+                "carrierLengthMm": 47.98886790020795,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.98886790020795
+              },
+              {
+                "name": "source_trace_30",
+                "carrierLengthMm": 47.9989732084715,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.9989732084715
+              },
+              {
+                "name": "source_trace_3",
+                "carrierLengthMm": 47.99601343224791,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.99601343224791
+              },
+              {
+                "name": "source_trace_40",
+                "carrierLengthMm": 47.998973208471455,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.998973208471455
+              },
+              {
+                "name": "source_trace_17",
+                "carrierLengthMm": 47.98886790005596,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.98886790005596
+              },
+              {
+                "name": "source_trace_41",
+                "carrierLengthMm": 47.99897320847145,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.99897320847145
+              },
+              {
+                "name": "source_trace_4",
+                "carrierLengthMm": 48.62386791016371,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 48.62386791016371
+              },
+              {
+                "name": "source_trace_31",
+                "carrierLengthMm": 47.99897320847153,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.99897320847153
+              },
+              {
+                "name": "source_trace_29",
+                "carrierLengthMm": 47.99897320847139,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 47.99897320847139
+              },
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 48.12597320847111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 48.12597320847111
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 48.19479812532557,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 48.19479812532557
+              }
+            ]
+          },
+          {
+            "busId": "DDR_BYTE1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6299473457258458,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_28",
+                "carrierLengthMm": 54.121337655262586,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.121337655262586
+              },
+              {
+                "name": "source_trace_12",
+                "carrierLengthMm": 54.121337655262565,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.121337655262565
+              },
+              {
+                "name": "source_trace_39",
+                "carrierLengthMm": 54.121337655262415,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.121337655262415
+              },
+              {
+                "name": "source_trace_2",
+                "carrierLengthMm": 54.12133765535696,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.12133765535696
+              },
+              {
+                "name": "source_trace_25",
+                "carrierLengthMm": 54.12133765526259,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.12133765526259
+              },
+              {
+                "name": "source_trace_1",
+                "carrierLengthMm": 54.12133765526272,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.12133765526272
+              },
+              {
+                "name": "source_trace_38",
+                "carrierLengthMm": 54.121337655262515,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.121337655262515
+              },
+              {
+                "name": "source_trace_11",
+                "carrierLengthMm": 54.12133765527015,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.12133765527015
+              },
+              {
+                "name": "source_trace_13",
+                "carrierLengthMm": 54.12133765526225,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.12133765526225
+              },
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 54.624285000988195,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.624285000988195
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 54.7512850009881,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.7512850009881
+              }
+            ]
+          }
+        ],
+        "pairLengths": [
+          {
+            "busId": "pair_0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.06882491685446013,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 48.12597320847111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 48.12597320847111
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 48.19479812532557,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 48.19479812532557
+              }
+            ]
+          },
+          {
+            "busId": "pair_1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.12699999999990297,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 54.624285000988195,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.624285000988195
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 54.7512850009881,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 54.7512850009881
+              }
+            ]
+          },
+          {
+            "busId": "pair_2",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.10542851386562901,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_32",
+                "carrierLengthMm": 26.59834747140992,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 26.59834747140992
+              },
+              {
+                "name": "source_trace_33",
+                "carrierLengthMm": 26.70377598527555,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 26.70377598527555
+              }
+            ]
+          }
+        ]
+      },
+      "failure": null,
+      "snapshot": {
+        "path": "snapshots/left-solved.png",
+        "sha256": "b6dab644c6512e16547b23504b08db26c1aaaa62e649d2fe7093f85c74f1f1af",
+        "visuallyInspected": true,
+        "inspectionBasis": "completed team visual review reported for publication",
+        "provenance": {
+          "inputSha256": "6042ca0f0889a983a6ccf8f929a6a46b18cc57134e1b9f3b49c19063b936caa5",
+          "outputSha256": "a199fb1428f76367f330c66ffc7a76f6c340cdf0132797eff362bdf5dec95fa1",
+          "signalTracesSha256": "dbfeaf8bc9d28977bf3f3ced585b55e4a7a7d3c8ac5b1b26557dd6d76685b807",
+          "fixedFanoutTracesSha256": "5561376c82dd712cbe35138f6abfc91b636e7923c3cf98902c69ade63efe3ac9",
+          "acceptedRouteFileSha256": "da2119e447cd4bd250a4bbca826724a2d4a5c0fe790ef68894d0dab36ce46b13"
+        }
+      }
+    },
+    {
+      "sample": "above",
+      "status": "accepted",
+      "routingAccepted": true,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": 27
+        }
+      },
+      "allowedSignalLayers": null,
+      "allowedSignalLayersInterpretation": "default caller permissions",
+      "acceptedCarrierLayerCounts": {
+        "bottom": 14,
+        "inner2": 15,
+        "inner1": 18
+      },
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": 47,
+      "provisionalTraceCount": null,
+      "inputSha256": "20fc884f08accd368e4ce049ab3fc180a1926f425787a504dbc4040f651bfa69",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 81.15133982399999,
+        "workerWallSeconds": 86.37106636,
+        "iterations": 101378
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": true
+      },
+      "acceptedRouteValidation": {
+        "complete": true,
+        "matched": true,
+        "combinedDrc": {
+          "valid": true,
+          "checkedTraceCount": 208,
+          "checkedSegmentCount": 23596,
+          "checkedViaCount": 255,
+          "issues": []
+        },
+        "busLengths": [
+          {
+            "busId": "DDR_BYTE0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000000108622,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_14",
+                "carrierLengthMm": 50.65646586810246,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.65646586810246
+              },
+              {
+                "name": "source_trace_30",
+                "carrierLengthMm": 50.656465868060785,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.656465868060785
+              },
+              {
+                "name": "source_trace_3",
+                "carrierLengthMm": 51.29146586807165,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 51.29146586807165
+              },
+              {
+                "name": "source_trace_40",
+                "carrierLengthMm": 50.65646586806121,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.65646586806121
+              },
+              {
+                "name": "source_trace_17",
+                "carrierLengthMm": 50.65646586806112,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.65646586806112
+              },
+              {
+                "name": "source_trace_41",
+                "carrierLengthMm": 50.656465868061076,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.656465868061076
+              },
+              {
+                "name": "source_trace_4",
+                "carrierLengthMm": 50.65646586806115,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.65646586806115
+              },
+              {
+                "name": "source_trace_31",
+                "carrierLengthMm": 50.65646586806107,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.65646586806107
+              },
+              {
+                "name": "source_trace_29",
+                "carrierLengthMm": 50.65646586806091,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.65646586806091
+              },
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 50.811327916519645,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.811327916519645
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 50.68432791651962,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.68432791651962
+              }
+            ]
+          },
+          {
+            "busId": "DDR_BYTE1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.635000000003032,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_28",
+                "carrierLengthMm": 57.39872539568981,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 57.39872539568981
+              },
+              {
+                "name": "source_trace_12",
+                "carrierLengthMm": 56.76372539570547,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.76372539570547
+              },
+              {
+                "name": "source_trace_39",
+                "carrierLengthMm": 56.76372539568678,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.76372539568678
+              },
+              {
+                "name": "source_trace_2",
+                "carrierLengthMm": 56.76372539570541,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.76372539570541
+              },
+              {
+                "name": "source_trace_25",
+                "carrierLengthMm": 56.76372539570537,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.76372539570537
+              },
+              {
+                "name": "source_trace_1",
+                "carrierLengthMm": 57.136021858255546,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 57.136021858255546
+              },
+              {
+                "name": "source_trace_38",
+                "carrierLengthMm": 56.76372539570547,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.76372539570547
+              },
+              {
+                "name": "source_trace_11",
+                "carrierLengthMm": 56.763725395705464,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.763725395705464
+              },
+              {
+                "name": "source_trace_13",
+                "carrierLengthMm": 56.763725395705414,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.763725395705414
+              },
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 56.763725395704974,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.763725395704974
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 56.890725395704926,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.890725395704926
+              }
+            ]
+          }
+        ],
+        "pairLengths": [
+          {
+            "busId": "pair_0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.12700000000002376,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 50.811327916519645,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.811327916519645
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 50.68432791651962,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 50.68432791651962
+              }
+            ]
+          },
+          {
+            "busId": "pair_1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.1269999999999527,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 56.763725395704974,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.763725395704974
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 56.890725395704926,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 56.890725395704926
+              }
+            ]
+          },
+          {
+            "busId": "pair_2",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.12699999999998823,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_32",
+                "carrierLengthMm": 51.30858243277705,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 51.30858243277705
+              },
+              {
+                "name": "source_trace_33",
+                "carrierLengthMm": 51.18158243277706,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 51.18158243277706
+              }
+            ]
+          }
+        ]
+      },
+      "failure": null,
+      "snapshot": {
+        "path": "snapshots/above-solved.png",
+        "sha256": "e84dde51a2053e726374d8fb26afcd7d709b65f4e3e56e73b66556c35c37ed24",
+        "visuallyInspected": true,
+        "inspectionBasis": "completed team visual review reported for publication",
+        "provenance": {
+          "inputSha256": "20fc884f08accd368e4ce049ab3fc180a1926f425787a504dbc4040f651bfa69",
+          "outputSha256": "45fbaf91e7dcfdd4eb56109f31d38f1ee3914fbe39ba0c26474549f50a3ce622",
+          "signalTracesSha256": "dff5dc9573940e5e2e3eb1d666c6d9dd498cf1a7dec531bb970dc822603d057e",
+          "fixedFanoutTracesSha256": "ffe6e0066d82091414c2835d6eda15aaedffa441b108b22c1501da0027515749",
+          "acceptedRouteFileSha256": "d5b86872030ab7a85fde264e4518cd898d0cefdaa4a1444c1ac6959460b35c4a"
+        }
+      }
+    },
+    {
+      "sample": "inner-layers",
+      "status": "accepted",
+      "routingAccepted": true,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": -27
+        }
+      },
+      "allowedSignalLayers": ["inner1", "inner2"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": {
+        "inner2": 23,
+        "inner1": 24
+      },
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": 47,
+      "provisionalTraceCount": null,
+      "inputSha256": "1b91e6c5207e4b7e132aa5ac246e94777f926c7beab8675adf0356634b8280ad",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 121.658031701,
+        "workerWallSeconds": 124.82266326399998,
+        "iterations": 124155
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": true
+      },
+      "acceptedRouteValidation": {
+        "complete": true,
+        "matched": true,
+        "combinedDrc": {
+          "valid": true,
+          "checkedTraceCount": 208,
+          "checkedSegmentCount": 16672,
+          "checkedViaCount": 255,
+          "issues": []
+        },
+        "busLengths": [
+          {
+            "busId": "DDR_BYTE0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.6350000000256202,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_14",
+                "carrierLengthMm": 35.29024652358628,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.29024652358628
+              },
+              {
+                "name": "source_trace_30",
+                "carrierLengthMm": 35.20230784972909,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.20230784972909
+              },
+              {
+                "name": "source_trace_3",
+                "carrierLengthMm": 34.815944885564306,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564306
+              },
+              {
+                "name": "source_trace_40",
+                "carrierLengthMm": 34.81594488559017,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488559017
+              },
+              {
+                "name": "source_trace_17",
+                "carrierLengthMm": 34.81594488556293,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488556293
+              },
+              {
+                "name": "source_trace_41",
+                "carrierLengthMm": 35.45094488554779,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.45094488554779
+              },
+              {
+                "name": "source_trace_4",
+                "carrierLengthMm": 34.81594488552217,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.81594488552217
+              },
+              {
+                "name": "source_trace_31",
+                "carrierLengthMm": 34.815944885585054,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885585054
+              },
+              {
+                "name": "source_trace_29",
+                "carrierLengthMm": 35.14387628465016,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 35.14387628465016
+              },
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 34.815944885564,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 34.893813210145474,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.893813210145474
+              }
+            ]
+          },
+          {
+            "busId": "DDR_BYTE1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.635,
+            "skewMm": 0.5899500418288213,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_28",
+                "carrierLengthMm": 32.46909308697712,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697712
+              },
+              {
+                "name": "source_trace_12",
+                "carrierLengthMm": 32.05226787878228,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.05226787878228
+              },
+              {
+                "name": "source_trace_39",
+                "carrierLengthMm": 32.4690930869773,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.4690930869773
+              },
+              {
+                "name": "source_trace_2",
+                "carrierLengthMm": 32.502958132182165,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.502958132182165
+              },
+              {
+                "name": "source_trace_25",
+                "carrierLengthMm": 32.46909308697719,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697719
+              },
+              {
+                "name": "source_trace_1",
+                "carrierLengthMm": 32.46909308697724,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697724
+              },
+              {
+                "name": "source_trace_38",
+                "carrierLengthMm": 32.4690930869772,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.4690930869772
+              },
+              {
+                "name": "source_trace_11",
+                "carrierLengthMm": 32.46909308697711,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.46909308697711
+              },
+              {
+                "name": "source_trace_13",
+                "carrierLengthMm": 32.188662981853675,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.188662981853675
+              },
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 32.51521792061114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.51521792061114
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 32.6422179206111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.6422179206111
+              }
+            ]
+          }
+        ],
+        "pairLengths": [
+          {
+            "busId": "pair_0",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.0778683245814733,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_15",
+                "carrierLengthMm": 34.815944885564,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.815944885564
+              },
+              {
+                "name": "source_trace_16",
+                "carrierLengthMm": 34.893813210145474,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 34.893813210145474
+              }
+            ]
+          },
+          {
+            "busId": "pair_1",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.1269999999999598,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_27",
+                "carrierLengthMm": 32.51521792061114,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.51521792061114
+              },
+              {
+                "name": "source_trace_26",
+                "carrierLengthMm": 32.6422179206111,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 32.6422179206111
+              }
+            ]
+          },
+          {
+            "busId": "pair_2",
+            "minLengthMm": null,
+            "aboveMinimumLength": true,
+            "maxLengthMm": null,
+            "withinLengthLimit": true,
+            "toleranceMm": 0.127,
+            "skewMm": 0.12699999999977152,
+            "matched": true,
+            "lengths": [
+              {
+                "name": "source_trace_32",
+                "carrierLengthMm": 31.264675511820876,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 31.264675511820876
+              },
+              {
+                "name": "source_trace_33",
+                "carrierLengthMm": 31.137675511821104,
+                "fixedLengthMm": 0,
+                "totalLengthMm": 31.137675511821104
+              }
+            ]
+          }
+        ]
+      },
+      "failure": null,
+      "snapshot": {
+        "path": "snapshots/inner-layers-solved.png",
+        "sha256": "a2d4931dc4292a0bd8634f01c2088e35f82d6ec49bbf06a1a909ef0cc2444af9",
+        "visuallyInspected": true,
+        "inspectionBasis": "completed team visual review reported for publication",
+        "provenance": {
+          "inputSha256": "1b91e6c5207e4b7e132aa5ac246e94777f926c7beab8675adf0356634b8280ad",
+          "outputSha256": "87ad5b9b19cb1e9d05ae34497d43e42f49b88fe9ed0b9ac78a6c765b3acfc78b",
+          "signalTracesSha256": "c0ea60190b34d93c9c5116e68da5f53cd679a94c204fa165e641e1ca47f64ea7",
+          "fixedFanoutTracesSha256": "79b80c3e41aabf91465bbf42dc626da608903b18519afc77e168c3db73417afe",
+          "acceptedRouteFileSha256": "ff7c21fe6e0e39e7e1d0b1d7027e4da8cc13eaf620588631a2b2d7039f51931b"
+        }
+      }
+    },
+    {
+      "sample": "inner-layers-right",
+      "status": "timed_out",
+      "routingAccepted": false,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 27,
+          "y": 0
+        }
+      },
+      "allowedSignalLayers": ["inner1", "inner2"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": null,
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": null,
+      "provisionalTraceCount": 47,
+      "inputSha256": "2eaf3dedcd84fbfed10262f4d4c99370a0ca00a7a060f87b7a1cdcba9de37a8e",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 181.219374382,
+        "workerWallSeconds": 181.47719255,
+        "iterations": 145131
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": false
+      },
+      "acceptedRouteValidation": null,
+      "failure": {
+        "code": null,
+        "error": "Routing exceeded 180 seconds",
+        "evidence": "worker timeout; routed DRC and matching incomplete"
+      },
+      "snapshot": null
+    },
+    {
+      "sample": "inner-layers-left",
+      "status": "timed_out",
+      "routingAccepted": false,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": -27,
+          "y": 0
+        }
+      },
+      "allowedSignalLayers": ["inner1", "inner2"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": null,
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": null,
+      "provisionalTraceCount": 0,
+      "inputSha256": "1c3db8ee018bc90df7fbbb0c198c42efcc0ca948a6a213338650cf81a51f7ab2",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 180.00183028000004,
+        "workerWallSeconds": 180.226717348,
+        "iterations": 382756
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": false
+      },
+      "acceptedRouteValidation": null,
+      "failure": {
+        "code": null,
+        "error": "Routing exceeded 180 seconds",
+        "evidence": "worker timeout; routed DRC and matching incomplete"
+      },
+      "snapshot": null
+    },
+    {
+      "sample": "inner-layers-above",
+      "status": "timed_out",
+      "routingAccepted": false,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": 27
+        }
+      },
+      "allowedSignalLayers": ["inner1", "inner2"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": null,
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": null,
+      "provisionalTraceCount": 0,
+      "inputSha256": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 180.00035504599998,
+        "workerWallSeconds": 180.238046065,
+        "iterations": 426355
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": false
+      },
+      "acceptedRouteValidation": null,
+      "failure": {
+        "code": null,
+        "error": "Routing exceeded 180 seconds",
+        "evidence": "worker timeout; routed DRC and matching incomplete"
+      },
+      "snapshot": null
+    },
+    {
+      "sample": "inner-layers-complete-ca",
+      "status": "timed_out",
+      "routingAccepted": false,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": -27
+        }
+      },
+      "allowedSignalLayers": ["inner1", "inner2"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": null,
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": null,
+      "provisionalTraceCount": 0,
+      "inputSha256": "a6def279fa2d3356a66ee94b1760a76eebb6c6d8e605005ce5903bd2fbca8776",
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": 180.00048841300003,
+        "workerWallSeconds": 180.274519926,
+        "iterations": 300866
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": true,
+        "inputUnchanged": true,
+        "fixedFanoutsPreserved": true,
+        "fixedFanoutCount": 161,
+        "fixedCopperDrc": {
+          "valid": true,
+          "checkedTraceCount": 161,
+          "checkedSegmentCount": 183,
+          "checkedViaCount": 161,
+          "issues": []
+        },
+        "completeRoutedOutputAudited": false
+      },
+      "acceptedRouteValidation": null,
+      "failure": {
+        "code": null,
+        "error": "Routing exceeded 180 seconds",
+        "evidence": "worker timeout; routed DRC and matching incomplete"
+      },
+      "snapshot": null
+    },
+    {
+      "sample": "outer-layers",
+      "status": "timed_out",
+      "routingAccepted": false,
+      "placement": {
+        "cpu": {
+          "x": 0,
+          "y": 0
+        },
+        "ram": {
+          "x": 0,
+          "y": -27
+        }
+      },
+      "allowedSignalLayers": ["top", "bottom"],
+      "allowedSignalLayersInterpretation": "explicit caller restriction",
+      "acceptedCarrierLayerCounts": null,
+      "requestedSignals": 47,
+      "acceptedConnectedSignals": null,
+      "provisionalTraceCount": null,
+      "inputSha256": null,
+      "runtime": {
+        "solveBudgetSeconds": 180,
+        "solveSeconds": null,
+        "workerWallSeconds": 195.110524279,
+        "iterations": null
+      },
+      "immutabilityAndFixedCopperAudit": {
+        "workerReportAvailable": false,
+        "inputUnchanged": null,
+        "fixedFanoutsPreserved": null,
+        "fixedFanoutCount": null,
+        "fixedCopperDrc": null,
+        "completeRoutedOutputAudited": false
+      },
+      "acceptedRouteValidation": null,
+      "failure": {
+        "code": null,
+        "error": "Worker exceeded its process deadline",
+        "evidence": "parent process deadline exceeded; no worker audit returned"
+      },
+      "snapshot": null
+    }
+  ],
+  "checks": {
+    "currentIsolatedFullSuite": {
+      "status": "passed",
+      "command": "taskset -c 0 bun test --timeout 30000",
+      "defaultTestTimeoutMilliseconds": 30000,
+      "result": {
+        "command": "taskset -c 0 bun test --timeout 30000",
+        "pass": 602,
+        "fail": 0,
+        "files": 191,
+        "assertions": 1011346,
+        "seconds": 141.21,
+        "log": "full-tests-final-v8-timeout30.log",
+        "sourceCommit": "11526d11fcf72ebe197646cc5090ea1f11ac9e68"
+      }
+    },
+    "priorFullSuiteAndTimeoutRechecks": {
+      "localSourceCommit": "11526d11fcf72ebe197646cc5090ea1f11ac9e68",
+      "equivalentPublishedCommit": "9f3ea4b3711992f27831bd442bb091d866f0b660",
+      "fullSuite": {
+        "pass": 599,
+        "fail": 3,
+        "failures": "Wall-clock timeouts while sharingCPU0 with package/type checks",
+        "assertions": 1011346,
+        "files": 191,
+        "seconds": 322.65,
+        "log": "full-tests-final-v8.log"
+      },
+      "timeoutRecheck": {
+        "pass": 6,
+        "fail": 0,
+        "files": 3,
+        "assertions": 39,
+        "seconds": 27.55,
+        "log": "timeout-recheck-final-v8.log",
+        "coversEveryFullSuiteFailure": true
+      },
+      "distinctTestsVerified": 602,
+      "typecheckExit": 0,
+      "packageExit": 0,
+      "packageUnpackedBytes": 2830410,
+      "packageConsumers": ["Node", "browser", "TypeScript"],
+      "noAssertionFailures": true
+    },
+    "typecheck": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "package": {
+      "status": "passed",
+      "exitCode": 0,
+      "isolatedConsumers": ["Node", "browser", "TypeScript"],
+      "unpackedBytes": 2830410
+    },
+    "priorDefaultTimeoutIsolatedSuite": {
+      "pass": 601,
+      "fail": 1,
+      "seconds": 229.19,
+      "failure": "Physical timing-preparation test exceeded Bun default5s timeout at8.17s",
+      "log": "full-tests-final-v8-isolated.log"
+    },
+    "evidenceFileSha256": "ae576d86a8bbdbc9ec7192802c0fea26fd11c7841f5a392c7bf87c25e668eefe"
+  },
+  "g350FreshProof": {
+    "status": "interrupted",
+    "requestedSignals": 49,
+    "routingAccepted": false,
+    "acceptedSnapshotAvailable": false,
+    "layerPlan": {
+      "L1": "Top DDR signals/component connections",
+      "L2": "continuous GND reference",
+      "L3": "power/reference planes",
+      "L4": "Bottom DDR signals/component connections"
+    },
+    "signalWireLayers": ["top", "bottom"],
+    "viaType": "full-depth through-vias",
+    "dqMapping": "explicit reproduction-only within-byte mapping; generic solver preserves supplied connectivity",
+    "note": "The managed environment restarted after the last observed pulse at 3126.112 s of a configured 3600 s run. The process died before a final solver report or accepted output. This is interruption, not solver-budget exhaustion. Progress counters do not establish independent complete connectivity, matching or DRC acceptance. Runtime input immutability after interruption could not be checked.",
+    "result": "unaccepted",
+    "termination": "environment_restart",
+    "configuredBudgetSeconds": 3600,
+    "solverBudgetExhausted": false,
+    "lastObservedSeconds": 3126.112124922,
+    "lastObservedIterations": 1906550,
+    "lastObservedPhase": "route_shared_layers",
+    "returnedOutput": false,
+    "finalSolverReportAvailable": false,
+    "acceptedFileWritten": false,
+    "runtimeInputUnchangedAfterInterruption": null,
+    "inputSha256Before": "fd0050cc1e3323d862be324fedc456cacaf195e81550dc1bccf574d69b365e5d",
+    "sourceFilesAfterRestartMatchOriginalGitTree": true,
+    "sourceFilesVerifiedAfterRestart": 920,
+    "interruptionEvidenceSha256": "1b5466f1603e23e741beac3b2061212a601136828d913089b130984c3f35b90e",
+    "nativePadObstacles": 854,
+    "runtimePadPreservationVerified": null
+  },
+  "publicationPolicy": "Only the five independently accepted and visually inspected PNGs are referenced. No failed-route geometry, provisional snapshots or private candidate pools are included.",
+  "benchmarkRunComplete": true
+}

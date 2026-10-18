@@ -1,23 +1,65 @@
 import { CopperConflictIndex } from "./copper-conflict-index"
+import { criticalSurfaceGridOrigins } from "./critical-surface-grid-origins"
 import { generatedEscapeHolesConflict } from "./expanded-signal-sites"
 import type { FlexibleSignalState } from "./flexible-signal-state"
 import { GridHistoryProjector } from "./grid-visibility"
 import { VectorScene } from "./vector-scene"
-import { distance, segmentDistance } from "./geometry"
+import { distance, length, segmentDistance } from "./geometry"
+import { maximumCarrierLength } from "./route-lengths"
 import { joinSignalEscapes } from "./join-signal-escapes"
+import { minimizeSignalCandidateConflicts } from "./minimize-signal-candidate-conflicts"
+import { improveSignalCandidateConflicts } from "./improve-signal-candidate-conflicts"
+import { rankSignalConflictPairs } from "./select-signal-conflict-pair"
 import {
   routeSurfaceBridge,
   surfaceBridgeEligible,
   type SurfaceBridgeOptions,
   type SurfaceBridgeRoute,
 } from "./route-surface-bridge"
+import { routeSurfaceViaAttachments } from "./route-surface-via-attachments"
 import { solveSignalCandidatePool } from "./solve-signal-candidate-pool"
 import type { Connection, SimpleRouteJson, Trace, Wire } from "./types"
 import { fixedCopper, type Copper } from "./vector-scene"
 
 export interface SurfaceNegotiationOptions {
+  onProgress?: (progress: SurfaceNegotiationProgress) => void
+  /** Diagnostic-only complete assignments may still contain physical
+   * conflicts. They are not accepted routing output or benchmark fixtures. */
+  onProvisionalCheckpoint?: (
+    state: FlexibleSignalState,
+    conflictCount: number,
+  ) => void
+  onCandidatePoolGraph?: (graph: SurfaceCandidatePoolGraph) => void
+  /** Search envelope policy only; original board bounds and outline remain hard. */
+  minimumSearchPadding?: number
+  surfaceGridStep?: number
+  nonPreferredLayerCost?: number
+  /** Retain the board lattice first, then try bounded phases for a failed
+   * search through narrow channels in hard copper. */
+  criticalGridOrigins?: boolean
+  /** Supplement whole-pad paths with independently placed native via sites;
+   * the two endpoint barrels and body transitions still total at most four. */
+  endpointViaAttachments?: boolean
+  /** Retain the cost of previously contested corridors across reroutes. */
+  congestionHistory?: boolean
+  /** Weighted A* is a candidate-search heuristic; hard physical and length
+   * validation remains unchanged. One retains the shortest-path heuristic. */
+  heuristicWeight?: number
+  /** Generate domain alternatives against one temporarily hard ordinary
+   * neighbor, while all supplied and paired copper remains hard throughout. */
+  hardNeighborRouting?: boolean
+  maxHardNeighbors?: number
+  /** When an exploratory route hits a currently clear signal, generate its
+   * replacement against that proposal before minimizing the candidate pool. */
+  rerouteNearbyClearSignals?: boolean
   maxRounds?: number
+  /** Try a small atomic repair after a full stagnant outer-surface sweep.
+   * Failed probes retain candidate domains and resume negotiated history. */
+  earlyClosure?: boolean
   maxExpansions?: number
+  /** First candidates can use a cheaper provisional soft-copper search;
+   * later reroutes retain the full negotiated expansion budget. */
+  maxInitialSoftExpansions?: number
   maxInitialExpansions?: number
   maxClosureExpansions?: number
   maxDomainCandidates?: number
@@ -27,7 +69,32 @@ export interface SurfaceNegotiationOptions {
   maxClosureNeighbors?: number
   maxClosureFragments?: number
   maxUntimedVias?: number
+  /** Timing checks include every owned approach; permit additional surface
+   * transitions when a bus lane cannot fit through a single carrier segment. */
+  maxTimedVias?: 2 | 4
   frozenConnectionNames?: ReadonlySet<string>
+}
+
+export interface SurfaceNegotiationProgress {
+  stage: "initial" | "negotiate" | "closure" | "complete"
+  connectionName: string
+  hardNeighbor?: string
+  hardNeighbors?: string[]
+  routedSignals: number
+  requestedSignals: number
+  candidates: number
+  mutuallyClearSignals: number
+  conflicts: number
+  round: number
+}
+
+export interface SurfaceCandidatePoolGraph {
+  routingAccepted: false
+  conflicts: number
+  connectionNames: string[]
+  domains: number[][]
+  current: number[]
+  incompatiblePairs: Array<[number, number]>
 }
 
 interface Candidate extends SurfaceBridgeRoute {
@@ -117,6 +184,8 @@ export function* negotiateSurfaceRoutes(
           !owners.includes(trace.source_trace_id ?? ""),
       )
     return (
+      length(value.joined.route) <=
+        maximumCarrierLength(native, connection.name) + 1e-8 &&
       !value.joined.route.some(
         (point) =>
           point.route_type === "via" &&
@@ -174,10 +243,56 @@ export function* negotiateSurfaceRoutes(
     if (domains[index].length > (options.maxDomainCandidates ?? 24))
       domains[index].splice(1, 1)
   }
-  const useHistory =
+  const innerOnly =
     targets.length > 0 &&
     native.allowedLayers?.length === 1 &&
     /^inner\d+$/.test(native.allowedLayers[0])
+  const sharedNativeSurface =
+    targets.length > 0 &&
+    targets.every((target) =>
+      target.pointsToConnect.every(
+        (point) => point.layer === targets[0].pointsToConnect[0].layer,
+      ),
+    )
+  const useHistory =
+    sharedNativeSurface && (innerOnly || options.congestionHistory === true)
+  const fineGridStep = Math.min(0.05, native.minTraceWidth),
+    fullSearchPadding = Math.max(
+      native.bounds.maxX - native.bounds.minX,
+      native.bounds.maxY - native.bounds.minY,
+    ),
+    searchPaddings = [
+      ...new Set(
+        [4, 8, 16, Math.max(16, fullSearchPadding)].map((padding) =>
+          Math.max(padding, options.minimumSearchPadding ?? 4),
+        ),
+      ),
+    ],
+    windowRounds = Math.max(1, Math.ceil(targets.length / 3)),
+    searchWindow = (round: number): SurfaceBridgeOptions =>
+      innerOnly
+        ? {}
+        : {
+            gridStep:
+              options.surfaceGridStep ??
+              (targets.length > 24 ? 0.1 : undefined),
+            searchPadding:
+              searchPaddings[
+                Math.min(
+                  searchPaddings.length - 1,
+                  Math.floor(round / windowRounds),
+                )
+              ],
+            maxGridCells: 4000000,
+          }
+  const historyLayers = targets.length
+    ? [
+        targets[0].pointsToConnect[0].layer,
+        native.allowedLayers?.find(
+          (layer) => layer !== targets[0].pointsToConnect[0].layer,
+        ),
+      ]
+    : []
   const historyProjector = useHistory
     ? new GridHistoryProjector(
         new VectorScene(native, targets[0], native.minTraceWidth, hardCopper),
@@ -202,10 +317,54 @@ export function* negotiateSurfaceRoutes(
       options.maxCandidateSearchNodes ?? 50000,
       options.maxSupportChecks ?? 500000,
     )
+  const report = (
+    stage: SurfaceNegotiationProgress["stage"],
+    index: number,
+    round: number,
+    conflicts = 0,
+    hardNeighbors: number[] = [],
+  ) => {
+    if (!options.onProgress) return
+    const remaining = current.flatMap((value, index) => (value ? [index] : [])),
+      degrees = new Uint16Array(current.length)
+    let currentConflicts = 0
+    for (const [at, first] of remaining.entries())
+      for (const second of remaining.slice(at + 1))
+        if (!compatible(current[first]!, current[second]!)) {
+          currentConflicts++
+          degrees[first]++
+          degrees[second]++
+        }
+    const independent: number[] = []
+    for (const index of remaining.sort((a, b) => degrees[a] - degrees[b]))
+      if (
+        independent.every((other) =>
+          compatible(current[index]!, current[other]!),
+        )
+      )
+        independent.push(index)
+    options.onProgress({
+      stage,
+      connectionName: targets[index]?.name ?? "",
+      hardNeighbor: hardNeighbors.length
+        ? targets[hardNeighbors[0]].name
+        : undefined,
+      hardNeighbors: hardNeighbors.length
+        ? hardNeighbors.map((at) => targets[at].name)
+        : undefined,
+      routedSignals: current.filter(Boolean).length,
+      requestedSignals: targets.length,
+      candidates: domains.reduce((sum, domain) => sum + domain.length, 0),
+      mutuallyClearSignals: independent.length,
+      conflicts: Math.max(conflicts, currentConflicts),
+      round,
+    })
+  }
   const preferredVias = (index: number): 2 | 4 =>
-    frozen.size > paired.size &&
-    !timed.has(targets[index].name) &&
-    (options.maxUntimedVias ?? 4) >= 4
+    (timed.has(targets[index].name) && (options.maxTimedVias ?? 2) >= 4) ||
+    (frozen.size > paired.size &&
+      !timed.has(targets[index].name) &&
+      (options.maxUntimedVias ?? 4) >= 4)
       ? 4
       : 2
   const compose = (selected: Candidate[]): FlexibleSignalState => {
@@ -234,12 +393,36 @@ export function* negotiateSurfaceRoutes(
       },
     }
   }
+  const checkpoint = (selected: Candidate[], conflictCount: number) => {
+    options.onProvisionalCheckpoint?.(compose(selected), conflictCount)
+    if (!options.onCandidatePoolGraph) return
+    const choices = domains.map((domain, index) =>
+      domain.includes(selected[index]) ? domain : [...domain, selected[index]],
+    )
+    const incompatiblePairs: Array<[number, number]> = []
+    for (let first = 0; first < choices.length; first++)
+      for (let second = first + 1; second < choices.length; second++)
+        for (const a of choices[first])
+          for (const b of choices[second])
+            if (!compatible(a, b)) incompatiblePairs.push([a.id, b.id])
+    options.onCandidatePoolGraph({
+      routingAccepted: false,
+      conflicts: conflictCount,
+      connectionNames: targets.map((target) => target.name),
+      domains: choices.map((domain) => domain.map((value) => value.id)),
+      current: selected.map((value) => value.id),
+      incompatiblePairs,
+    })
+  }
   function* search(
     index: number,
     input: SimpleRouteJson,
     soft: Trace[],
     settings: SurfaceBridgeOptions,
     reverse = false,
+    endpointFirst = false,
+    attachmentBudget: "early" | "closure" = "early",
+    supplementalDomains = true,
   ): Generator<void, Candidate | null> {
     const key = JSON.stringify([
       index,
@@ -247,7 +430,15 @@ export function* negotiateSurfaceRoutes(
       soft.map(traceId),
       settings,
       reverse,
+      endpointFirst,
+      attachmentBudget,
+      supplementalDomains,
       historyEpoch,
+      options.heuristicWeight,
+      options.nonPreferredLayerCost,
+      options.criticalGridOrigins,
+      options.endpointViaAttachments,
+      domains[index].map((value) => value.id),
     ])
     if (searches.has(key)) return searches.get(key)!
     const connection = targets[index],
@@ -257,12 +448,73 @@ export function* negotiateSurfaceRoutes(
             pointsToConnect: [...connection.pointsToConnect].reverse(),
           }
         : connection
-    const result = yield* routeSurfaceBridge(input, reversed, {
-      gridStep: useHistory ? 0.1 : undefined,
+    const bridgeSettings: SurfaceBridgeOptions = {
+      gridStep: innerOnly ? 0.1 : undefined,
+      heuristicWeight: options.heuristicWeight,
+      nonPreferredLayerCost: options.nonPreferredLayerCost,
       ...settings,
       history,
       softTraces: soft,
-    })
+    }
+    const allowAttachments =
+        supplementalDomains &&
+        !innerOnly &&
+        settings.maxVias === 4 &&
+        options.endpointViaAttachments !== false &&
+        (settings.maxExpansions ?? 1) > 0,
+      attachmentSettings = {
+        ...bridgeSettings,
+        candidateEscapes: [
+          // A newly frozen obstacle can invalidate the old body while one of
+          // its generated native approaches remains a useful legal domain.
+          ...previous.escapes.filter(
+            (escape) => escape.connection_name === connection.name,
+          ),
+          ...domains[index].flatMap((value) => value.escapes),
+          ...(current[index] && !domains[index].includes(current[index]!)
+            ? current[index]!.escapes
+            : []),
+        ],
+        heuristicWeight: 1,
+        maxAttachmentPairs: attachmentBudget === "early" ? 8 : 16,
+        maxExpansions: Math.min(
+          settings.maxExpansions ?? 200000,
+          attachmentBudget === "early" ? 25000 : 200000,
+        ),
+      }
+    let result =
+      endpointFirst && allowAttachments
+        ? yield* routeSurfaceViaAttachments(input, reversed, attachmentSettings)
+        : null
+    if (!result)
+      result = yield* routeSurfaceBridge(input, reversed, bridgeSettings)
+    if (!result && allowAttachments && !endpointFirst)
+      result = yield* routeSurfaceViaAttachments(
+        input,
+        reversed,
+        attachmentSettings,
+      )
+    if (
+      !result &&
+      supplementalDomains &&
+      !innerOnly &&
+      !settings.gridOrigin &&
+      options.criticalGridOrigins !== false &&
+      (settings.maxExpansions ?? 1) > 0
+    )
+      for (const gridOrigin of criticalSurfaceGridOrigins(
+        input,
+        reversed,
+        settings.gridStep ?? fineGridStep,
+      )) {
+        result = yield* routeSurfaceBridge(input, reversed, {
+          ...bridgeSettings,
+          gridOrigin,
+          maxExpansions: Math.min(settings.maxExpansions ?? 200000, 200000),
+        })
+        if (result) break
+        yield
+      }
     if (!result) {
       searches.set(key, null)
       return null
@@ -300,36 +552,73 @@ export function* negotiateSurfaceRoutes(
   }
   for (let index = 0; index < targets.length; index++) {
     if (current[index]) continue
+    report("initial", index, 0)
     const soft = current.flatMap((value, other) =>
       value && other !== index ? [value.joined] : [],
     )
     current[index] =
       (yield* search(index, hard, soft, {
+        ...searchWindow(0),
+        heuristicWeight: 1,
         maxVias: preferredVias(index),
         softPenalty: 2,
         viaPenalty: 2,
-        maxExpansions: options.maxExpansions ?? 900000,
+        maxExpansions:
+          options.maxInitialSoftExpansions ?? options.maxExpansions ?? 900000,
       })) ??
       (yield* search(index, hard, [], {
+        ...searchWindow(0),
+        ...(innerOnly ? {} : { gridStep: fineGridStep }),
+        heuristicWeight: 1,
         maxVias: preferredVias(index),
         viaPenalty: 2,
         maxExpansions: options.maxInitialExpansions ?? 1500000,
       }))
     if (
       !current[index] &&
-      !timed.has(targets[index].name) &&
-      (options.maxUntimedVias ?? 4) >= 4
+      (timed.has(targets[index].name)
+        ? (options.maxTimedVias ?? 2)
+        : (options.maxUntimedVias ?? 4)) >= 4
     )
       current[index] = yield* search(index, hard, [], {
+        ...searchWindow(0),
+        ...(innerOnly ? {} : { gridStep: fineGridStep }),
+        heuristicWeight: 1,
         maxVias: 4,
         viaPenalty: 2,
         maxExpansions: options.maxInitialExpansions ?? 1500000,
       })
+    // A local package envelope is a first search, not a routing boundary.
+    // Preserve the board-wide escape when an obstacle fences both surfaces.
+    if (!current[index] && !innerOnly)
+      for (const searchPadding of searchPaddings.slice(1)) {
+        current[index] = yield* search(index, hard, [], {
+          heuristicWeight: 1,
+          searchPadding,
+          maxGridCells: 4000000,
+          maxVias:
+            (timed.has(targets[index].name)
+              ? (options.maxTimedVias ?? 2)
+              : (options.maxUntimedVias ?? 4)) >= 4
+              ? 4
+              : 2,
+          viaPenalty: 2,
+          maxExpansions: options.maxInitialExpansions ?? 1500000,
+        })
+        if (current[index]) break
+        yield
+      }
     if (!current[index]) return null
+    report("initial", index, 0)
     yield
   }
   let selected = select()
-  if (selected) return compose(selected)
+  if (selected) {
+    current.splice(0, current.length, ...selected)
+    report("complete", -1, 0)
+    checkpoint(selected, 0)
+    return compose(selected)
+  }
   const edges = (values: Array<Candidate | null>) => {
     const result: Array<[number, number]> = []
     for (let first = 0; first < values.length; first++)
@@ -345,20 +634,113 @@ export function* negotiateSurfaceRoutes(
   let best = current.slice(),
     bestCount = edges(current).length,
     lastImprovement = 0
+  checkpoint(best as Candidate[], bestCount)
   const lastAttempt = new Int32Array(targets.length),
-    lastFailure = new Int32Array(targets.length)
+    lastFailure = new Int32Array(targets.length),
+    lastClearAttempt = new Int32Array(targets.length),
+    rerouteAttempts = new Uint16Array(targets.length),
+    pairAttempts = new Map<string, number>()
   lastAttempt.fill(-100)
   lastFailure.fill(-100)
+  lastClearAttempt.fill(-100)
+  const maximumClosure = Math.min(4, options.maxClosureSize ?? 3),
+    earlySweep = Math.max(1, targets.length),
+    sparseClosureCooldown = Math.max(4, Math.ceil(earlySweep / 3)),
+    lastEarlyAttempt = new Int32Array(targets.length),
+    earlyComponentAttempts = new Map<string, number>()
+  lastEarlyAttempt.fill(-earlySweep)
+  let lastEarlyClosure = -earlySweep,
+    continueEarlyClosure = false
   for (let round = 0; round < (options.maxRounds ?? 120); round++) {
     const active = edges(current),
       counts = new Uint16Array(targets.length)
-    if (!active.length) return compose(current as Candidate[])
+    if (!active.length) {
+      report("complete", -1, round)
+      checkpoint(current as Candidate[], 0)
+      return compose(current as Candidate[])
+    }
     if (active.length < bestCount) {
       best = current.slice()
       bestCount = active.length
       lastImprovement = round
+      checkpoint(best as Candidate[], bestCount)
     }
-    if (round - lastImprovement > (useHistory ? 1000 : 35)) break
+    if (
+      !innerOnly &&
+      options.earlyClosure !== false &&
+      (continueEarlyClosure ||
+        (round - lastImprovement >= earlySweep &&
+          round - lastEarlyClosure >= earlySweep) ||
+        (round >= earlySweep &&
+          round - lastEarlyClosure >= sparseClosureCooldown &&
+          active.length <= Math.ceil(earlySweep / 3) &&
+          conflictComponents(active).every(
+            (component) => component.length <= maximumClosure,
+          )))
+    ) {
+      lastEarlyClosure = round
+      continueEarlyClosure = false
+      const proposals = earlyClosureProposals(active, maximumClosure, 3)
+      if (
+        yield* repairClosure(
+          proposals.map((proposal) => proposal.release),
+          {
+            gridStep: 0.1,
+            maxVias: 4,
+            softPenalty: 20,
+            orientation: 0,
+            originVariant: 0,
+            maxExpansions: Math.min(
+              25000,
+              options.maxClosureExpansions ?? 25000,
+            ),
+            maxOrders: 2,
+            maxProposals: 3,
+            supplementalDomains: false,
+            adaptViaBudget: true,
+            onProposal: (release) => {
+              const proposal = proposals.find(
+                (value) => value.release === release,
+              )!
+              for (const index of release) lastEarlyAttempt[index] = round
+              earlyComponentAttempts.set(
+                proposal.key,
+                (earlyComponentAttempts.get(proposal.key) ?? 0) + 1,
+              )
+              return {
+                gridStep: proposal.gridStep,
+                softPenalty: proposal.softPenalty,
+              }
+            },
+            round,
+          },
+        )
+      ) {
+        const remaining = edges(current).length
+        if (!remaining) {
+          report("complete", -1, round)
+          checkpoint(current as Candidate[], 0)
+          return compose(current as Candidate[])
+        }
+        if (remaining < bestCount) {
+          best = current.slice()
+          bestCount = remaining
+          lastImprovement = round
+          checkpoint(current as Candidate[], remaining)
+        }
+        // Each follow-up must remove another global edge. If it cannot,
+        // resume history with the same domains instead of abandoning this seed.
+        continueEarlyClosure = true
+        yield
+        continue
+      }
+    }
+    const plateauLimit = useHistory
+      ? 1000
+      : !innerOnly && options.earlyClosure !== false
+        ? Math.max(35, earlySweep * 2)
+        : 35
+    if (round - lastImprovement > plateauLimit) break
     for (const [first, second] of active) {
       if (history && historyProjector) {
         const hit = conflicts.firstConflict(
@@ -367,12 +749,8 @@ export function* negotiateSurfaceRoutes(
           clearance - 1e-8,
         )
         if (hit) {
-          const plane =
-            hit[0].layer === targets[0].pointsToConnect[0].layer ? 0 : 1
-          if (
-            hit[0].layer === targets[0].pointsToConnect[0].layer ||
-            hit[0].layer === native.allowedLayers![0]
-          )
+          const plane = historyLayers.indexOf(hit[0].layer)
+          if (plane >= 0)
             historyProjector.penalizeIntersection(
               history.values[plane],
               hit[0].a,
@@ -381,7 +759,7 @@ export function* negotiateSurfaceRoutes(
               hit[1].b,
               hit[0].radius + hit[1].radius + clearance,
               true,
-              2,
+              innerOnly ? 2 : 0.3 / Math.max(1, targets.length),
             )
         }
       }
@@ -403,78 +781,328 @@ export function* negotiateSurfaceRoutes(
       choices = [...targets.keys()]
         .filter((index) => counts[index])
         .sort((first, second) => lastFailure[first] - lastFailure[second])
-    const index = choices[0]
+    let index = choices[0],
+      hardNeighbor: number | undefined,
+      hardNeighbors: number[] = []
+    if (options.hardNeighborRouting && round % 3 === 2) {
+      const proposal = rankSignalConflictPairs(
+        domains,
+        current as Candidate[],
+        compatible,
+        options.maxSupportChecks ?? 10000,
+      )
+        .sort(
+          (a, b) =>
+            Number(b.unsupported) - Number(a.unsupported) ||
+            Math.max(...b.indices.map((at) => counts[at])) -
+              Math.max(...a.indices.map((at) => counts[at])),
+        )
+        .find(
+          (pair) =>
+            (pair.unsupported ||
+              round - lastImprovement >= Math.max(2, windowRounds / 2)) &&
+            pair.indices.some((at) => round - lastFailure[at] >= 15),
+        )
+      if (proposal) {
+        const key = proposal.indices.join(":"),
+          attempt = pairAttempts.get(key) ?? 0,
+          ordered = [...proposal.indices].sort(
+            (a, b) =>
+              counts[b] - counts[a] ||
+              domains[a].length - domains[b].length ||
+              lastAttempt[a] - lastAttempt[b],
+          ),
+          preferred = ordered[attempt % 2],
+          chosen =
+            round - lastFailure[preferred] >= 15
+              ? preferred
+              : ordered[1 - (attempt % 2)]
+        index = chosen
+        hardNeighbor = proposal.indices.find((at) => at !== chosen)!
+        pairAttempts.set(key, attempt + 1)
+        const neighbors = [...targets.keys()]
+            .filter(
+              (at) =>
+                at !== index && !compatible(current[index]!, current[at]!),
+            )
+            .sort((a, b) => counts[b] - counts[a]),
+          limits = [
+            2,
+            Math.max(2, Math.ceil(neighbors.length / 2)),
+            neighbors.length,
+          ],
+          limit = Math.min(
+            options.maxHardNeighbors ?? 1,
+            limits[Math.floor(rerouteAttempts[index] / 2) % limits.length],
+          ),
+          others = neighbors.filter((at) => at !== hardNeighbor),
+          offset = others.length ? attempt % others.length : 0
+        hardNeighbors = [
+          hardNeighbor,
+          ...others.slice(offset),
+          ...others.slice(0, offset),
+        ].slice(0, Math.max(1, limit))
+      }
+    }
+    report("negotiate", index, round, active.length, hardNeighbors)
     lastAttempt[index] = round
-    const value = yield* search(
-      index,
-      hard,
-      current.flatMap((value, other) =>
-        value && other !== index ? [value.joined] : [],
+    // Reversing the search explores a different native attachment first and
+    // breaks the persistent preference for one package's manufactured sites.
+    const attempt = rerouteAttempts[index]++,
+      reverse = attempt % 2 === 0,
+      endpointFirst =
+        !innerOnly &&
+        options.endpointViaAttachments !== false &&
+        preferredVias(index) === 4 &&
+        round - lastImprovement >= Math.max(4, windowRounds / 2) &&
+        attempt % 3 === 2
+    const routingInput = !hardNeighbors.length
+        ? hard
+        : {
+            ...hard,
+            traces: [
+              ...hard.traces!,
+              ...hardNeighbors.map((at) => current[at]!.joined),
+            ],
+          },
+      soft = current.flatMap((value, other) =>
+        value && other !== index && !hardNeighbors.includes(other)
+          ? [value.joined]
+          : [],
       ),
-      {
+      searchSettings: SurfaceBridgeOptions = {
+        ...searchWindow(round + (hardNeighbors.length ? windowRounds : 0)),
         maxVias: preferredVias(index),
         softPenalty: Math.min(300, 5 + round * 2),
         viaPenalty: 2,
         maxExpansions: options.maxExpansions ?? 900000,
-      },
+      }
+    let value = yield* search(
+      index,
+      routingInput,
+      soft,
+      searchSettings,
+      reverse,
+      endpointFirst,
     )
-    if (value) {
+    if (
+      !value &&
+      !innerOnly &&
+      (searchSettings.gridStep ?? fineGridStep) > fineGridStep
+    )
+      value = yield* search(
+        index,
+        routingInput,
+        soft,
+        { ...searchSettings, gridStep: fineGridStep },
+        reverse,
+        endpointFirst,
+      )
+    if (value && hardNeighbors.every((at) => compatible(value, current[at]!))) {
       const after = current.filter(
         (other, otherIndex) =>
           other && otherIndex !== index && !compatible(value, other),
       ).length
       if (after >= counts[index]) lastFailure[index] = round
       current[index] = value
+      // A useful new escape can trade an existing crossing for a clear
+      // neighbor's landing. Generate the neighbor's corresponding replacement
+      // before coordinate minimization restores the old target route. The
+      // proposal is hard only for this candidate search; supplied copper and
+      // paired rails remain hard in every search.
+      const blocker = options.rerouteNearbyClearSignals
+        ? [...targets.keys()]
+            .filter(
+              (at) =>
+                at !== index &&
+                !counts[at] &&
+                round - lastClearAttempt[at] >= 14 &&
+                !compatible(value!, current[at]!),
+            )
+            .sort((a, b) => lastClearAttempt[a] - lastClearAttempt[b])[0]
+        : undefined
+      if (blocker !== undefined) {
+        lastClearAttempt[blocker] = round
+        report("negotiate", blocker, round, edges(current).length, [index])
+        const replacementInput: SimpleRouteJson = {
+            ...hard,
+            traces: [...hard.traces!, value.joined],
+          },
+          replacementSoft = current.flatMap((other, at) =>
+            other && at !== index && at !== blocker ? [other.joined] : [],
+          ),
+          replacementSettings: SurfaceBridgeOptions = {
+            ...searchWindow(round + windowRounds),
+            maxVias: preferredVias(blocker),
+            viaPenalty: 2,
+            softPenalty: searchSettings.softPenalty,
+            maxExpansions: Math.min(options.maxExpansions ?? 900000, 200000),
+          },
+          replacementReverse = rerouteAttempts[blocker]++ % 2 === 0
+        let replacement = yield* search(
+          blocker,
+          replacementInput,
+          replacementSoft,
+          replacementSettings,
+          replacementReverse,
+          endpointFirst,
+        )
+        if (
+          !replacement &&
+          !innerOnly &&
+          (replacementSettings.gridStep ?? fineGridStep) > fineGridStep
+        )
+          replacement = yield* search(
+            blocker,
+            replacementInput,
+            replacementSoft,
+            { ...replacementSettings, gridStep: fineGridStep },
+            replacementReverse,
+            endpointFirst,
+          )
+        if (replacement && compatible(value, replacement))
+          current[blocker] = replacement
+      }
     } else lastFailure[index] = round
     if (round % 3 === 0) {
       selected = select()
-      if (selected) return compose(selected)
+      if (selected) {
+        current.splice(0, current.length, ...selected)
+        report("complete", -1, round)
+        checkpoint(selected, 0)
+        return compose(selected)
+      }
+      const single = minimizeSignalCandidateConflicts(
+        domains,
+        current as Candidate[],
+        compatible,
+      )
+      current.splice(
+        0,
+        current.length,
+        ...improveSignalCandidateConflicts(domains, single, compatible),
+      )
     }
     yield
   }
+  const finalConflicts = edges(current).length
+  if (!finalConflicts) {
+    report("complete", -1, options.maxRounds ?? 120)
+    checkpoint(current as Candidate[], 0)
+    return compose(current as Candidate[])
+  }
+  if (finalConflicts < bestCount) {
+    best = current.slice()
+    bestCount = finalConflicts
+    checkpoint(best as Candidate[], finalConflicts)
+  }
   current.splice(0, current.length, ...best)
-  const maximumClosure = Math.min(3, options.maxClosureSize ?? 3)
   while (edges(current).length) {
-    const active = edges(current),
-      component = conflictComponents(active)[0]
-    if (component.length > maximumClosure) {
-      let repaired = false,
-        attempts = 0
-      for (const fragment of closureFragments(
-        component,
-        active,
-        maximumClosure,
-      )) {
-        if (++attempts > (options.maxClosureFragments ?? 12)) break
-        if (yield* repairClosure(fragment)) {
-          repaired = true
-          break
-        }
-      }
-      if (!repaired || edges(current).length >= active.length) return null
-      continue
+    const active = edges(current)
+    if (active.length < bestCount) {
+      bestCount = active.length
+      checkpoint(current as Candidate[], bestCount)
     }
-    const repaired = yield* repairClosure(component)
-    if (!repaired && component.length < maximumClosure) {
-      const neighbors = closureNeighbors(component)
-      let expanded = false
-      for (const neighbor of neighbors.slice(
-        0,
-        options.maxClosureNeighbors ?? 4,
-      )) {
-        if (yield* repairClosure([...component, neighbor])) {
-          expanded = true
-          break
+    let progress = false
+    // An unroutable component must not hide independent repairs elsewhere.
+    // Restart only after a strict global reduction, so each successful sweep
+    // is finite and can unlock an earlier blocked component.
+    const internalConflicts = (component: number[]) =>
+        active.filter(
+          ([a, b]) => component.includes(a) && component.includes(b),
+        ).length,
+      components = conflictComponents(active).sort(
+        (a, b) =>
+          internalConflicts(b) - internalConflicts(a) || b.length - a.length,
+      ),
+      proposals: number[][] = [],
+      seenProposals = new Set<string>(),
+      addProposal = (component: number[]) => {
+        const key = [...component].sort((a, b) => a - b).join(":")
+        if (!seenProposals.has(key)) {
+          seenProposals.add(key)
+          proposals.push(component)
         }
       }
-      if (!expanded) return null
-    } else if (!repaired) return null
-    if (edges(current).length >= active.length) return null
+    for (const component of components)
+      if (component.length <= maximumClosure) addProposal(component)
+      else {
+        let attempts = 0
+        for (const fragment of closureFragments(
+          component,
+          active,
+          maximumClosure,
+        )) {
+          if (++attempts > (options.maxClosureFragments ?? 12)) break
+          addProposal(fragment)
+        }
+      }
+    // Release nearby blockers as atomic members before refining the same
+    // unsuccessful smaller closure. A four-member attempt can release two
+    // otherwise clear neighbors together, with bounded combination count.
+    for (let added = 1; added <= Math.min(2, maximumClosure - 1); added++)
+      for (const component of components) {
+        if (component.length + added > maximumClosure) continue
+        const neighbors = closureNeighbors(
+          component,
+          maximumClosure >= 4,
+        ).slice(0, options.maxClosureNeighbors ?? 4)
+        let attempts = 0
+        for (const group of combinations(neighbors, added)) {
+          if (++attempts > (options.maxClosureFragments ?? 12)) break
+          addProposal([...component, ...group])
+        }
+      }
+    proposals.sort(
+      (a, b) =>
+        internalConflicts(b) - internalConflicts(a) || a.length - b.length,
+    )
+    closureSweep: for (const gridStep of [0.1, 0.05, 0.025])
+      for (const maxVias of [4, 2] as const)
+        for (let orientation = 0; orientation < 4; orientation++)
+          for (const { originVariant, softPenalty } of closurePolicies(maxVias))
+            for (const proposal of proposals) {
+              if (
+                (yield* repairClosure([proposal], {
+                  gridStep,
+                  maxVias,
+                  softPenalty,
+                  orientation,
+                  originVariant,
+                })) &&
+                edges(current).length < active.length
+              ) {
+                progress = true
+                break closureSweep
+              }
+            }
+    if (!progress) return null
   }
   if (edges(current).length) return null
+  report("complete", -1, 0)
+  checkpoint(current as Candidate[], 0)
   return compose(current as Candidate[])
 
-  function closureNeighbors(component: number[]) {
+  function closurePolicies(maxVias: 2 | 4) {
+    const endpoint =
+        !innerOnly && maxVias === 4 && options.endpointViaAttachments !== false,
+      result = [{ originVariant: 0, softPenalty: 20 }]
+    // Atomic members have all been released. Their old bodies should not cage
+    // independently placed endpoint vias before any new body has been built.
+    if (endpoint) result.push({ originVariant: -1, softPenalty: 0 })
+    for (const softPenalty of [0, 2, 200])
+      result.push({ originVariant: 0, softPenalty })
+    if (endpoint)
+      for (const softPenalty of [20, 2, 200])
+        result.push({ originVariant: -1, softPenalty })
+    if (!innerOnly && options.criticalGridOrigins !== false)
+      for (const originVariant of [1, 2, 3, 4])
+        for (const softPenalty of [0, 20])
+          result.push({ originVariant, softPenalty })
+    return result
+  }
+
+  function closureNeighbors(component: number[], preferNative = false) {
     const blocked = component.flatMap((first, at) =>
         component.slice(at + 1).flatMap((second) => {
           const hit = conflicts.firstConflict(
@@ -485,7 +1113,7 @@ export function* negotiateSurfaceRoutes(
           return hit ?? []
         }),
       ),
-      distance = (index: number) =>
+      copperDistance = (index: number) =>
         Math.min(
           ...current[index]!.copper.flatMap((copper) =>
             blocked
@@ -497,13 +1125,158 @@ export function* negotiateSurfaceRoutes(
                   other.radius,
               ),
           ),
-        )
+        ),
+      padDistance = (index: number) =>
+        Math.min(
+          ...targets[index].pointsToConnect.flatMap((point) =>
+            component.flatMap((other) =>
+              targets[other].pointsToConnect.map((terminal) =>
+                distance(point, terminal),
+              ),
+            ),
+          ),
+        ),
+      score = (index: number) =>
+        preferNative
+          ? Math.min(copperDistance(index), padDistance(index))
+          : copperDistance(index)
     return [...targets.keys()]
       .filter((index) => !component.includes(index))
-      .sort((first, second) => distance(first) - distance(second))
+      .sort((first, second) => score(first) - score(second))
   }
 
-  function* repairClosure(component: number[]): Generator<void, boolean> {
+  interface ClosureSettings {
+    gridStep: number
+    maxVias: 2 | 4
+    softPenalty: number
+    orientation: number
+    originVariant: number
+    maxExpansions?: number
+    maxOrders?: number
+    maxProposals?: number
+    supplementalDomains?: boolean
+    adaptViaBudget?: boolean
+    onProposal?: (
+      component: number[],
+    ) => { gridStep: number; softPenalty: number } | void
+    round?: number
+  }
+
+  function earlyClosureProposals(
+    active: Array<[number, number]>,
+    maximum: number,
+    limit: number,
+  ): Array<{
+    release: number[]
+    key: string
+    gridStep: number
+    softPenalty: number
+  }> {
+    const components = conflictComponents(active),
+      busy = new Set(active.flat()),
+      internal = (component: number[]) =>
+        active.filter(
+          ([a, b]) => component.includes(a) && component.includes(b),
+        ).length,
+      lastAttempt = (component: number[]) =>
+        Math.max(...component.map((index) => lastEarlyAttempt[index])),
+      proposals: Array<{
+        release: number[]
+        key: string
+        gridStep: number
+        softPenalty: number
+      }> = []
+    components.sort(
+      (a, b) =>
+        lastAttempt(a) - lastAttempt(b) ||
+        internal(b) - internal(a) ||
+        Math.min(...a) - Math.min(...b),
+    )
+    // Give distinct, least-recently attempted components a turn. A component
+    // that splits or merges inherits its members' newest attempt timestamp.
+    for (const component of components) {
+      if (proposals.length >= limit) break
+      const key = [...component].sort((a, b) => a - b).join(":"),
+        attempt = earlyComponentAttempts.get(key) ?? 0
+      let release = component
+      if (component.length > maximum) {
+        const fragments = closureFragments(component, active, maximum),
+          // Revisit each fragment with both soft costs before advancing the
+          // pair, so fragment and policy periods cannot hide a combination.
+          skip =
+            (Math.floor(attempt / 8) * 2 + Math.floor((attempt % 4) / 2)) %
+            Math.max(1, options.maxClosureFragments ?? 12)
+        let next = fragments.next()
+        if (next.done) continue
+        const first = next.value
+        for (let index = 0; index < skip && !next.done; index++)
+          next = fragments.next()
+        release = next.done ? first : next.value
+      } else if (
+        attempt % 4 >= 2 &&
+        component.length < maximum &&
+        (options.maxClosureNeighbors ?? 4) > 0
+      ) {
+        const neighbor = closureNeighbors(component, maximum >= 4).find(
+          (index) => !busy.has(index),
+        )
+        if (neighbor !== undefined) release = [...component, neighbor]
+      }
+      // Give the same release both lattice resolutions before expanding its
+      // neighborhood. A narrow legal corridor can be absent from the coarse
+      // lattice even when its component already has the right membership.
+      // On the next four visits, release the old partners' congestion cost as
+      // well: their discarded bodies must not cage an otherwise clear tuple.
+      proposals.push({
+        release,
+        key,
+        gridStep: attempt % 2 ? Math.min(0.1, fineGridStep) : 0.1,
+        softPenalty: Math.floor(attempt / 4) % 2 ? 0 : 20,
+      })
+    }
+    return proposals
+  }
+
+  function* repairClosure(
+    proposals: number[][],
+    settings: ClosureSettings,
+  ): Generator<void, boolean> {
+    const before = current.slice(),
+      beforeCount = edges(current).length
+    for (const component of proposals.slice(0, settings.maxProposals)) {
+      const override = settings.onProposal?.(component)
+      report("closure", component[0], settings.round ?? 0, beforeCount)
+      const maxVias =
+        settings.adaptViaBudget &&
+        settings.maxVias === 4 &&
+        !component.some(
+          (index) =>
+            (timed.has(targets[index].name)
+              ? (options.maxTimedVias ?? 2)
+              : (options.maxUntimedVias ?? 4)) >= 4,
+        )
+          ? 2
+          : settings.maxVias
+      if (
+        (yield* repairClosureProposal(component, {
+          ...settings,
+          ...override,
+          maxVias,
+        })) &&
+        edges(current).length < beforeCount
+      )
+        return true
+      // Candidate generation remains useful even when the atomic assignment
+      // makes no progress. Keep domains, costs and history; restore only choices.
+      current.splice(0, current.length, ...before)
+    }
+    return false
+  }
+
+  function* repairClosureProposal(
+    component: number[],
+    settings: ClosureSettings,
+  ): Generator<void, boolean> {
     const stable = current.flatMap((value, index) =>
         value && !component.includes(index) ? [value] : [],
       ),
@@ -511,62 +1284,93 @@ export function* negotiateSurfaceRoutes(
         ...hard,
         traces: [...hard.traces!, ...stable.map((value) => value.joined)],
       }
-    const viaLimits: Array<2 | 4> =
-      component.some((index) => !timed.has(targets[index].name)) &&
-      (options.maxUntimedVias ?? 4) >= 4
-        ? [4, 2]
-        : [2]
-    for (const maxVias of viaLimits)
-      for (const order of permutations(component))
-        for (const gridStep of [0.05, 0.025])
-          for (const orientation of orientations(component.length, maxVias > 2))
-            for (const softPenalty of [0, 2, 20, 200]) {
-              const built: Candidate[] = []
-              let failed = false
-              for (const [at, index] of order.entries()) {
-                const value = yield* search(
-                  index,
-                  {
-                    ...input,
-                    traces: [
-                      ...input.traces,
-                      ...built.map((value) => value.joined),
-                    ],
-                  },
-                  order.slice(at + 1).map((other) => current[other]!.joined),
-                  {
-                    gridStep,
-                    maxGridCells: 4000000,
-                    maxVias: timed.has(targets[index].name) ? 2 : maxVias,
-                    softPenalty: at ? 0 : softPenalty,
-                    viaPenalty: 2,
-                    maxExpansions: options.maxClosureExpansions ?? 2000000,
-                  },
-                  orientation[at],
-                )
-                if (
-                  !value ||
-                  [...stable, ...built].some(
-                    (other) => !compatible(value, other),
-                  )
-                ) {
-                  failed = true
-                  break
-                }
-                built.push(value)
-              }
-              if (!failed) {
-                for (const [at, index] of order.entries())
-                  current[index] = built[at]
-                return true
-              }
-              selected = select()
-              if (selected) {
-                current.splice(0, current.length, ...selected)
-                return true
-              }
-              yield
-            }
+    const permitsFour = component.some(
+      (index) =>
+        (timed.has(targets[index].name)
+          ? (options.maxTimedVias ?? 2)
+          : (options.maxUntimedVias ?? 4)) >= 4,
+    )
+    if (settings.maxVias === 4 && !permitsFour) return false
+    const { gridStep, maxVias, softPenalty } = settings,
+      orientation = [...orientations(component.length, maxVias > 2)][
+        settings.orientation
+      ]
+    if (!orientation) return false
+    let orders = 0
+    for (const order of closureOrders(component)) {
+      if (++orders > (settings.maxOrders ?? Infinity)) break
+      const gridOrigin =
+          settings.originVariant > 0
+            ? criticalSurfaceGridOrigins(input, targets[order[0]], gridStep)[
+                settings.originVariant - 1
+              ]
+            : undefined,
+        built: Candidate[] = []
+      if (settings.originVariant > 0 && !gridOrigin) continue
+      let failed = false
+      for (const [at, index] of order.entries()) {
+        const value = yield* search(
+          index,
+          {
+            ...input,
+            traces: [...input.traces, ...built.map((value) => value.joined)],
+          },
+          order.slice(at + 1).map((other) => current[other]!.joined),
+          {
+            gridStep,
+            gridOrigin: at ? undefined : gridOrigin,
+            searchPadding: innerOnly ? undefined : fullSearchPadding,
+            maxGridCells: 4000000,
+            maxVias: timed.has(targets[index].name)
+              ? Math.min(options.maxTimedVias ?? 2, maxVias)
+              : Math.min(options.maxUntimedVias ?? 4, maxVias),
+            softPenalty: at ? 0 : softPenalty,
+            viaPenalty: 2,
+            maxExpansions:
+              settings.maxExpansions ??
+              (gridStep >= 0.1
+                ? Math.min(options.maxClosureExpansions ?? 2000000, 200000)
+                : (options.maxClosureExpansions ?? 2000000)),
+          },
+          orientation[at],
+          settings.originVariant === -1,
+          "closure",
+          settings.supplementalDomains !== false,
+        )
+        if (
+          !value ||
+          [...stable, ...built].some((other) => !compatible(value, other))
+        ) {
+          failed = true
+          break
+        }
+        built.push(value)
+      }
+      if (!failed) {
+        for (const [at, index] of order.entries()) current[index] = built[at]
+        return true
+      }
+      selected = select()
+      if (selected) {
+        current.splice(0, current.length, ...selected)
+        return true
+      }
+      // An independent component may remain blocked while candidates from
+      // this failed atomic order already remove crossings elsewhere. Preserve
+      // that strict global improvement instead of requiring the entire graph
+      // to become clear in a single closure attempt.
+      const single = minimizeSignalCandidateConflicts(
+          domains,
+          current as Candidate[],
+          compatible,
+        ),
+        improved = improveSignalCandidateConflicts(domains, single, compatible)
+      if (edges(improved).length < edges(current).length) {
+        current.splice(0, current.length, ...improved)
+        return true
+      }
+      yield
+    }
     return false
   }
 }
@@ -618,6 +1422,15 @@ function* closureFragments(
         (first, second) =>
           neighbors.get(second)!.length - neighbors.get(first)!.length,
       )
+    if (limit > 3)
+      for (const group of combinations(adjacent, 3)) {
+        const fragment = [hub, ...group],
+          key = [...fragment].sort((a, b) => a - b).join(":")
+        if (!seen.has(key)) {
+          seen.add(key)
+          yield fragment
+        }
+      }
     if (limit > 2)
       for (let first = 0; first < adjacent.length; first++)
         for (const second of adjacent.slice(first + 1)) {
@@ -649,6 +1462,30 @@ function* permutations(values: number[]): Generator<number[]> {
   for (let index = 0; index < values.length; index++)
     for (const tail of permutations(values.filter((_, at) => at !== index)))
       yield [values[index], ...tail]
+}
+
+/** Larger atomic releases use a fixed-size order portfolio instead of a
+ * factorial search. Each member is tried first in both directions. */
+function* closureOrders(values: number[]): Generator<number[]> {
+  if (values.length <= 3) {
+    yield* permutations(values)
+    return
+  }
+  for (let offset = 0; offset < Math.min(values.length, 4); offset++) {
+    const order = [...values.slice(offset), ...values.slice(0, offset)]
+    yield order
+    yield [...order].reverse()
+  }
+}
+
+function* combinations(values: number[], count: number): Generator<number[]> {
+  if (!count) {
+    yield []
+    return
+  }
+  for (let index = 0; index <= values.length - count; index++)
+    for (const rest of combinations(values.slice(index + 1), count - 1))
+      yield [values[index], ...rest]
 }
 
 function* orientations(

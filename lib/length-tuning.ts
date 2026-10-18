@@ -16,11 +16,9 @@ export function tuneLengths(
     const connection = input.connections.find(
       (c) => c.name === t.connection_name,
     )!
-    // Keep the existing coupled-pair correction path unchanged. Independent
-    // lane tuning must not spend additional copper length in its via land.
-    const terminalViaCopperIsClear = t.coupledSection
-      ? (_path: Point[]) => true
-      : createTerminalViaClearanceChecker(input, t)
+    // Paired and independent corrections both need to leave the via land
+    // before spending additional length in a tuning bank.
+    const terminalViaCopperIsClear = createTerminalViaClearanceChecker(input, t)
     const width = (t.route[0] as Wire).width
     const fixedLength = fixedRouteLength(input, connection.name)
     const delta = targets.get(connection.name)! - length(t.route) - fixedLength

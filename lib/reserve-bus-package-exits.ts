@@ -1,8 +1,9 @@
 import { packageApproachRegions } from "./package-approach-regions"
 import type { Copper } from "./vector-scene"
 import type { Point, SimpleRouteJson } from "./types"
+import { distance } from "./geometry"
 
-/** Reserve one lane pitch per bus member outside exposed package terminals.
+/** Reserve one lane pitch per same-layer exit on each exposed package face.
  * These provisional straight channels guide paired corridors only. They are
  * not output copper and do not prescribe an inter-package boundary route. */
 export function reserveBusPackageExits(
@@ -27,13 +28,26 @@ export function reserveBusPackageExits(
   if (!related.length) return []
   const bus = related[0],
     names = new Set(related.flatMap((bus) => bus.connectionNames)),
-    members = input.connections.filter((c) => names.has(c.name))
+    members = input.connections.filter(
+      (c) => names.has(c.name) && c.pointsToConnect[0].layer === pairLayer,
+    )
+  if (!members.length) return []
   const regions = packageApproachRegions(input, 0),
-    layer = members[0].pointsToConnect[0].layer,
     width = bus.traceWidth ?? input.minTraceWidth
+  // packageApproachRegions retains component insertion order. Native pad
+  // ownership identifies the BGA even when a nearby support part has a closer
+  // center than the package. Generated handoffs retain the connection owner.
+  const componentIndexes = new Map(
+    [
+      ...new Set(
+        input.obstacles.flatMap((pad) =>
+          pad.componentId ? [pad.componentId] : [],
+        ),
+      ),
+    ].map((id, index) => [id, index]),
+  )
   const clearance =
     input.minTraceToPadEdgeClearance ?? input.defaultObstacleMargin ?? 0.075
-  const reserve = Math.max(0, members.length - 2) * (width + clearance)
   type Face = {
     point: Point
     name: string
@@ -42,7 +56,25 @@ export function reserveBusPackageExits(
   const faces = new Map<string, Face[]>()
   for (const connection of members)
     for (const point of connection.pointsToConnect) {
-      const region = regions
+      const owners = [
+        connection.name,
+        connection.source_trace_id,
+        point.pcb_port_id,
+        point.pointId,
+      ]
+      const pad = input.obstacles
+        .filter(
+          (pad) =>
+            pad.componentId &&
+            pad.connectedTo.some((owner) => owners.includes(owner)),
+        )
+        .sort(
+          (a, b) => distance(a.center, point) - distance(b.center, point),
+        )[0]
+      const ownerIndex = pad?.componentId
+        ? componentIndexes.get(pad.componentId)
+        : undefined
+      const candidates = regions
         .map((region, index) => ({
           box: region.pads,
           index,
@@ -51,7 +83,10 @@ export function reserveBusPackageExits(
             point.y - (region.pads.minY + region.pads.maxY) / 2,
           ),
         }))
-        .sort((a, b) => a.distance - b.distance)[0]
+        .sort((a, b) => a.distance - b.distance)
+      const region =
+        candidates.find((region) => region.index === ownerIndex) ??
+        candidates[0]
       if (!region) continue
       const { box } = region
       const edge = [
@@ -67,6 +102,13 @@ export function reserveBusPackageExits(
     }
   const reservations: Copper[] = []
   for (const face of faces.values()) {
+    // Other package faces and other signal planes do not compete for this
+    // face's perpendicular escape space. Standalone pairs may not belong to
+    // the bus, so count the actual ordinary exits rather than subtracting two.
+    const reserve =
+      face.filter((member) => !pair.connectionNames.includes(member.name))
+        .length *
+      (width + clearance)
     const nearest = Math.min(...face.map((member) => member.edge.d))
     for (const { point, edge, name } of face) {
       if (pair.connectionNames.includes(name) || edge.d > nearest + width / 2)
@@ -75,7 +117,7 @@ export function reserveBusPackageExits(
         a: point,
         b: { x: point.x + edge.x * reserve, y: point.y + edge.y * reserve },
         radius: width / 2,
-        layer,
+        layer: pairLayer,
         owners: [name],
       })
     }

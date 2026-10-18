@@ -5,6 +5,7 @@ import {
 } from "@tscircuit/fanout-solver"
 import { distance, length } from "./geometry"
 import { GridVisibilitySearch } from "./grid-visibility"
+import { localDogboneInput } from "./local-dogbone-input"
 import { ownedSignalEscapes } from "./repair-bus-dogbones"
 import {
   clearanceToCopper,
@@ -53,10 +54,10 @@ export function localSignalSiteCandidates(
     for (let attempt = 0; attempt < 8; attempt++) {
       try {
         const generated = routeLocalSignalDogbones(
-          {
+          localDogboneInput({
             ...single,
             obstacles: [...single.obstacles, ...rejected],
-          } as Parameters<typeof routeLocalSignalDogbones>[0],
+          }) as Parameters<typeof routeLocalSignalDogbones>[0],
           options,
         )
         const point = generated.connections[0].pointsToConnect[end] as Terminal

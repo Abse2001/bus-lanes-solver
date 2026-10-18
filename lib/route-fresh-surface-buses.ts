@@ -11,7 +11,10 @@ import {
   findViaAwareSignalPocket,
 } from "./find-signal-site-pocket"
 import { signalLayers, type FlexibleSignalState } from "./flexible-signal-state"
-import { negotiateSignalSites } from "./negotiate-signal-sites"
+import {
+  negotiateSignalSites,
+  type SignalSiteProgress,
+} from "./negotiate-signal-sites"
 import { negotiateSurfaceRoutes } from "./negotiate-surface-routes"
 import { pairCouplingReports } from "./pair-coupling"
 import { prepareSurfaceTimingBanks } from "./prepare-surface-timing-banks"
@@ -37,6 +40,11 @@ export interface SurfaceRoutingSeed {
 export interface SurfaceSeedOptions {
   maxControlAttempts?: number
   maxControlIterations?: number
+  onProgress?: (progress: SurfaceRoutingProgress) => void
+}
+
+export type SurfaceRoutingProgress = Omit<SignalSiteProgress, "stage"> & {
+  stage: SignalSiteProgress["stage"] | "pairs" | "matching"
 }
 
 /** Choose fresh surface sites before committing independent control dogbones.
@@ -48,6 +56,7 @@ export function* routeFreshSurfaceBuses(
   originalEscapes: Trace[],
   terminalLayers: ReadonlyMap<string, string[]>,
   options: SolverOptions,
+  seedOptions: SurfaceSeedOptions = {},
 ): Generator<void, RepairedBusDogbones | null> {
   const seeds = routeFreshSurfaceSeeds(
     native,
@@ -55,6 +64,7 @@ export function* routeFreshSurfaceBuses(
     originalEscapes,
     terminalLayers,
     options,
+    seedOptions,
   )
   let next = seeds.next()
   let matchedTiming: FlexibleSignalState | undefined
@@ -201,7 +211,7 @@ export function* routeFreshSurfaceSeeds(
     ),
     traces: [...(native.traces ?? []), ...pairEscapes],
   }
-  const plans = priorityPairPlans(timingAllocation, terminalLayers)
+  const plans = priorityPairPlans(timingAllocation, terminalLayers, seedOptions)
   let plan = plans.next()
   let greatest: FlexibleSignalState | null = null
   try {
@@ -241,6 +251,7 @@ export function* routeFreshSurfaceSeeds(
           negotiateSignalSites(state, ordinaryNames, false, false, {
             allowExpandedSites: false,
             maxCandidateSearchNodes: 12000,
+            onProgress: seedOptions.onProgress,
           }),
           paired.length && !isProvisionalPairPlan(paired) ? 250000 : 1500000,
         )
@@ -282,6 +293,13 @@ export function* routeFreshSurfaceSeeds(
       // A shorter candidate may consume its own tuning corridor. Each actual
       // checkpoint is finished independently before controls occupy that space.
       for (const checkpoint of shortcuts.toReversed()) {
+        seedOptions.onProgress?.({
+          stage: "matching",
+          connectionName: "",
+          requestedSignals: timing.connections.length,
+          routedSignals: carrierCount(checkpoint),
+          siteOptions: 0,
+        })
         const finished = yield* finishSurfaceTiming(checkpoint, options)
         if (!finished) continue
         if (!greatest || carrierCount(finished) > carrierCount(greatest))
@@ -349,26 +367,38 @@ function carrierCount(state: FlexibleSignalState) {
 function* priorityPairPlans(
   allocation: SimpleRouteJson,
   terminalLayers: ReadonlyMap<string, string[]>,
+  options: SurfaceSeedOptions,
 ): Generator<Trace[] | undefined> {
   const preferred = new Map(
     allocation.connections.map((connection) => [
       connection.name,
-      [connection.pointsToConnect[0].layer],
+      [
+        ...new Set([
+          connection.pointsToConnect[0].layer,
+          ...(terminalLayers.get(connection.name) ?? []),
+        ]),
+      ],
     ]),
   )
-  yield* planSharedPairCorridors(allocation, preferred, true, {
+  const pairOptions = {
     preferPackageOnlyTuning: true,
-  })
-  if (
-    allocation.connections.some((connection) =>
-      terminalLayers
-        .get(connection.name)
-        ?.some((layer) => layer !== connection.pointsToConnect[0].layer),
-    )
-  )
-    yield* planSharedPairCorridors(allocation, terminalLayers, true, {
-      preferPackageOnlyTuning: true,
-    })
+    onProgress: (progress: {
+      connectionName: string
+      pairedSignals: number
+      candidates: number
+    }) =>
+      options.onProgress?.({
+        stage: "pairs",
+        connectionName: progress.connectionName,
+        requestedSignals: allocation.connections.length,
+        routedSignals: progress.pairedSignals,
+        siteOptions: progress.candidates,
+      }),
+  }
+  // Grow both permitted carrier domains together. Exhausting every preferred-
+  // layer topology before considering the other surface can starve an otherwise
+  // legal plan whose paired package approaches cross on the preferred layer.
+  yield* planSharedPairCorridors(allocation, preferred, true, pairOptions)
 }
 
 function scopeInput(
