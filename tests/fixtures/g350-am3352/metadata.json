@@ -348,10 +348,10 @@
   "fixedFanouts": 0,
   "fabricationReady": false,
   "filesSha256": {
-    "circuit.json": "cdb1870ae3cc8775be7027e03e1ccbb50b6c03d0186bfb5c39ab21af28dcb18c",
+    "circuit.json": "f34a5914c8730f502a1f15066745b3dc11805d8bcf4be03dc4bdc1b0bd06d72d",
     "cpu-ball-map.json": "f936e408a702a5eb42d68d2cd834d7ccefb98930eda205ac234144c0c10213df",
     "memory-byte1-top-centered-swizzled-connections.json": "6e9df46944e0ec389be0f992f4783cbf1031e080727f87f0f9f911c95f32ab50",
-    "native-input.json": "0528681387cce23a7024c9e095dfa9f1c73258bc4608829bdd80fe16c4bea882",
+    "native-input.json": "5bd8033ef48a0077a91e34bef24173cab7a87d2670a477fc1c644dd3bc1644f5",
     "ram-ball-map.json": "7998a87e977af7f9b8bbc69cc6879e9df4820778434401bc9ed4ac5c0ef6f752"
   },
   "capacitors": 125,
@@ -427,5 +427,447 @@
     },
     "originalPinMappingPreserved": true,
     "captureReplay": "The adjusted coordinates are stored in circuit.json; Core capture replay applies no additional placement translation."
+  },
+  "hardwareCorrections": {
+    "sourceCommit": "6fb21b8b11eb76299ab2cb42a975ae12bc7a2ffb",
+    "sourceFilesSha256": {
+      "circuit.json": "cdb1870ae3cc8775be7027e03e1ccbb50b6c03d0186bfb5c39ab21af28dcb18c",
+      "cpu-ball-map.json": "f936e408a702a5eb42d68d2cd834d7ccefb98930eda205ac234144c0c10213df",
+      "memory-byte1-top-centered-swizzled-connections.json": "6e9df46944e0ec389be0f992f4783cbf1031e080727f87f0f9f911c95f32ab50",
+      "native-input.json": "0528681387cce23a7024c9e095dfa9f1c73258bc4608829bdd80fe16c4bea882",
+      "ram-ball-map.json": "7998a87e977af7f9b8bbc69cc6879e9df4820778434401bc9ed4ac5c0ef6f752"
+    },
+    "references": {
+      "ddr": "https://www.ti.com/lit/ds/sprs717l/sprs717l.pdf",
+      "batterySense": "https://www.ti.com/lit/ds/symlink/tps65217.pdf"
+    },
+    "placement": {
+      "kind": "ti-ddr-support-placement-repair",
+      "sourceCommit": "6fb21b8b11eb76299ab2cb42a975ae12bc7a2ffb",
+      "adjustments": [
+        {
+          "name": "R_DDR_ZQ",
+          "sourceComponentId": "source_component_43",
+          "pcbComponentId": "pcb_component_43",
+          "before": {
+            "x": 10,
+            "y": -15
+          },
+          "after": {
+            "x": -2,
+            "y": -7.6
+          },
+          "translationMm": {
+            "x": -12,
+            "y": 7.4
+          },
+          "layer": "top",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_CPU_13",
+          "sourceComponentId": "source_component_115",
+          "pcbComponentId": "pcb_component_115",
+          "before": {
+            "x": -13.4,
+            "y": 11.8
+          },
+          "after": {
+            "x": -5.7,
+            "y": 16.5
+          },
+          "translationMm": {
+            "x": 7.7,
+            "y": 4.699999999999999
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_CPU_16",
+          "sourceComponentId": "source_component_118",
+          "pcbComponentId": "pcb_component_118",
+          "before": {
+            "x": -13.2,
+            "y": 9.8
+          },
+          "after": {
+            "x": -5.7,
+            "y": 14.7
+          },
+          "translationMm": {
+            "x": 7.499999999999999,
+            "y": 4.899999999999999
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_CPU_19",
+          "sourceComponentId": "source_component_121",
+          "pcbComponentId": "pcb_component_121",
+          "before": {
+            "x": -13.2,
+            "y": 8.2
+          },
+          "after": {
+            "x": -3.3,
+            "y": 14.7
+          },
+          "translationMm": {
+            "x": 9.899999999999999,
+            "y": 6.5
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_1",
+          "sourceComponentId": "source_component_125",
+          "pcbComponentId": "pcb_component_125",
+          "before": {
+            "x": -8,
+            "y": -3
+          },
+          "after": {
+            "x": -6,
+            "y": -4.4
+          },
+          "translationMm": {
+            "x": 2,
+            "y": -1.4000000000000004
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_2",
+          "sourceComponentId": "source_component_126",
+          "pcbComponentId": "pcb_component_126",
+          "before": {
+            "x": 8,
+            "y": -3
+          },
+          "after": {
+            "x": -3.6,
+            "y": -4.4
+          },
+          "translationMm": {
+            "x": -11.6,
+            "y": -1.4000000000000004
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_3",
+          "sourceComponentId": "source_component_127",
+          "pcbComponentId": "pcb_component_127",
+          "before": {
+            "x": -8,
+            "y": -5
+          },
+          "after": {
+            "x": -1.2,
+            "y": -4.4
+          },
+          "translationMm": {
+            "x": 6.8,
+            "y": 0.5999999999999996
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_4",
+          "sourceComponentId": "source_component_128",
+          "pcbComponentId": "pcb_component_128",
+          "before": {
+            "x": 8,
+            "y": -5
+          },
+          "after": {
+            "x": 1.2,
+            "y": -4.4
+          },
+          "translationMm": {
+            "x": -6.8,
+            "y": 0.5999999999999996
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_5",
+          "sourceComponentId": "source_component_129",
+          "pcbComponentId": "pcb_component_129",
+          "before": {
+            "x": -8,
+            "y": -7
+          },
+          "after": {
+            "x": 3.6,
+            "y": -4.4
+          },
+          "translationMm": {
+            "x": 11.6,
+            "y": 2.5999999999999996
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_6",
+          "sourceComponentId": "source_component_130",
+          "pcbComponentId": "pcb_component_130",
+          "before": {
+            "x": 8,
+            "y": -7
+          },
+          "after": {
+            "x": 6,
+            "y": -4.4
+          },
+          "translationMm": {
+            "x": -2,
+            "y": 2.5999999999999996
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_7",
+          "sourceComponentId": "source_component_131",
+          "pcbComponentId": "pcb_component_131",
+          "before": {
+            "x": -8,
+            "y": -9
+          },
+          "after": {
+            "x": -6,
+            "y": 0.4
+          },
+          "translationMm": {
+            "x": 2,
+            "y": 9.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_8",
+          "sourceComponentId": "source_component_132",
+          "pcbComponentId": "pcb_component_132",
+          "before": {
+            "x": 8,
+            "y": -9
+          },
+          "after": {
+            "x": -3.6,
+            "y": 0.4
+          },
+          "translationMm": {
+            "x": -11.6,
+            "y": 9.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_9",
+          "sourceComponentId": "source_component_133",
+          "pcbComponentId": "pcb_component_133",
+          "before": {
+            "x": -8,
+            "y": -11
+          },
+          "after": {
+            "x": -1.2,
+            "y": 0.4
+          },
+          "translationMm": {
+            "x": 6.8,
+            "y": 11.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_10",
+          "sourceComponentId": "source_component_134",
+          "pcbComponentId": "pcb_component_134",
+          "before": {
+            "x": 8,
+            "y": -11
+          },
+          "after": {
+            "x": 1.2,
+            "y": 0.4
+          },
+          "translationMm": {
+            "x": -6.8,
+            "y": 11.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_11",
+          "sourceComponentId": "source_component_135",
+          "pcbComponentId": "pcb_component_135",
+          "before": {
+            "x": -8,
+            "y": -13
+          },
+          "after": {
+            "x": 3.6,
+            "y": 0.4
+          },
+          "translationMm": {
+            "x": 11.6,
+            "y": 13.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_DDR_RAM_12",
+          "sourceComponentId": "source_component_136",
+          "pcbComponentId": "pcb_component_136",
+          "before": {
+            "x": 8,
+            "y": -13
+          },
+          "after": {
+            "x": 6,
+            "y": 0.4
+          },
+          "translationMm": {
+            "x": -2,
+            "y": 13.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_VREF_CPU",
+          "sourceComponentId": "source_component_139",
+          "pcbComponentId": "pcb_component_139",
+          "before": {
+            "x": 1.4,
+            "y": 18
+          },
+          "after": {
+            "x": -0.8,
+            "y": 14.7
+          },
+          "translationMm": {
+            "x": -2.2,
+            "y": -3.3000000000000007
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_VREF_RAM_CA",
+          "sourceComponentId": "source_component_140",
+          "pcbComponentId": "pcb_component_140",
+          "before": {
+            "x": 0,
+            "y": -10.8
+          },
+          "after": {
+            "x": -2.8,
+            "y": -6.4
+          },
+          "translationMm": {
+            "x": -2.8,
+            "y": 4.4
+          },
+          "layer": "bottom",
+          "rotation": 0
+        },
+        {
+          "name": "C_VREF_RAM_DQ",
+          "sourceComponentId": "source_component_141",
+          "pcbComponentId": "pcb_component_141",
+          "before": {
+            "x": 0,
+            "y": -7.6
+          },
+          "after": {
+            "x": 0.4,
+            "y": 2.8
+          },
+          "translationMm": {
+            "x": 0.4,
+            "y": 10.399999999999999
+          },
+          "layer": "bottom",
+          "rotation": 0
+        }
+      ],
+      "movedComponents": 19,
+      "movedPadObstacles": 38,
+      "movedPcbPorts": 38,
+      "movedNativeEndpoints": 38,
+      "sameLayerCourtyardOverlapCount": 0,
+      "cpuCenterUnchanged": {
+        "x": 0,
+        "y": 20
+      },
+      "ramCenterUnchanged": {
+        "x": 0,
+        "y": -2
+      },
+      "layersAndRotationsUnchanged": true,
+      "originalPinMappingPreserved": true
+    },
+    "batterySense": {
+      "sourcePortId": "source_port_425",
+      "sourceTraceId": "source_trace_932",
+      "pcbPortId": "pcb_port_425",
+      "netId": "source_net_3",
+      "netName": "VBAT",
+      "connectionRequirement": "Route BAT_SENSE separately to BAT at the battery terminal; no routed copper is supplied."
+    },
+    "lengthBounds": [
+      {
+        "busId": "DDR_BYTE0",
+        "longestManhattanMm": 22.4,
+        "nominalLengthMm": 22.4,
+        "maxLength": 22.4
+      },
+      {
+        "busId": "DDR_BYTE1",
+        "longestManhattanMm": 22.400000000000002,
+        "nominalLengthMm": 22.400000000000002,
+        "maxLength": 22.400000000000002
+      },
+      {
+        "busId": "DDR_COMMAND_CLOCK",
+        "longestManhattanMm": 24,
+        "nominalLengthMm": 31.62,
+        "minLength": 30.35,
+        "maxLength": 32.89
+      }
+    ],
+    "verification": {
+      "bypassCapacitorsChecked": 32,
+      "maximumCpuBypassDistanceMm": 9.972462083156797,
+      "maximumRamBypassDistanceMm": 1.1313708498984774,
+      "sameLayerCourtyardOverlapCount": 0,
+      "batterySenseCaptured": true,
+      "electricalTimingVerified": false,
+      "supportRoutingVerified": false
+    },
+    "requiredStackup": {
+      "top": "DDR signal routing",
+      "inner1": "Uninterrupted GND reference throughout DDR routing region",
+      "inner2": "Uninterrupted DDR_1V5 reference throughout DDR routing region",
+      "bottom": "DDR signal routing",
+      "planeCopperSupplied": false,
+      "impedanceAndReturnPathsVerified": false
+    }
   }
 }

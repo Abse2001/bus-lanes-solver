@@ -10534,7 +10534,8 @@
       "height": 0.850011,
       "connectedTo": [
         "pcb_port_425",
-        "pcb_smtpad_425"
+        "pcb_smtpad_425",
+        "source_net_3"
       ]
     },
     {
@@ -13545,8 +13546,8 @@
         "top"
       ],
       "center": {
-        "x": 10.432816,
-        "y": -15
+        "x": -1.567184,
+        "y": -7.6
       },
       "width": 0.565658,
       "height": 0.540004,
@@ -13569,8 +13570,8 @@
         "top"
       ],
       "center": {
-        "x": 9.567184,
-        "y": -15
+        "x": -2.432816,
+        "y": -7.6
       },
       "width": 0.565658,
       "height": 0.540004,
@@ -17001,8 +17002,8 @@
         "bottom"
       ],
       "center": {
-        "x": -13.820116,
-        "y": 11.8
+        "x": -6.120116,
+        "y": 16.5
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17025,8 +17026,8 @@
         "bottom"
       ],
       "center": {
-        "x": -12.979884,
-        "y": 11.8
+        "x": -5.279884,
+        "y": 16.5
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17145,8 +17146,8 @@
         "bottom"
       ],
       "center": {
-        "x": -13.620116,
-        "y": 9.8
+        "x": -6.120116,
+        "y": 14.7
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17169,8 +17170,8 @@
         "bottom"
       ],
       "center": {
-        "x": -12.779884,
-        "y": 9.8
+        "x": -5.279884,
+        "y": 14.7
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17289,8 +17290,8 @@
         "bottom"
       ],
       "center": {
-        "x": -13.620116,
-        "y": 8.2
+        "x": -3.720116,
+        "y": 14.7
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17313,8 +17314,8 @@
         "bottom"
       ],
       "center": {
-        "x": -12.779884,
-        "y": 8.2
+        "x": -2.879884,
+        "y": 14.7
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17481,8 +17482,8 @@
         "bottom"
       ],
       "center": {
-        "x": -8.420116,
-        "y": -3
+        "x": -6.420116,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17505,8 +17506,8 @@
         "bottom"
       ],
       "center": {
-        "x": -7.579884,
-        "y": -3
+        "x": -5.579884,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17529,8 +17530,8 @@
         "bottom"
       ],
       "center": {
-        "x": 7.579884,
-        "y": -3
+        "x": -4.020116,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17553,8 +17554,8 @@
         "bottom"
       ],
       "center": {
-        "x": 8.420116,
-        "y": -3
+        "x": -3.179884,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17577,8 +17578,8 @@
         "bottom"
       ],
       "center": {
-        "x": -8.420116,
-        "y": -5
+        "x": -1.620116,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17601,8 +17602,8 @@
         "bottom"
       ],
       "center": {
-        "x": -7.579884,
-        "y": -5
+        "x": -0.779884,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17625,8 +17626,8 @@
         "bottom"
       ],
       "center": {
-        "x": 7.579884,
-        "y": -5
+        "x": 0.779884,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17649,8 +17650,8 @@
         "bottom"
       ],
       "center": {
-        "x": 8.420116,
-        "y": -5
+        "x": 1.620116,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17673,8 +17674,8 @@
         "bottom"
       ],
       "center": {
-        "x": -8.420116,
-        "y": -7
+        "x": 3.179884,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17697,8 +17698,8 @@
         "bottom"
       ],
       "center": {
-        "x": -7.579884,
-        "y": -7
+        "x": 4.020116,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17721,8 +17722,8 @@
         "bottom"
       ],
       "center": {
-        "x": 7.579884,
-        "y": -7
+        "x": 5.579884,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17745,8 +17746,8 @@
         "bottom"
       ],
       "center": {
-        "x": 8.420116,
-        "y": -7
+        "x": 6.420116,
+        "y": -4.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17769,8 +17770,8 @@
         "bottom"
       ],
       "center": {
-        "x": -8.420116,
-        "y": -9
+        "x": -6.420116,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17793,8 +17794,8 @@
         "bottom"
       ],
       "center": {
-        "x": -7.579884,
-        "y": -9
+        "x": -5.579884,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17817,8 +17818,8 @@
         "bottom"
       ],
       "center": {
-        "x": 7.579884,
-        "y": -9
+        "x": -4.020116,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17841,8 +17842,8 @@
         "bottom"
       ],
       "center": {
-        "x": 8.420116,
-        "y": -9
+        "x": -3.179884,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17865,8 +17866,8 @@
         "bottom"
       ],
       "center": {
-        "x": -8.420116,
-        "y": -11
+        "x": -1.620116,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17889,8 +17890,8 @@
         "bottom"
       ],
       "center": {
-        "x": -7.579884,
-        "y": -11
+        "x": -0.779884,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17913,8 +17914,8 @@
         "bottom"
       ],
       "center": {
-        "x": 7.579884,
-        "y": -11
+        "x": 0.779884,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17937,8 +17938,8 @@
         "bottom"
       ],
       "center": {
-        "x": 8.420116,
-        "y": -11
+        "x": 1.620116,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17961,8 +17962,8 @@
         "bottom"
       ],
       "center": {
-        "x": -8.420116,
-        "y": -13
+        "x": 3.179884,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -17985,8 +17986,8 @@
         "bottom"
       ],
       "center": {
-        "x": -7.579884,
-        "y": -13
+        "x": 4.020116,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18009,8 +18010,8 @@
         "bottom"
       ],
       "center": {
-        "x": 7.579884,
-        "y": -13
+        "x": 5.579884,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18033,8 +18034,8 @@
         "bottom"
       ],
       "center": {
-        "x": 8.420116,
-        "y": -13
+        "x": 6.420116,
+        "y": 0.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18153,8 +18154,8 @@
         "bottom"
       ],
       "center": {
-        "x": 0.979884,
-        "y": 18
+        "x": -1.220116,
+        "y": 14.7
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18177,8 +18178,8 @@
         "bottom"
       ],
       "center": {
-        "x": 1.8201159999999998,
-        "y": 18
+        "x": -0.379884,
+        "y": 14.7
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18201,8 +18202,8 @@
         "bottom"
       ],
       "center": {
-        "x": -0.420116,
-        "y": -10.8
+        "x": -3.220116,
+        "y": -6.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18225,8 +18226,8 @@
         "bottom"
       ],
       "center": {
-        "x": 0.420116,
-        "y": -10.8
+        "x": -2.379884,
+        "y": -6.4
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18249,8 +18250,8 @@
         "bottom"
       ],
       "center": {
-        "x": -0.420116,
-        "y": -7.6
+        "x": -0.020116,
+        "y": 2.8
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -18273,8 +18274,8 @@
         "bottom"
       ],
       "center": {
-        "x": 0.420116,
-        "y": -7.6
+        "x": 0.820116,
+        "y": 2.8
       },
       "width": 0.499999,
       "height": 0.540004,
@@ -22848,8 +22849,8 @@
           "port_selector": "R_DDR_VTP.pin2"
         },
         {
-          "x": 10.432816,
-          "y": -15,
+          "x": -1.567184,
+          "y": -7.6,
           "layer": "top",
           "pointId": "pcb_port_552",
           "pcb_port_id": "pcb_port_552",
@@ -23424,8 +23425,8 @@
           "port_selector": "C_DDR_CPU_12.pin2"
         },
         {
-          "x": -13.820116,
-          "y": 11.8,
+          "x": -6.120116,
+          "y": 16.5,
           "layer": "bottom",
           "pointId": "pcb_port_696",
           "pcb_port_id": "pcb_port_696",
@@ -23448,8 +23449,8 @@
           "port_selector": "C_DDR_CPU_15.pin2"
         },
         {
-          "x": -13.620116,
-          "y": 9.8,
+          "x": -6.120116,
+          "y": 14.7,
           "layer": "bottom",
           "pointId": "pcb_port_702",
           "pcb_port_id": "pcb_port_702",
@@ -23472,8 +23473,8 @@
           "port_selector": "C_DDR_CPU_18.pin2"
         },
         {
-          "x": -13.620116,
-          "y": 8.2,
+          "x": -3.720116,
+          "y": 14.7,
           "layer": "bottom",
           "pointId": "pcb_port_708",
           "pcb_port_id": "pcb_port_708",
@@ -23504,96 +23505,96 @@
           "port_selector": "C_DDR_CPU_BULK2.pin2"
         },
         {
-          "x": -8.420116,
-          "y": -3,
+          "x": -6.420116,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_716",
           "pcb_port_id": "pcb_port_716",
           "port_selector": "C_DDR_RAM_1.pin2"
         },
         {
-          "x": 7.579884,
-          "y": -3,
+          "x": -4.020116,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_718",
           "pcb_port_id": "pcb_port_718",
           "port_selector": "C_DDR_RAM_2.pin2"
         },
         {
-          "x": -8.420116,
-          "y": -5,
+          "x": -1.620116,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_720",
           "pcb_port_id": "pcb_port_720",
           "port_selector": "C_DDR_RAM_3.pin2"
         },
         {
-          "x": 7.579884,
-          "y": -5,
+          "x": 0.779884,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_722",
           "pcb_port_id": "pcb_port_722",
           "port_selector": "C_DDR_RAM_4.pin2"
         },
         {
-          "x": -8.420116,
-          "y": -7,
+          "x": 3.179884,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_724",
           "pcb_port_id": "pcb_port_724",
           "port_selector": "C_DDR_RAM_5.pin2"
         },
         {
-          "x": 7.579884,
-          "y": -7,
+          "x": 5.579884,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_726",
           "pcb_port_id": "pcb_port_726",
           "port_selector": "C_DDR_RAM_6.pin2"
         },
         {
-          "x": -8.420116,
-          "y": -9,
+          "x": -6.420116,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_728",
           "pcb_port_id": "pcb_port_728",
           "port_selector": "C_DDR_RAM_7.pin2"
         },
         {
-          "x": 7.579884,
-          "y": -9,
+          "x": -4.020116,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_730",
           "pcb_port_id": "pcb_port_730",
           "port_selector": "C_DDR_RAM_8.pin2"
         },
         {
-          "x": -8.420116,
-          "y": -11,
+          "x": -1.620116,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_732",
           "pcb_port_id": "pcb_port_732",
           "port_selector": "C_DDR_RAM_9.pin2"
         },
         {
-          "x": 7.579884,
-          "y": -11,
+          "x": 0.779884,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_734",
           "pcb_port_id": "pcb_port_734",
           "port_selector": "C_DDR_RAM_10.pin2"
         },
         {
-          "x": -8.420116,
-          "y": -13,
+          "x": 3.179884,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_736",
           "pcb_port_id": "pcb_port_736",
           "port_selector": "C_DDR_RAM_11.pin2"
         },
         {
-          "x": 7.579884,
-          "y": -13,
+          "x": 5.579884,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_738",
           "pcb_port_id": "pcb_port_738",
@@ -23616,24 +23617,24 @@
           "port_selector": "C_DDR_RAM_BULK2.pin2"
         },
         {
-          "x": 0.979884,
-          "y": 18,
+          "x": -1.220116,
+          "y": 14.7,
           "layer": "bottom",
           "pointId": "pcb_port_744",
           "pcb_port_id": "pcb_port_744",
           "port_selector": "C_VREF_CPU.pin2"
         },
         {
-          "x": -0.420116,
-          "y": -10.8,
+          "x": -3.220116,
+          "y": -6.4,
           "layer": "bottom",
           "pointId": "pcb_port_746",
           "pcb_port_id": "pcb_port_746",
           "port_selector": "C_VREF_RAM_CA.pin2"
         },
         {
-          "x": -0.420116,
-          "y": -7.6,
+          "x": -0.020116,
+          "y": 2.8,
           "layer": "bottom",
           "pointId": "pcb_port_748",
           "pcb_port_id": "pcb_port_748",
@@ -24067,6 +24068,14 @@
           "pointId": "pcb_port_424",
           "pcb_port_id": "pcb_port_424",
           "port_selector": "U_PMIC.BAT2"
+        },
+        {
+          "x": -24.200025,
+          "y": 17.025025,
+          "layer": "top",
+          "pointId": "pcb_port_425",
+          "pcb_port_id": "pcb_port_425",
+          "port_selector": "U_PMIC.BAT_SENSE"
         },
         {
           "x": -18,
@@ -24515,8 +24524,8 @@
           "port_selector": "C_DDR_CPU_12.pin1"
         },
         {
-          "x": -12.979884,
-          "y": 11.8,
+          "x": -5.279884,
+          "y": 16.5,
           "layer": "bottom",
           "pointId": "pcb_port_695",
           "pcb_port_id": "pcb_port_695",
@@ -24539,8 +24548,8 @@
           "port_selector": "C_DDR_CPU_15.pin1"
         },
         {
-          "x": -12.779884,
-          "y": 9.8,
+          "x": -5.279884,
+          "y": 14.7,
           "layer": "bottom",
           "pointId": "pcb_port_701",
           "pcb_port_id": "pcb_port_701",
@@ -24563,8 +24572,8 @@
           "port_selector": "C_DDR_CPU_18.pin1"
         },
         {
-          "x": -12.779884,
-          "y": 8.2,
+          "x": -2.879884,
+          "y": 14.7,
           "layer": "bottom",
           "pointId": "pcb_port_707",
           "pcb_port_id": "pcb_port_707",
@@ -24595,96 +24604,96 @@
           "port_selector": "C_DDR_CPU_BULK2.pin1"
         },
         {
-          "x": -7.579884,
-          "y": -3,
+          "x": -5.579884,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_715",
           "pcb_port_id": "pcb_port_715",
           "port_selector": "C_DDR_RAM_1.pin1"
         },
         {
-          "x": 8.420116,
-          "y": -3,
+          "x": -3.179884,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_717",
           "pcb_port_id": "pcb_port_717",
           "port_selector": "C_DDR_RAM_2.pin1"
         },
         {
-          "x": -7.579884,
-          "y": -5,
+          "x": -0.779884,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_719",
           "pcb_port_id": "pcb_port_719",
           "port_selector": "C_DDR_RAM_3.pin1"
         },
         {
-          "x": 8.420116,
-          "y": -5,
+          "x": 1.620116,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_721",
           "pcb_port_id": "pcb_port_721",
           "port_selector": "C_DDR_RAM_4.pin1"
         },
         {
-          "x": -7.579884,
-          "y": -7,
+          "x": 4.020116,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_723",
           "pcb_port_id": "pcb_port_723",
           "port_selector": "C_DDR_RAM_5.pin1"
         },
         {
-          "x": 8.420116,
-          "y": -7,
+          "x": 6.420116,
+          "y": -4.4,
           "layer": "bottom",
           "pointId": "pcb_port_725",
           "pcb_port_id": "pcb_port_725",
           "port_selector": "C_DDR_RAM_6.pin1"
         },
         {
-          "x": -7.579884,
-          "y": -9,
+          "x": -5.579884,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_727",
           "pcb_port_id": "pcb_port_727",
           "port_selector": "C_DDR_RAM_7.pin1"
         },
         {
-          "x": 8.420116,
-          "y": -9,
+          "x": -3.179884,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_729",
           "pcb_port_id": "pcb_port_729",
           "port_selector": "C_DDR_RAM_8.pin1"
         },
         {
-          "x": -7.579884,
-          "y": -11,
+          "x": -0.779884,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_731",
           "pcb_port_id": "pcb_port_731",
           "port_selector": "C_DDR_RAM_9.pin1"
         },
         {
-          "x": 8.420116,
-          "y": -11,
+          "x": 1.620116,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_733",
           "pcb_port_id": "pcb_port_733",
           "port_selector": "C_DDR_RAM_10.pin1"
         },
         {
-          "x": -7.579884,
-          "y": -13,
+          "x": 4.020116,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_735",
           "pcb_port_id": "pcb_port_735",
           "port_selector": "C_DDR_RAM_11.pin1"
         },
         {
-          "x": 8.420116,
-          "y": -13,
+          "x": 6.420116,
+          "y": 0.4,
           "layer": "bottom",
           "pointId": "pcb_port_737",
           "pcb_port_id": "pcb_port_737",
@@ -26114,24 +26123,24 @@
           "port_selector": "R_VREF_LO.pin1"
         },
         {
-          "x": 1.8201159999999998,
-          "y": 18,
+          "x": -0.379884,
+          "y": 14.7,
           "layer": "bottom",
           "pointId": "pcb_port_743",
           "pcb_port_id": "pcb_port_743",
           "port_selector": "C_VREF_CPU.pin1"
         },
         {
-          "x": 0.420116,
-          "y": -10.8,
+          "x": -2.379884,
+          "y": -6.4,
           "layer": "bottom",
           "pointId": "pcb_port_745",
           "pcb_port_id": "pcb_port_745",
           "port_selector": "C_VREF_RAM_CA.pin1"
         },
         {
-          "x": 0.420116,
-          "y": -7.6,
+          "x": 0.820116,
+          "y": 2.8,
           "layer": "bottom",
           "pointId": "pcb_port_747",
           "pcb_port_id": "pcb_port_747",
@@ -26446,8 +26455,8 @@
           "port_selector": "U_RAM.L8"
         },
         {
-          "x": 9.567184,
-          "y": -15,
+          "x": -2.432816,
+          "y": -7.6,
           "layer": "top",
           "pointId": "pcb_port_551",
           "pcb_port_id": "pcb_port_551",
@@ -27652,7 +27661,8 @@
         "bottom",
         "top"
       ],
-      "maxLengthSkew": 0.635
+      "maxLengthSkew": 0.635,
+      "maxLength": 22.4
     },
     {
       "busId": "DDR_BYTE1",
@@ -27678,7 +27688,8 @@
         "bottom",
         "top"
       ],
-      "maxLengthSkew": 0.635
+      "maxLengthSkew": 0.635,
+      "maxLength": 22.400000000000002
     },
     {
       "busId": "DDR_COMMAND_CLOCK",
@@ -27719,7 +27730,9 @@
         "bottom",
         "top"
       ],
-      "maxLengthSkew": 0.635
+      "maxLengthSkew": 0.635,
+      "minLength": 30.35,
+      "maxLength": 32.89
     }
   ]
 }

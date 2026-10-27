@@ -7,7 +7,10 @@ import {
   loadG350Am3352Sample,
   g350Am3352Metadata,
 } from "../scripts/g350-am3352-sample"
-import { exportG350RoutedSnapshot } from "../scripts/snapshot-g350-am3352"
+import {
+  exportG350InputSnapshot,
+  exportG350RoutedSnapshot,
+} from "../scripts/snapshot-g350-am3352"
 import { validateG350Am3352Sample } from "../scripts/validate-g350-am3352-sample"
 
 test("incomplete G350 copper cannot create routed snapshot artifacts", async () => {
@@ -54,23 +57,28 @@ test("49 connected paths through foreign pads cannot create routed snapshots", a
   }
 })
 
-test("committed input snapshot matches the fixture and never claims routing acceptance", async () => {
-  const root = new URL("../docs/g350-am3352/", import.meta.url)
-  const manifest = JSON.parse(
-    await readFile(new URL("g350-input.json", root), "utf8"),
-  )
-  expect(manifest.kind).toBe("input")
-  expect(manifest.routingAccepted).toBe(false)
-  expect(manifest.inputFixtureSha256).toBe(
-    g350Am3352Metadata.filesSha256["native-input.json"],
-  )
-  for (const [name, expected] of Object.entries(manifest.filesSha256))
-    expect(
-      createHash("sha256")
-        .update(await readFile(new URL(name, root)))
-        .digest("hex"),
-    ).toBe(expected as string)
-  const svg = await readFile(new URL("g350-input.svg", root), "utf8")
-  expect(svg).toContain("INPUT / NOT ROUTED")
-  expect(svg).toContain("NOT PCB copper")
+test("local input diagnostics match the fixture and never claim routing acceptance", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "g350-input-"))
+  try {
+    await exportG350InputSnapshot(directory)
+    const manifest = JSON.parse(
+      await readFile(join(directory, "g350-input.json"), "utf8"),
+    )
+    expect(manifest.kind).toBe("input")
+    expect(manifest.routingAccepted).toBe(false)
+    expect(manifest.inputFixtureSha256).toBe(
+      g350Am3352Metadata.filesSha256["native-input.json"],
+    )
+    for (const [name, expected] of Object.entries(manifest.filesSha256))
+      expect(
+        createHash("sha256")
+          .update(await readFile(join(directory, name)))
+          .digest("hex"),
+      ).toBe(expected as string)
+    const svg = await readFile(join(directory, "g350-input.svg"), "utf8")
+    expect(svg).toContain("INPUT / NOT ROUTED")
+    expect(svg).toContain("NOT PCB copper")
+  } finally {
+    await rm(directory, { recursive: true, force: true })
+  }
 })

@@ -133,6 +133,8 @@ if (import.meta.main) {
       ...(b.max_length_skew === undefined
         ? {}
         : { maxLengthSkew: b.max_length_skew }),
+      ...(b.min_length === undefined ? {} : { minLength: b.min_length }),
+      ...(b.max_length === undefined ? {} : { maxLength: b.max_length }),
     }))
   complete.differentialPairs = sourceBuses
     .filter((b) => b.name.endsWith("_PAIR"))

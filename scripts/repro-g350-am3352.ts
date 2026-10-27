@@ -4,7 +4,13 @@ import {
   busLengthReports,
   pairLengthReports,
 } from "../lib"
-import { g350Am3352Metadata, loadG350Am3352Sample } from "./g350-am3352-sample"
+import {
+  g350Am3352Metadata,
+  loadG350Am3352CompleteInput,
+  loadG350Am3352Sample,
+} from "./g350-am3352-sample"
+import circuit from "../tests/fixtures/g350-am3352/circuit.json"
+import { auditG350HardwareRecommendations } from "./g350-hardware-recommendations"
 import { validateG350Am3352Sample } from "./validate-g350-am3352-sample"
 
 const hash = (value: unknown) =>
@@ -16,6 +22,14 @@ export async function runG350Am3352Repro(
 ) {
   if (!Number.isFinite(timeoutSeconds) || timeoutSeconds <= 0)
     throw Error("Invalid timeout")
+  const hardwareRecommendations = auditG350HardwareRecommendations(
+    circuit,
+    loadG350Am3352CompleteInput(),
+  )
+  if (!hardwareRecommendations.valid)
+    throw Error(
+      `Invalid G350 hardware fixture: ${hardwareRecommendations.issues.join("; ")}`,
+    )
   const input = loadG350Am3352Sample()
   const before = hash(input)
   const solver = new BusLanesPipelineSolver(input)
@@ -73,6 +87,7 @@ export async function runG350Am3352Repro(
       busLengthReports(input, []).filter((b) => b.toleranceMm !== null),
     pairs: validation?.pairs ?? pairLengthReports(input, []),
     validation,
+    hardwareRecommendations,
     fabricationReady: false,
     notVerified: [
       "Power/ground/clock/reset support routing",

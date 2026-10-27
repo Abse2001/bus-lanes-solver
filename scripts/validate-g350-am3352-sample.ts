@@ -6,12 +6,14 @@ import {
 } from "../lib"
 import { exteriorPairSpacingReports } from "../lib/exterior-pair-spacing"
 import { distance } from "../lib/geometry"
+import { validateG350LengthConstraints } from "./g350-hardware-recommendations"
 
 /** Independent pad-to-pad acceptance; missing paths cannot count as matching. */
 export function validateG350Am3352Sample(
   input: SimpleRouteJson,
   output: SimpleRouteJson,
 ) {
+  const lengthConstraints = validateG350LengthConstraints(input)
   const fixedCount = input.traces?.length ?? 0
   const traces = (output.traces ?? []).slice(fixedCount)
   const fixedPreserved =
@@ -86,6 +88,7 @@ export function validateG350Am3352Sample(
     )
   return {
     valid:
+      lengthConstraints.valid &&
       complete &&
       geometryPreserved &&
       fixedPreserved &&
@@ -94,6 +97,7 @@ export function validateG350Am3352Sample(
       matched &&
       coupling.every((r) => r.applicable && r.matched),
     complete,
+    lengthConstraints,
     geometryPreserved,
     fixedPreserved,
     allowedLayers,
