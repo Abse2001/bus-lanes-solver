@@ -19,7 +19,7 @@
     "name": "U_RAM",
     "part": "MT41K256M16TW-107:P",
     "x": 0,
-    "y": 6,
+    "y": -2,
     "rotation": 270,
     "pads": 96
   },
@@ -348,12 +348,84 @@
   "fixedFanouts": 0,
   "fabricationReady": false,
   "filesSha256": {
-    "circuit.json": "584923a0f43680d260bab975ef797c01ad4aa5dcc68169a093b11582f4bb757a",
+    "circuit.json": "cdb1870ae3cc8775be7027e03e1ccbb50b6c03d0186bfb5c39ab21af28dcb18c",
     "cpu-ball-map.json": "f936e408a702a5eb42d68d2cd834d7ccefb98930eda205ac234144c0c10213df",
     "memory-byte1-top-centered-swizzled-connections.json": "6e9df46944e0ec389be0f992f4783cbf1031e080727f87f0f9f911c95f32ab50",
-    "native-input.json": "d77ad8c4e8e72a44976dfd7d947d09233f307fe7cb469b8ac6368918ed322064",
+    "native-input.json": "0528681387cce23a7024c9e095dfa9f1c73258bc4608829bdd80fe16c4bea882",
     "ram-ball-map.json": "7998a87e977af7f9b8bbc69cc6879e9df4820778434401bc9ed4ac5c0ef6f752"
   },
   "capacitors": 125,
-  "pairTraceGapMm": 0.12
+  "pairTraceGapMm": 0.12,
+  "placementAdjustment": {
+    "kind": "ram-and-local-support-island-translation",
+    "sourceCommit": "3b1b6e23453a43a4838c1e68293b5bcec16e76ab",
+    "sourceFilesSha256": {
+      "circuit.json": "584923a0f43680d260bab975ef797c01ad4aa5dcc68169a093b11582f4bb757a",
+      "native-input.json": "d77ad8c4e8e72a44976dfd7d947d09233f307fe7cb469b8ac6368918ed322064",
+      "metadata.json": "ad7267e1c21757ee586fbd07e99f18947fbea6c77c97f666735d889c74152d19"
+    },
+    "translationMm": {
+      "x": 0,
+      "y": -8
+    },
+    "componentIds": [
+      "pcb_component_1",
+      "pcb_component_43",
+      "pcb_component_125",
+      "pcb_component_126",
+      "pcb_component_127",
+      "pcb_component_128",
+      "pcb_component_129",
+      "pcb_component_130",
+      "pcb_component_131",
+      "pcb_component_132",
+      "pcb_component_133",
+      "pcb_component_134",
+      "pcb_component_135",
+      "pcb_component_136",
+      "pcb_component_137",
+      "pcb_component_138",
+      "pcb_component_140",
+      "pcb_component_141"
+    ],
+    "componentNames": [
+      "U_RAM",
+      "R_DDR_ZQ",
+      "C_DDR_RAM_1",
+      "C_DDR_RAM_2",
+      "C_DDR_RAM_3",
+      "C_DDR_RAM_4",
+      "C_DDR_RAM_5",
+      "C_DDR_RAM_6",
+      "C_DDR_RAM_7",
+      "C_DDR_RAM_8",
+      "C_DDR_RAM_9",
+      "C_DDR_RAM_10",
+      "C_DDR_RAM_11",
+      "C_DDR_RAM_12",
+      "C_DDR_RAM_BULK1",
+      "C_DDR_RAM_BULK2",
+      "C_VREF_RAM_CA",
+      "C_VREF_RAM_DQ"
+    ],
+    "movedComponents": 18,
+    "movedPadObstacles": 130,
+    "movedPcbPorts": 130,
+    "movedNativeEndpoints": 125,
+    "affectedNativeConnections": 53,
+    "cpuCenterUnchanged": {
+      "x": 0,
+      "y": 20
+    },
+    "ramCenterBefore": {
+      "x": 0,
+      "y": 6
+    },
+    "ramCenterAfter": {
+      "x": 0,
+      "y": -2
+    },
+    "originalPinMappingPreserved": true,
+    "captureReplay": "The adjusted coordinates are stored in circuit.json; Core capture replay applies no additional placement translation."
+  }
 }

@@ -6,10 +6,19 @@ fixture, loader, CLI and debugger structure of the
 
 ## Input
 
-The CPU is at `(0,20)`, rotation 0; RAM is at `(0,6)`, rotation 270.
+The CPU is at `(0,20)`, rotation 0; RAM is at `(0,-2)`, rotation 270.
 Coordinates are board-world millimetres. The fixture contains 194 components
 and 854 pads, including all 324 CPU balls and 96 RAM balls, unused/NC pads,
 decoupling, power supplies, VREF, ZQ/VTP, clock and reset circuitry.
+
+RAM and its 17 local support components have moved 8 mm down from the original
+RAM center `(0,6)` to leave more room between the CPU and RAM. The same `(0,-8)`
+translation applies to `R_DDR_ZQ`, `C_DDR_RAM_1` through `C_DDR_RAM_12`,
+`C_DDR_RAM_BULK1`, `C_DDR_RAM_BULK2`, `C_VREF_RAM_CA` and `C_VREF_RAM_DQ`,
+including their pads, ports and courtyards. All other component positions,
+including the CPU bulk capacitors, and the original DDR pin mapping remain
+unchanged. `metadata.json` records the original commit, file hashes and exact
+component IDs for this placement adjustment.
 
 `tests/fixtures/g350-am3352/circuit.json` contains the netlist and physical
 geometry. `native-input.json` contains 49 DDR connections and 68 support nets.
@@ -67,7 +76,8 @@ bun scripts/snapshot-g350-am3352.ts /tmp/g350-routed.json /tmp/g350-snapshot
 File hashes, part identities and component/net mappings are recorded in
 `tests/fixtures/g350-am3352/metadata.json`; attribution is in its `LICENSE`.
 The optional capture verifier uses Core 0.0.2107 and checks regenerated fixture
-bytes without overwriting them:
+bytes without overwriting them. The adjusted coordinates are already stored
+in `circuit.json`; capture replay applies no additional placement translation:
 
 ```sh
 bun scripts/capture-g350-am3352.ts /path/to/core/dist/index.js

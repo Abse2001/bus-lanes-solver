@@ -55,14 +55,25 @@ function g350SnapshotGraphics(input: SimpleRouteJson, traces?: Trace[]) {
     53 / (overview.maxX - overview.minX),
     82.5 / (overview.maxY - overview.minY),
   )
+  const packagePads = input.obstacles.filter((pad) =>
+    ["U_SOC", "U_RAM"].includes(componentNames[pad.componentId ?? ""]),
+  )
+  const detailMinY = Math.min(
+    -3,
+    ...packagePads.map((pad) => pad.center.y - pad.height / 2 - 2),
+  )
+  const detailMaxY = Math.max(
+    30,
+    ...packagePads.map((pad) => pad.center.y + pad.height / 2 + 2),
+  )
   const panels = [
     {
       name: "CPU / RAM pad fields",
       minX: -12,
       maxX: 12,
-      minY: -3,
-      maxY: 30,
-      scale: 2.5,
+      minY: detailMinY,
+      maxY: detailMaxY,
+      scale: Math.min(2.5, 82.5 / (detailMaxY - detailMinY)),
       dx: 0,
       dy: 0,
     },

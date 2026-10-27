@@ -38,6 +38,8 @@ test("all real BGA and support pads survive, including unused and NC balls", () 
   expect(ofType("source_component")).toHaveLength(194)
   expect(ofType("pcb_smtpad")).toHaveLength(854)
   expect(input.obstacles).toHaveLength(854)
+  expect(metadata.cpu).toMatchObject({ x: 0, y: 20, rotation: 0 })
+  expect(metadata.ram).toMatchObject({ x: 0, y: -2, rotation: 270 })
   for (const [name, map, count, diameter] of [
     ["U_SOC", cpuMap, 324, 0.4],
     ["U_RAM", ramMap, 96, 0.42],
@@ -46,6 +48,10 @@ test("all real BGA and support pads survive, including unused and NC balls", () 
     const pcb = ofType("pcb_component").find(
       (e) => e.source_component_id === component.source_component_id,
     )!
+    const placement = name === "U_SOC" ? metadata.cpu : metadata.ram
+    expect(pcb.center).toEqual({ x: placement.x, y: placement.y })
+    expect(pcb.display_offset_x).toBe(placement.x)
+    expect(pcb.display_offset_y).toBe(placement.y)
     const ports = ofType("source_port").filter(
       (e) => e.source_component_id === component.source_component_id,
     )

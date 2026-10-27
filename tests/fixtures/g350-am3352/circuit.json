@@ -26316,7 +26316,7 @@
     "pcb_component_id": "pcb_component_1",
     "center": {
       "x": 0,
-      "y": 6
+      "y": -2
     },
     "width": 12.420000000000002,
     "height": 6.820000000000003,
@@ -26330,7 +26330,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 0,
-    "display_offset_y": 6,
+    "display_offset_y": -2,
     "pin1_location": "leftside_top"
   },
   {
@@ -27236,7 +27236,7 @@
     "pcb_component_id": "pcb_component_43",
     "center": {
       "x": 10,
-      "y": -7
+      "y": -15
     },
     "width": 1.4312900000000006,
     "height": 0.5400039999999997,
@@ -27250,7 +27250,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 10,
-    "display_offset_y": -7,
+    "display_offset_y": -15,
     "pin1_location": "topside_left"
   },
   {
@@ -29040,7 +29040,7 @@
     "pcb_component_id": "pcb_component_125",
     "center": {
       "x": -8,
-      "y": 5
+      "y": -3
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29054,7 +29054,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -8,
-    "display_offset_y": 5,
+    "display_offset_y": -3,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29062,7 +29062,7 @@
     "pcb_component_id": "pcb_component_126",
     "center": {
       "x": 8,
-      "y": 5
+      "y": -3
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29076,7 +29076,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 8,
-    "display_offset_y": 5,
+    "display_offset_y": -3,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29084,7 +29084,7 @@
     "pcb_component_id": "pcb_component_127",
     "center": {
       "x": -8,
-      "y": 3
+      "y": -5
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29098,7 +29098,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -8,
-    "display_offset_y": 3,
+    "display_offset_y": -5,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29106,7 +29106,7 @@
     "pcb_component_id": "pcb_component_128",
     "center": {
       "x": 8,
-      "y": 3
+      "y": -5
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29120,7 +29120,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 8,
-    "display_offset_y": 3,
+    "display_offset_y": -5,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29128,7 +29128,7 @@
     "pcb_component_id": "pcb_component_129",
     "center": {
       "x": -8,
-      "y": 1
+      "y": -7
     },
     "width": 1.3402310000000002,
     "height": 0.5400040000000002,
@@ -29142,7 +29142,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -8,
-    "display_offset_y": 1,
+    "display_offset_y": -7,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29150,7 +29150,7 @@
     "pcb_component_id": "pcb_component_130",
     "center": {
       "x": 8,
-      "y": 1
+      "y": -7
     },
     "width": 1.3402310000000002,
     "height": 0.5400040000000002,
@@ -29164,7 +29164,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 8,
-    "display_offset_y": 1,
+    "display_offset_y": -7,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29172,7 +29172,7 @@
     "pcb_component_id": "pcb_component_131",
     "center": {
       "x": -8,
-      "y": -1
+      "y": -9
     },
     "width": 1.3402310000000002,
     "height": 0.5400040000000002,
@@ -29186,7 +29186,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -8,
-    "display_offset_y": -1,
+    "display_offset_y": -9,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29194,7 +29194,7 @@
     "pcb_component_id": "pcb_component_132",
     "center": {
       "x": 8,
-      "y": -1
+      "y": -9
     },
     "width": 1.3402310000000002,
     "height": 0.5400040000000002,
@@ -29208,7 +29208,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 8,
-    "display_offset_y": -1,
+    "display_offset_y": -9,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29216,7 +29216,7 @@
     "pcb_component_id": "pcb_component_133",
     "center": {
       "x": -8,
-      "y": -3
+      "y": -11
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29230,7 +29230,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -8,
-    "display_offset_y": -3,
+    "display_offset_y": -11,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29238,7 +29238,7 @@
     "pcb_component_id": "pcb_component_134",
     "center": {
       "x": 8,
-      "y": -3
+      "y": -11
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29252,7 +29252,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 8,
-    "display_offset_y": -3,
+    "display_offset_y": -11,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29260,7 +29260,7 @@
     "pcb_component_id": "pcb_component_135",
     "center": {
       "x": -8,
-      "y": -5
+      "y": -13
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29274,7 +29274,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -8,
-    "display_offset_y": -5,
+    "display_offset_y": -13,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29282,7 +29282,7 @@
     "pcb_component_id": "pcb_component_136",
     "center": {
       "x": 8,
-      "y": -5
+      "y": -13
     },
     "width": 1.3402310000000002,
     "height": 0.5400039999999997,
@@ -29296,7 +29296,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 8,
-    "display_offset_y": -5,
+    "display_offset_y": -13,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29304,7 +29304,7 @@
     "pcb_component_id": "pcb_component_137",
     "center": {
       "x": -11,
-      "y": 2
+      "y": -6
     },
     "width": 4.670171,
     "height": 1.7279874,
@@ -29318,7 +29318,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -11,
-    "display_offset_y": 2,
+    "display_offset_y": -6,
     "pin1_location": "topside_left"
   },
   {
@@ -29326,7 +29326,7 @@
     "pcb_component_id": "pcb_component_138",
     "center": {
       "x": -11,
-      "y": -1
+      "y": -9
     },
     "width": 4.670171,
     "height": 1.7279874,
@@ -29340,7 +29340,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": -11,
-    "display_offset_y": -1,
+    "display_offset_y": -9,
     "pin1_location": "topside_left"
   },
   {
@@ -29370,7 +29370,7 @@
     "pcb_component_id": "pcb_component_140",
     "center": {
       "x": 0,
-      "y": -2.8
+      "y": -10.8
     },
     "width": 1.340231,
     "height": 0.5400039999999997,
@@ -29384,7 +29384,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 0,
-    "display_offset_y": -2.8,
+    "display_offset_y": -10.8,
     "pin1_location": "bottomside_right"
   },
   {
@@ -29392,7 +29392,7 @@
     "pcb_component_id": "pcb_component_141",
     "center": {
       "x": 0,
-      "y": 0.4
+      "y": -7.6
     },
     "width": 1.340231,
     "height": 0.5400039999999999,
@@ -29406,7 +29406,7 @@
     "position_mode": "relative_to_group_anchor",
     "positioned_relative_to_pcb_board_id": "pcb_board_0",
     "display_offset_x": 0,
-    "display_offset_y": 0.4,
+    "display_offset_y": -7.6,
     "pin1_location": "bottomside_right"
   },
   {
@@ -35849,7 +35849,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 6.000000000000001,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35865,7 +35865,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.200000000000001,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35881,7 +35881,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 4.400000000000001,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35897,7 +35897,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 3.6000000000000005,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35913,7 +35913,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.8000000000000003,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35929,7 +35929,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.0000000000000004,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35945,7 +35945,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.2000000000000006,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35961,7 +35961,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.40000000000000063,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35977,7 +35977,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.3999999999999994,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -35993,7 +35993,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.1999999999999993,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36009,7 +36009,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.9999999999999993,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36025,7 +36025,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.7999999999999994,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36041,7 +36041,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -3.5999999999999996,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36057,7 +36057,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -4.3999999999999995,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36073,7 +36073,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.199999999999999,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36089,7 +36089,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.999999999999999,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36105,7 +36105,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 6,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36121,7 +36121,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.2,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36137,7 +36137,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 4.4,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36153,7 +36153,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 3.6000000000000005,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36169,7 +36169,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.8000000000000003,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36185,7 +36185,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.0000000000000004,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36201,7 +36201,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.2000000000000004,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36217,7 +36217,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.40000000000000047,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36233,7 +36233,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.3999999999999996,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36249,7 +36249,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.1999999999999995,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36265,7 +36265,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.9999999999999996,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36281,7 +36281,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.7999999999999994,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36297,7 +36297,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -3.5999999999999996,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36313,7 +36313,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -4.4,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36329,7 +36329,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.2,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36345,7 +36345,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -6,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36361,7 +36361,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 6,
-    "y": 7.599999999999999,
+    "y": -0.40000000000000124,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36377,7 +36377,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.2,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36393,7 +36393,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 4.4,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36409,7 +36409,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 3.6000000000000005,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36425,7 +36425,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.8000000000000003,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36441,7 +36441,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.0000000000000004,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36457,7 +36457,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.2000000000000002,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36473,7 +36473,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.4000000000000003,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36489,7 +36489,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.39999999999999974,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36505,7 +36505,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.1999999999999997,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36521,7 +36521,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.9999999999999998,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36537,7 +36537,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.7999999999999994,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36553,7 +36553,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -3.5999999999999996,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36569,7 +36569,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -4.4,
-    "y": 7.600000000000001,
+    "y": -0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36585,7 +36585,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.2,
-    "y": 7.600000000000001,
+    "y": -0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36601,7 +36601,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -6,
-    "y": 7.600000000000001,
+    "y": -0.3999999999999986,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36617,7 +36617,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 6,
-    "y": 4.399999999999999,
+    "y": -3.6000000000000014,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36633,7 +36633,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.2,
-    "y": 4.399999999999999,
+    "y": -3.6000000000000014,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36649,7 +36649,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 4.4,
-    "y": 4.399999999999999,
+    "y": -3.6000000000000014,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36665,7 +36665,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 3.5999999999999996,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36681,7 +36681,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.7999999999999994,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36697,7 +36697,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.9999999999999998,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36713,7 +36713,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.1999999999999997,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36729,7 +36729,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.39999999999999974,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36745,7 +36745,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.4000000000000003,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36761,7 +36761,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.2000000000000002,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36777,7 +36777,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.0000000000000004,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36793,7 +36793,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.8000000000000003,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36809,7 +36809,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -3.6000000000000005,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36825,7 +36825,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -4.4,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36841,7 +36841,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.2,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36857,7 +36857,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -6,
-    "y": 4.400000000000001,
+    "y": -3.5999999999999988,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36873,7 +36873,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 6,
-    "y": 3.599999999999999,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36889,7 +36889,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.2,
-    "y": 3.599999999999999,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36905,7 +36905,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 4.4,
-    "y": 3.599999999999999,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36921,7 +36921,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 3.5999999999999996,
-    "y": 3.5999999999999996,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36937,7 +36937,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.7999999999999994,
-    "y": 3.5999999999999996,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36953,7 +36953,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.9999999999999996,
-    "y": 3.5999999999999996,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36969,7 +36969,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.1999999999999995,
-    "y": 3.6,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -36985,7 +36985,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.3999999999999996,
-    "y": 3.6,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37001,7 +37001,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.40000000000000047,
-    "y": 3.6,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37017,7 +37017,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.2000000000000004,
-    "y": 3.6,
+    "y": -4.4,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37033,7 +37033,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.0000000000000004,
-    "y": 3.6000000000000005,
+    "y": -4.3999999999999995,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37049,7 +37049,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.8000000000000003,
-    "y": 3.6000000000000005,
+    "y": -4.3999999999999995,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37065,7 +37065,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -3.6000000000000005,
-    "y": 3.6000000000000005,
+    "y": -4.3999999999999995,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37081,7 +37081,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -4.4,
-    "y": 3.600000000000001,
+    "y": -4.399999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37097,7 +37097,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.2,
-    "y": 3.600000000000001,
+    "y": -4.399999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37113,7 +37113,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -6,
-    "y": 3.600000000000001,
+    "y": -4.399999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37129,7 +37129,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.999999999999999,
-    "y": 2.799999999999999,
+    "y": -5.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37145,7 +37145,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 5.199999999999999,
-    "y": 2.799999999999999,
+    "y": -5.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37161,7 +37161,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 4.3999999999999995,
-    "y": 2.799999999999999,
+    "y": -5.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37177,7 +37177,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 3.5999999999999996,
-    "y": 2.7999999999999994,
+    "y": -5.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37193,7 +37193,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 2.7999999999999994,
-    "y": 2.7999999999999994,
+    "y": -5.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37209,7 +37209,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.9999999999999993,
-    "y": 2.7999999999999994,
+    "y": -5.200000000000001,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37225,7 +37225,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 1.1999999999999993,
-    "y": 2.8,
+    "y": -5.2,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37241,7 +37241,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.3999999999999994,
-    "y": 2.8,
+    "y": -5.2,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37257,7 +37257,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.40000000000000063,
-    "y": 2.8,
+    "y": -5.2,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37273,7 +37273,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -1.2000000000000006,
-    "y": 2.8,
+    "y": -5.2,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37289,7 +37289,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.0000000000000004,
-    "y": 2.8000000000000003,
+    "y": -5.199999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37305,7 +37305,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -2.8000000000000003,
-    "y": 2.8000000000000003,
+    "y": -5.199999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37321,7 +37321,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -3.6000000000000005,
-    "y": 2.8000000000000003,
+    "y": -5.199999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37337,7 +37337,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -4.400000000000001,
-    "y": 2.8000000000000007,
+    "y": -5.199999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37353,7 +37353,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -5.200000000000001,
-    "y": 2.8000000000000007,
+    "y": -5.199999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37369,7 +37369,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -6.000000000000001,
-    "y": 2.8000000000000007,
+    "y": -5.199999999999999,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -37380,23 +37380,23 @@
     "outline": [
       {
         "x": 7.565200000000119,
-        "y": 10.796600000000124
+        "y": 2.796600000000124
       },
       {
         "x": 7.565200000000117,
-        "y": 1.6860000000000337
+        "y": -6.313999999999966
       },
       {
         "x": -7.3111999999998725,
-        "y": 1.6860000000000372
+        "y": -6.313999999999963
       },
       {
         "x": -7.311199999999871,
-        "y": 10.796600000000128
+        "y": 2.7966000000001277
       },
       {
         "x": 7.565200000000119,
-        "y": 10.796600000000124
+        "y": 2.796600000000124
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -40759,7 +40759,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 10.432816,
-    "y": -7,
+    "y": -15,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -40776,7 +40776,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 9.567184,
-    "y": -7,
+    "y": -15,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -40787,23 +40787,23 @@
     "outline": [
       {
         "x": 8.810200000000123,
-        "y": -6.241999999999962
+        "y": -14.241999999999962
       },
       {
         "x": 11.189799999999991,
-        "y": -6.241999999999962
+        "y": -14.241999999999962
       },
       {
         "x": 11.189799999999991,
-        "y": -7.732600000000048
+        "y": -15.732600000000048
       },
       {
         "x": 8.810200000000123,
-        "y": -7.732600000000048
+        "y": -15.732600000000048
       },
       {
         "x": 8.810200000000123,
-        "y": -6.241999999999962
+        "y": -14.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -45925,7 +45925,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -8.420116,
-    "y": 5,
+    "y": -3,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -45942,7 +45942,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -7.579884,
-    "y": 5,
+    "y": -3,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -45953,23 +45953,23 @@
     "outline": [
       {
         "x": -6.8863999999999805,
-        "y": 5.758000000000038
+        "y": -2.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": 5.758000000000038
+        "y": -2.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": 4.267399999999952
+        "y": -3.7326000000000477
       },
       {
         "x": -6.8863999999999805,
-        "y": 4.267399999999952
+        "y": -3.7326000000000477
       },
       {
         "x": -6.8863999999999805,
-        "y": 5.758000000000038
+        "y": -2.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -45988,7 +45988,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 7.579884,
-    "y": 5,
+    "y": -3,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46005,7 +46005,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 8.420116,
-    "y": 5,
+    "y": -3,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46016,23 +46016,23 @@
     "outline": [
       {
         "x": 9.11360000000002,
-        "y": 5.758000000000038
+        "y": -2.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": 5.758000000000038
+        "y": -2.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": 4.267399999999952
+        "y": -3.7326000000000477
       },
       {
         "x": 9.11360000000002,
-        "y": 4.267399999999952
+        "y": -3.7326000000000477
       },
       {
         "x": 9.11360000000002,
-        "y": 5.758000000000038
+        "y": -2.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46051,7 +46051,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -8.420116,
-    "y": 3,
+    "y": -5,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46068,7 +46068,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -7.579884,
-    "y": 3,
+    "y": -5,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46079,23 +46079,23 @@
     "outline": [
       {
         "x": -6.8863999999999805,
-        "y": 3.758000000000038
+        "y": -4.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": 3.758000000000038
+        "y": -4.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": 2.2673999999999523
+        "y": -5.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": 2.2673999999999523
+        "y": -5.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": 3.758000000000038
+        "y": -4.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46114,7 +46114,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 7.579884,
-    "y": 3,
+    "y": -5,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46131,7 +46131,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 8.420116,
-    "y": 3,
+    "y": -5,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46142,23 +46142,23 @@
     "outline": [
       {
         "x": 9.11360000000002,
-        "y": 3.758000000000038
+        "y": -4.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": 3.758000000000038
+        "y": -4.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": 2.2673999999999523
+        "y": -5.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": 2.2673999999999523
+        "y": -5.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": 3.758000000000038
+        "y": -4.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46177,7 +46177,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -8.420116,
-    "y": 1,
+    "y": -7,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46194,7 +46194,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -7.579884,
-    "y": 1,
+    "y": -7,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46205,23 +46205,23 @@
     "outline": [
       {
         "x": -6.8863999999999805,
-        "y": 1.7580000000000382
+        "y": -6.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": 1.7580000000000382
+        "y": -6.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": 0.26739999999995234
+        "y": -7.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": 0.26739999999995234
+        "y": -7.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": 1.7580000000000382
+        "y": -6.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46240,7 +46240,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 7.579884,
-    "y": 1,
+    "y": -7,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46257,7 +46257,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 8.420116,
-    "y": 1,
+    "y": -7,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46268,23 +46268,23 @@
     "outline": [
       {
         "x": 9.11360000000002,
-        "y": 1.7580000000000382
+        "y": -6.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": 1.7580000000000382
+        "y": -6.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": 0.26739999999995234
+        "y": -7.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": 0.26739999999995234
+        "y": -7.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": 1.7580000000000382
+        "y": -6.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46303,7 +46303,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -8.420116,
-    "y": -1,
+    "y": -9,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46320,7 +46320,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -7.579884,
-    "y": -1,
+    "y": -9,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46331,23 +46331,23 @@
     "outline": [
       {
         "x": -6.8863999999999805,
-        "y": -0.2419999999999618
+        "y": -8.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": -0.2419999999999618
+        "y": -8.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": -1.7326000000000477
+        "y": -9.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": -1.7326000000000477
+        "y": -9.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": -0.2419999999999618
+        "y": -8.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46366,7 +46366,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 7.579884,
-    "y": -1,
+    "y": -9,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46383,7 +46383,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 8.420116,
-    "y": -1,
+    "y": -9,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46394,23 +46394,23 @@
     "outline": [
       {
         "x": 9.11360000000002,
-        "y": -0.2419999999999618
+        "y": -8.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": -0.2419999999999618
+        "y": -8.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": -1.7326000000000477
+        "y": -9.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": -1.7326000000000477
+        "y": -9.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": -0.2419999999999618
+        "y": -8.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46429,7 +46429,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -8.420116,
-    "y": -3,
+    "y": -11,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46446,7 +46446,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -7.579884,
-    "y": -3,
+    "y": -11,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46457,23 +46457,23 @@
     "outline": [
       {
         "x": -6.8863999999999805,
-        "y": -2.241999999999962
+        "y": -10.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": -2.241999999999962
+        "y": -10.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": -3.7326000000000477
+        "y": -11.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": -3.7326000000000477
+        "y": -11.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": -2.241999999999962
+        "y": -10.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46492,7 +46492,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 7.579884,
-    "y": -3,
+    "y": -11,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46509,7 +46509,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 8.420116,
-    "y": -3,
+    "y": -11,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46520,23 +46520,23 @@
     "outline": [
       {
         "x": 9.11360000000002,
-        "y": -2.241999999999962
+        "y": -10.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": -2.241999999999962
+        "y": -10.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": -3.7326000000000477
+        "y": -11.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": -3.7326000000000477
+        "y": -11.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": -2.241999999999962
+        "y": -10.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46555,7 +46555,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -8.420116,
-    "y": -5,
+    "y": -13,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46572,7 +46572,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -7.579884,
-    "y": -5,
+    "y": -13,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46583,23 +46583,23 @@
     "outline": [
       {
         "x": -6.8863999999999805,
-        "y": -4.241999999999962
+        "y": -12.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": -4.241999999999962
+        "y": -12.241999999999962
       },
       {
         "x": -9.138999999999896,
-        "y": -5.732600000000048
+        "y": -13.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": -5.732600000000048
+        "y": -13.732600000000048
       },
       {
         "x": -6.8863999999999805,
-        "y": -4.241999999999962
+        "y": -12.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46618,7 +46618,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 7.579884,
-    "y": -5,
+    "y": -13,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46635,7 +46635,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 8.420116,
-    "y": -5,
+    "y": -13,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46646,23 +46646,23 @@
     "outline": [
       {
         "x": 9.11360000000002,
-        "y": -4.241999999999962
+        "y": -12.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": -4.241999999999962
+        "y": -12.241999999999962
       },
       {
         "x": 6.861000000000104,
-        "y": -5.732600000000048
+        "y": -13.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": -5.732600000000048
+        "y": -13.732600000000048
       },
       {
         "x": 9.11360000000002,
-        "y": -4.241999999999962
+        "y": -12.241999999999962
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46681,7 +46681,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -9.40742,
-    "y": 2,
+    "y": -6,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46698,7 +46698,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -12.59258,
-    "y": 2,
+    "y": -6,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46709,23 +46709,23 @@
     "outline": [
       {
         "x": -13.815400000000068,
-        "y": 3.342200000000048
+        "y": -4.657799999999952
       },
       {
         "x": -8.184600000000046,
-        "y": 3.342200000000048
+        "y": -4.657799999999952
       },
       {
         "x": -8.184600000000046,
-        "y": 0.6578000000000657
+        "y": -7.342199999999934
       },
       {
         "x": -13.815400000000068,
-        "y": 0.6578000000000657
+        "y": -7.342199999999934
       },
       {
         "x": -13.815400000000068,
-        "y": 3.342200000000048
+        "y": -4.657799999999952
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46744,7 +46744,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -9.40742,
-    "y": -1,
+    "y": -9,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46761,7 +46761,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -12.59258,
-    "y": -1,
+    "y": -9,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46772,23 +46772,23 @@
     "outline": [
       {
         "x": -13.815400000000068,
-        "y": 0.342200000000048
+        "y": -7.657799999999952
       },
       {
         "x": -8.184600000000046,
-        "y": 0.342200000000048
+        "y": -7.657799999999952
       },
       {
         "x": -8.184600000000046,
-        "y": -2.3421999999999343
+        "y": -10.342199999999934
       },
       {
         "x": -13.815400000000068,
-        "y": -2.3421999999999343
+        "y": -10.342199999999934
       },
       {
         "x": -13.815400000000068,
-        "y": 0.342200000000048
+        "y": -7.657799999999952
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46870,7 +46870,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.420116,
-    "y": -2.8,
+    "y": -10.8,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46887,7 +46887,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.420116,
-    "y": -2.8,
+    "y": -10.8,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46898,23 +46898,23 @@
     "outline": [
       {
         "x": 1.1136000000000195,
-        "y": -2.0419999999999616
+        "y": -10.041999999999963
       },
       {
         "x": -1.1389999999998963,
-        "y": -2.0419999999999616
+        "y": -10.041999999999963
       },
       {
         "x": -1.1389999999998963,
-        "y": -3.5326000000000475
+        "y": -11.532600000000048
       },
       {
         "x": 1.1136000000000195,
-        "y": -3.5326000000000475
+        "y": -11.532600000000048
       },
       {
         "x": 1.1136000000000195,
-        "y": -2.0419999999999616
+        "y": -10.041999999999963
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -46933,7 +46933,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": -0.420116,
-    "y": 0.4,
+    "y": -7.6,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46950,7 +46950,7 @@
     ],
     "is_covered_with_solder_mask": false,
     "x": 0.420116,
-    "y": 0.4,
+    "y": -7.6,
     "subcircuit_id": "subcircuit_source_group_0"
   },
   {
@@ -46961,23 +46961,23 @@
     "outline": [
       {
         "x": 1.1136000000000195,
-        "y": 1.158000000000038
+        "y": -6.8419999999999614
       },
       {
         "x": -1.1389999999998963,
-        "y": 1.158000000000038
+        "y": -6.8419999999999614
       },
       {
         "x": -1.1389999999998963,
-        "y": -0.33260000000004764
+        "y": -8.332600000000047
       },
       {
         "x": 1.1136000000000195,
-        "y": -0.33260000000004764
+        "y": -8.332600000000047
       },
       {
         "x": 1.1136000000000195,
-        "y": 1.158000000000038
+        "y": -6.8419999999999614
       }
     ],
     "subcircuit_id": "subcircuit_source_group_0"
@@ -53920,7 +53920,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 6.000000000000001,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_324"
   },
   {
@@ -53932,7 +53932,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.200000000000001,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_325"
   },
   {
@@ -53944,7 +53944,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 4.400000000000001,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_326"
   },
   {
@@ -53956,7 +53956,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 3.6000000000000005,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_327"
   },
   {
@@ -53968,7 +53968,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.8000000000000003,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_328"
   },
   {
@@ -53980,7 +53980,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.0000000000000004,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_329"
   },
   {
@@ -53992,7 +53992,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.2000000000000006,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_330"
   },
   {
@@ -54004,7 +54004,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.40000000000000063,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_331"
   },
   {
@@ -54016,7 +54016,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.3999999999999994,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_332"
   },
   {
@@ -54028,7 +54028,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.1999999999999993,
-    "y": 9.2,
+    "y": 1.1999999999999993,
     "source_port_id": "source_port_333"
   },
   {
@@ -54040,7 +54040,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.9999999999999993,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "source_port_id": "source_port_334"
   },
   {
@@ -54052,7 +54052,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.7999999999999994,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "source_port_id": "source_port_335"
   },
   {
@@ -54064,7 +54064,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -3.5999999999999996,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "source_port_id": "source_port_336"
   },
   {
@@ -54076,7 +54076,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -4.3999999999999995,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "source_port_id": "source_port_337"
   },
   {
@@ -54088,7 +54088,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.199999999999999,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "source_port_id": "source_port_338"
   },
   {
@@ -54100,7 +54100,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.999999999999999,
-    "y": 9.200000000000001,
+    "y": 1.200000000000001,
     "source_port_id": "source_port_339"
   },
   {
@@ -54112,7 +54112,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 6,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "source_port_id": "source_port_340"
   },
   {
@@ -54124,7 +54124,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.2,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "source_port_id": "source_port_341"
   },
   {
@@ -54136,7 +54136,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 4.4,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "source_port_id": "source_port_342"
   },
   {
@@ -54148,7 +54148,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 3.6000000000000005,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "source_port_id": "source_port_343"
   },
   {
@@ -54160,7 +54160,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.8000000000000003,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "source_port_id": "source_port_344"
   },
   {
@@ -54172,7 +54172,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.0000000000000004,
-    "y": 8.399999999999999,
+    "y": 0.3999999999999986,
     "source_port_id": "source_port_345"
   },
   {
@@ -54184,7 +54184,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.2000000000000004,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_346"
   },
   {
@@ -54196,7 +54196,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.40000000000000047,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_347"
   },
   {
@@ -54208,7 +54208,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.3999999999999996,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_348"
   },
   {
@@ -54220,7 +54220,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.1999999999999995,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_349"
   },
   {
@@ -54232,7 +54232,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.9999999999999996,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_350"
   },
   {
@@ -54244,7 +54244,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.7999999999999994,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_351"
   },
   {
@@ -54256,7 +54256,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -3.5999999999999996,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_352"
   },
   {
@@ -54268,7 +54268,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -4.4,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_353"
   },
   {
@@ -54280,7 +54280,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.2,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_354"
   },
   {
@@ -54292,7 +54292,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -6,
-    "y": 8.4,
+    "y": 0.40000000000000036,
     "source_port_id": "source_port_355"
   },
   {
@@ -54304,7 +54304,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 6,
-    "y": 7.599999999999999,
+    "y": -0.40000000000000124,
     "source_port_id": "source_port_356"
   },
   {
@@ -54316,7 +54316,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.2,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_357"
   },
   {
@@ -54328,7 +54328,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 4.4,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_358"
   },
   {
@@ -54340,7 +54340,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 3.6000000000000005,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_359"
   },
   {
@@ -54352,7 +54352,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.8000000000000003,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_360"
   },
   {
@@ -54364,7 +54364,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.0000000000000004,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_361"
   },
   {
@@ -54376,7 +54376,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.2000000000000002,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_362"
   },
   {
@@ -54388,7 +54388,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.4000000000000003,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_363"
   },
   {
@@ -54400,7 +54400,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.39999999999999974,
-    "y": 7.6,
+    "y": -0.40000000000000036,
     "source_port_id": "source_port_364"
   },
   {
@@ -54412,7 +54412,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.1999999999999997,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "source_port_id": "source_port_365"
   },
   {
@@ -54424,7 +54424,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.9999999999999998,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "source_port_id": "source_port_366"
   },
   {
@@ -54436,7 +54436,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.7999999999999994,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "source_port_id": "source_port_367"
   },
   {
@@ -54448,7 +54448,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -3.5999999999999996,
-    "y": 7.6000000000000005,
+    "y": -0.39999999999999947,
     "source_port_id": "source_port_368"
   },
   {
@@ -54460,7 +54460,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -4.4,
-    "y": 7.600000000000001,
+    "y": -0.3999999999999986,
     "source_port_id": "source_port_369"
   },
   {
@@ -54472,7 +54472,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.2,
-    "y": 7.600000000000001,
+    "y": -0.3999999999999986,
     "source_port_id": "source_port_370"
   },
   {
@@ -54484,7 +54484,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -6,
-    "y": 7.600000000000001,
+    "y": -0.3999999999999986,
     "source_port_id": "source_port_371"
   },
   {
@@ -54496,7 +54496,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 6,
-    "y": 4.399999999999999,
+    "y": -3.6000000000000014,
     "source_port_id": "source_port_372"
   },
   {
@@ -54508,7 +54508,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.2,
-    "y": 4.399999999999999,
+    "y": -3.6000000000000014,
     "source_port_id": "source_port_373"
   },
   {
@@ -54520,7 +54520,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 4.4,
-    "y": 4.399999999999999,
+    "y": -3.6000000000000014,
     "source_port_id": "source_port_374"
   },
   {
@@ -54532,7 +54532,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 3.5999999999999996,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "source_port_id": "source_port_375"
   },
   {
@@ -54544,7 +54544,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.7999999999999994,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "source_port_id": "source_port_376"
   },
   {
@@ -54556,7 +54556,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.9999999999999998,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "source_port_id": "source_port_377"
   },
   {
@@ -54568,7 +54568,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.1999999999999997,
-    "y": 4.3999999999999995,
+    "y": -3.6000000000000005,
     "source_port_id": "source_port_378"
   },
   {
@@ -54580,7 +54580,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.39999999999999974,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_379"
   },
   {
@@ -54592,7 +54592,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.4000000000000003,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_380"
   },
   {
@@ -54604,7 +54604,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.2000000000000002,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_381"
   },
   {
@@ -54616,7 +54616,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.0000000000000004,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_382"
   },
   {
@@ -54628,7 +54628,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.8000000000000003,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_383"
   },
   {
@@ -54640,7 +54640,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -3.6000000000000005,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_384"
   },
   {
@@ -54652,7 +54652,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -4.4,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_385"
   },
   {
@@ -54664,7 +54664,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.2,
-    "y": 4.4,
+    "y": -3.5999999999999996,
     "source_port_id": "source_port_386"
   },
   {
@@ -54676,7 +54676,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -6,
-    "y": 4.400000000000001,
+    "y": -3.5999999999999988,
     "source_port_id": "source_port_387"
   },
   {
@@ -54688,7 +54688,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 6,
-    "y": 3.599999999999999,
+    "y": -4.4,
     "source_port_id": "source_port_388"
   },
   {
@@ -54700,7 +54700,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.2,
-    "y": 3.599999999999999,
+    "y": -4.4,
     "source_port_id": "source_port_389"
   },
   {
@@ -54712,7 +54712,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 4.4,
-    "y": 3.599999999999999,
+    "y": -4.4,
     "source_port_id": "source_port_390"
   },
   {
@@ -54724,7 +54724,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 3.5999999999999996,
-    "y": 3.5999999999999996,
+    "y": -4.4,
     "source_port_id": "source_port_391"
   },
   {
@@ -54736,7 +54736,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.7999999999999994,
-    "y": 3.5999999999999996,
+    "y": -4.4,
     "source_port_id": "source_port_392"
   },
   {
@@ -54748,7 +54748,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.9999999999999996,
-    "y": 3.5999999999999996,
+    "y": -4.4,
     "source_port_id": "source_port_393"
   },
   {
@@ -54760,7 +54760,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.1999999999999995,
-    "y": 3.6,
+    "y": -4.4,
     "source_port_id": "source_port_394"
   },
   {
@@ -54772,7 +54772,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.3999999999999996,
-    "y": 3.6,
+    "y": -4.4,
     "source_port_id": "source_port_395"
   },
   {
@@ -54784,7 +54784,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.40000000000000047,
-    "y": 3.6,
+    "y": -4.4,
     "source_port_id": "source_port_396"
   },
   {
@@ -54796,7 +54796,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.2000000000000004,
-    "y": 3.6,
+    "y": -4.4,
     "source_port_id": "source_port_397"
   },
   {
@@ -54808,7 +54808,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.0000000000000004,
-    "y": 3.6000000000000005,
+    "y": -4.3999999999999995,
     "source_port_id": "source_port_398"
   },
   {
@@ -54820,7 +54820,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.8000000000000003,
-    "y": 3.6000000000000005,
+    "y": -4.3999999999999995,
     "source_port_id": "source_port_399"
   },
   {
@@ -54832,7 +54832,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -3.6000000000000005,
-    "y": 3.6000000000000005,
+    "y": -4.3999999999999995,
     "source_port_id": "source_port_400"
   },
   {
@@ -54844,7 +54844,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -4.4,
-    "y": 3.600000000000001,
+    "y": -4.399999999999999,
     "source_port_id": "source_port_401"
   },
   {
@@ -54856,7 +54856,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.2,
-    "y": 3.600000000000001,
+    "y": -4.399999999999999,
     "source_port_id": "source_port_402"
   },
   {
@@ -54868,7 +54868,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -6,
-    "y": 3.600000000000001,
+    "y": -4.399999999999999,
     "source_port_id": "source_port_403"
   },
   {
@@ -54880,7 +54880,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.999999999999999,
-    "y": 2.799999999999999,
+    "y": -5.200000000000001,
     "source_port_id": "source_port_404"
   },
   {
@@ -54892,7 +54892,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 5.199999999999999,
-    "y": 2.799999999999999,
+    "y": -5.200000000000001,
     "source_port_id": "source_port_405"
   },
   {
@@ -54904,7 +54904,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 4.3999999999999995,
-    "y": 2.799999999999999,
+    "y": -5.200000000000001,
     "source_port_id": "source_port_406"
   },
   {
@@ -54916,7 +54916,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 3.5999999999999996,
-    "y": 2.7999999999999994,
+    "y": -5.200000000000001,
     "source_port_id": "source_port_407"
   },
   {
@@ -54928,7 +54928,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 2.7999999999999994,
-    "y": 2.7999999999999994,
+    "y": -5.200000000000001,
     "source_port_id": "source_port_408"
   },
   {
@@ -54940,7 +54940,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.9999999999999993,
-    "y": 2.7999999999999994,
+    "y": -5.200000000000001,
     "source_port_id": "source_port_409"
   },
   {
@@ -54952,7 +54952,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 1.1999999999999993,
-    "y": 2.8,
+    "y": -5.2,
     "source_port_id": "source_port_410"
   },
   {
@@ -54964,7 +54964,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.3999999999999994,
-    "y": 2.8,
+    "y": -5.2,
     "source_port_id": "source_port_411"
   },
   {
@@ -54976,7 +54976,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.40000000000000063,
-    "y": 2.8,
+    "y": -5.2,
     "source_port_id": "source_port_412"
   },
   {
@@ -54988,7 +54988,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -1.2000000000000006,
-    "y": 2.8,
+    "y": -5.2,
     "source_port_id": "source_port_413"
   },
   {
@@ -55000,7 +55000,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.0000000000000004,
-    "y": 2.8000000000000003,
+    "y": -5.199999999999999,
     "source_port_id": "source_port_414"
   },
   {
@@ -55012,7 +55012,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -2.8000000000000003,
-    "y": 2.8000000000000003,
+    "y": -5.199999999999999,
     "source_port_id": "source_port_415"
   },
   {
@@ -55024,7 +55024,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -3.6000000000000005,
-    "y": 2.8000000000000003,
+    "y": -5.199999999999999,
     "source_port_id": "source_port_416"
   },
   {
@@ -55036,7 +55036,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -4.400000000000001,
-    "y": 2.8000000000000007,
+    "y": -5.199999999999999,
     "source_port_id": "source_port_417"
   },
   {
@@ -55048,7 +55048,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -5.200000000000001,
-    "y": 2.8000000000000007,
+    "y": -5.199999999999999,
     "source_port_id": "source_port_418"
   },
   {
@@ -55060,7 +55060,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -6.000000000000001,
-    "y": 2.8000000000000007,
+    "y": -5.199999999999999,
     "source_port_id": "source_port_419"
   },
   {
@@ -56644,7 +56644,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 9.567184,
-    "y": -7,
+    "y": -15,
     "source_port_id": "source_port_551"
   },
   {
@@ -56656,7 +56656,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 10.432816,
-    "y": -7,
+    "y": -15,
     "source_port_id": "source_port_552"
   },
   {
@@ -58612,7 +58612,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -7.579884,
-    "y": 5,
+    "y": -3,
     "source_port_id": "source_port_715"
   },
   {
@@ -58624,7 +58624,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -8.420116,
-    "y": 5,
+    "y": -3,
     "source_port_id": "source_port_716"
   },
   {
@@ -58636,7 +58636,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 8.420116,
-    "y": 5,
+    "y": -3,
     "source_port_id": "source_port_717"
   },
   {
@@ -58648,7 +58648,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 7.579884,
-    "y": 5,
+    "y": -3,
     "source_port_id": "source_port_718"
   },
   {
@@ -58660,7 +58660,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -7.579884,
-    "y": 3,
+    "y": -5,
     "source_port_id": "source_port_719"
   },
   {
@@ -58672,7 +58672,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -8.420116,
-    "y": 3,
+    "y": -5,
     "source_port_id": "source_port_720"
   },
   {
@@ -58684,7 +58684,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 8.420116,
-    "y": 3,
+    "y": -5,
     "source_port_id": "source_port_721"
   },
   {
@@ -58696,7 +58696,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 7.579884,
-    "y": 3,
+    "y": -5,
     "source_port_id": "source_port_722"
   },
   {
@@ -58708,7 +58708,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -7.579884,
-    "y": 1,
+    "y": -7,
     "source_port_id": "source_port_723"
   },
   {
@@ -58720,7 +58720,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -8.420116,
-    "y": 1,
+    "y": -7,
     "source_port_id": "source_port_724"
   },
   {
@@ -58732,7 +58732,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 8.420116,
-    "y": 1,
+    "y": -7,
     "source_port_id": "source_port_725"
   },
   {
@@ -58744,7 +58744,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 7.579884,
-    "y": 1,
+    "y": -7,
     "source_port_id": "source_port_726"
   },
   {
@@ -58756,7 +58756,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -7.579884,
-    "y": -1,
+    "y": -9,
     "source_port_id": "source_port_727"
   },
   {
@@ -58768,7 +58768,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -8.420116,
-    "y": -1,
+    "y": -9,
     "source_port_id": "source_port_728"
   },
   {
@@ -58780,7 +58780,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 8.420116,
-    "y": -1,
+    "y": -9,
     "source_port_id": "source_port_729"
   },
   {
@@ -58792,7 +58792,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 7.579884,
-    "y": -1,
+    "y": -9,
     "source_port_id": "source_port_730"
   },
   {
@@ -58804,7 +58804,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -7.579884,
-    "y": -3,
+    "y": -11,
     "source_port_id": "source_port_731"
   },
   {
@@ -58816,7 +58816,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -8.420116,
-    "y": -3,
+    "y": -11,
     "source_port_id": "source_port_732"
   },
   {
@@ -58828,7 +58828,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 8.420116,
-    "y": -3,
+    "y": -11,
     "source_port_id": "source_port_733"
   },
   {
@@ -58840,7 +58840,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 7.579884,
-    "y": -3,
+    "y": -11,
     "source_port_id": "source_port_734"
   },
   {
@@ -58852,7 +58852,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -7.579884,
-    "y": -5,
+    "y": -13,
     "source_port_id": "source_port_735"
   },
   {
@@ -58864,7 +58864,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -8.420116,
-    "y": -5,
+    "y": -13,
     "source_port_id": "source_port_736"
   },
   {
@@ -58876,7 +58876,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 8.420116,
-    "y": -5,
+    "y": -13,
     "source_port_id": "source_port_737"
   },
   {
@@ -58888,7 +58888,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 7.579884,
-    "y": -5,
+    "y": -13,
     "source_port_id": "source_port_738"
   },
   {
@@ -58900,7 +58900,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -12.59258,
-    "y": 2,
+    "y": -6,
     "source_port_id": "source_port_739"
   },
   {
@@ -58912,7 +58912,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -9.40742,
-    "y": 2,
+    "y": -6,
     "source_port_id": "source_port_740"
   },
   {
@@ -58924,7 +58924,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -12.59258,
-    "y": -1,
+    "y": -9,
     "source_port_id": "source_port_741"
   },
   {
@@ -58936,7 +58936,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -9.40742,
-    "y": -1,
+    "y": -9,
     "source_port_id": "source_port_742"
   },
   {
@@ -58972,7 +58972,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.420116,
-    "y": -2.8,
+    "y": -10.8,
     "source_port_id": "source_port_745"
   },
   {
@@ -58984,7 +58984,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.420116,
-    "y": -2.8,
+    "y": -10.8,
     "source_port_id": "source_port_746"
   },
   {
@@ -58996,7 +58996,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": 0.420116,
-    "y": 0.4,
+    "y": -7.6,
     "source_port_id": "source_port_747"
   },
   {
@@ -59008,7 +59008,7 @@
     ],
     "subcircuit_id": "subcircuit_source_group_0",
     "x": -0.420116,
-    "y": 0.4,
+    "y": -7.6,
     "source_port_id": "source_port_748"
   },
   {
